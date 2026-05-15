@@ -5825,7 +5825,10 @@
       .then(segments => {
         if (!segments[i]) throw new Error('Scene not found');
         const seg = segments[i];
+        const effectiveStyle = seg.mainTextStyleOverride || seg.textStyle || 'box';
         _copiedStyle = {
+          fontSize: seg.fontSize,
+          rotation: seg.rotation,
           textColor: seg.textColor,
           textColorOverride: seg.textColorOverride,
           blockColor: seg.blockColor,
@@ -5842,8 +5845,7 @@
           boxBorderRadius: seg.boxBorderRadius,
           blockBorderRadius: seg.blockBorderRadius,
           font: seg.font,
-          textStyle: seg.textStyle,
-          mainTextStyleOverride: seg.mainTextStyleOverride,
+          mainTextStyleOverride: effectiveStyle,
           textAnimation: seg.textAnimation,
         };
         btn.textContent = '✅ Copied!';
