@@ -5826,25 +5826,26 @@
         if (!segments[i]) throw new Error('Scene not found');
         const seg = segments[i];
         const effectiveStyle = seg.mainTextStyleOverride || seg.textStyle || 'box';
+        const effectiveGlowColor = seg.glowColorOverride || seg.glowColor || '#00ffff';
+        const effectiveBlockColor = seg.blockColorOverride || seg.blockColor || '#ffdd00';
+        const effectiveTextColor = seg.textColorOverride || seg.textColor || '#000000';
+        const effectiveGlowTextColor = seg.glowTextColorOverride || '#ffffff';
+        const effectiveTextStrokeColor = seg.textStrokeColorOverride || seg.textStrokeColor || '#000000';
+        const effectiveGlowSize = seg.glowSizeOverride ?? seg.glowSize ?? 1;
+        const effectiveTextStrokeSize = seg.textStrokeSizeOverride ?? seg.textStrokeSize ?? 0;
+
         _copiedStyle = {
           fontSize: seg.fontSize,
           rotation: seg.rotation,
-          textColor: seg.textColor,
-          textColorOverride: seg.textColorOverride,
-          blockColor: seg.blockColor,
-          blockColorOverride: seg.blockColorOverride,
-          glowColor: seg.glowColor,
-          glowColorOverride: seg.glowColorOverride,
-          glowTextColorOverride: seg.glowTextColorOverride,
-          glowSize: seg.glowSize,
-          glowSizeOverride: seg.glowSizeOverride,
-          textStrokeColor: seg.textStrokeColor,
-          textStrokeColorOverride: seg.textStrokeColorOverride,
-          textStrokeSize: seg.textStrokeSize,
-          textStrokeSizeOverride: seg.textStrokeSizeOverride,
+          blockColorOverride: effectiveBlockColor,
+          textColorOverride: effectiveTextColor,
+          glowColorOverride: effectiveGlowColor,
+          glowTextColorOverride: effectiveGlowTextColor,
+          glowSizeOverride: effectiveGlowSize,
+          textStrokeColorOverride: effectiveTextStrokeColor,
+          textStrokeSizeOverride: effectiveTextStrokeSize,
           boxBorderRadius: seg.boxBorderRadius,
           blockBorderRadius: seg.blockBorderRadius,
-          font: seg.font,
           mainTextStyleOverride: effectiveStyle,
           textAnimation: seg.textAnimation,
         };
