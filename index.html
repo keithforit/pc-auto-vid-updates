@@ -6280,13 +6280,14 @@
     const fadeInMs = Math.min(toMs(fadeInSeconds), Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.45)));
     const fadeOutMs = Math.min(toMs(fadeOutSeconds), Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.45)));
     if (normalizedMode === 'static') return '';
-    if (normalizedMode === 'fade-in') return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms 1 both`;
+    if (normalizedMode === 'fade-in') return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms infinite both`;
     if (normalizedMode === 'fade-out') {
       const fadeOutDelay = delayMs + Math.max(0, activeMs - fadeOutMs);
-      return `preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${fadeOutDelay}ms 1 both`;
+      return `preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${fadeOutDelay}ms infinite both`;
     }
     const holdMs = Math.max(realTime ? 0 : 80, activeMs - fadeInMs - fadeOutMs);
-    return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms 1 both, preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${delayMs + fadeInMs + holdMs}ms 1 both`;
+    const totalCycleDurationMs = fadeInMs + holdMs + fadeOutMs;
+    return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms infinite, preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${delayMs + fadeInMs + holdMs}ms infinite`;
   }
 
   function buildOverlayPreviewHTML(i, j, rawOverlay, replay = false, sceneDuration = 5, realTime = false) {
