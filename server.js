@@ -1,0 +1,1303 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const { spawn, execSync, exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+const mp3Duration = require('mp3-duration');
+
+// Uploaded files land in public/backgrounds/, public/overlays/, public/voiceovers/, public/sfx/, or public/brand/ depending on route
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = req.path === '/upload-overlay'
+            ? './public/overlays/'
+            : req.path === '/upload-scene-audio'
+                ? './public/voiceovers/'
+                : req.path === '/upload-scene-sfx'
+                    ? './public/sfx/'
+                    : req.path === '/upload-custom-music'
+                        ? './public/music/'
+                        : req.path === '/upload-brand-image'
+                            ? './public/brand/'
+                            : './public/backgrounds/';
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const fallbackExt = (req.path === '/upload-scene-audio' || req.path === '/upload-scene-sfx' || req.path === '/upload-custom-music') ? '.mp3' : '.mp4';
+        const ext = path.extname(file.originalname) || fallbackExt;
+        cb(null, `upload-${Date.now()}${ext}`);
+    }
+});
+const upload = multer({ storage });
+const CONTENT_PATH = './src/Content.json';
+const SETTINGS_PATH = './src/VideoSettings.json';
+const PROJECT_DRAFT_PATH = './src/ProjectDraft.json';
+const SCENE_DRAFTS_PATH = './src/SceneDrafts.json';
+const SCENE_DRAFT_LIBRARY_PATH = './src/SceneDraftLibrary.json';
+const MEDIA_LIBRARY_PATH = './src/MediaLibrary.json';
+
+function readJsonFile(filePath, fallback) {
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch {
+        return fallback;
+    }
+}
+
+function writeJsonFile(filePath, value) {
+    fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
+}
+
+function mapSceneDraftIndices(mapper) {
+    const current = readJsonFile(SCENE_DRAFTS_PATH, {});
+    const next = {};
+    Object.entries(current || {}).forEach(([key, value]) => {
+        const mapped = mapper(Number(key), value);
+        if (Number.isInteger(mapped) && mapped >= 0) {
+            next[String(mapped)] = value;
+        }
+    });
+    writeJsonFile(SCENE_DRAFTS_PATH, next);
+}
+
+function reorderSceneDraftIndices(fromIndex, toIndex) {
+    const current = readJsonFile(SCENE_DRAFTS_PATH, {});
+    const ordered = Object.keys(current)
+        .map((key) => ({ index: Number(key), value: current[key] }))
+        .filter((entry) => Number.isInteger(entry.index))
+        .sort((a, b) => a.index - b.index);
+    const fromPos = ordered.findIndex((entry) => entry.index === fromIndex);
+    const toPos = ordered.findIndex((entry) => entry.index === toIndex);
+    if (fromPos === -1 && toPos === -1) return;
+    if (fromPos === -1 || toPos === -1) {
+        mapSceneDraftIndices((index) => {
+            if (fromIndex < toIndex) {
+                if (index === fromIndex) return toIndex;
+                if (index > fromIndex && index <= toIndex) return index - 1;
+            } else if (fromIndex > toIndex) {
+                if (index === fromIndex) return toIndex;
+                if (index >= toIndex && index < fromIndex) return index + 1;
+            }
+            return index;
+        });
+        return;
+    }
+    const [moved] = ordered.splice(fromPos, 1);
+    ordered.splice(toPos, 0, moved);
+    const next = {};
+    ordered.forEach((entry, idx) => {
+        next[String(idx)] = entry.value;
+    });
+    writeJsonFile(SCENE_DRAFTS_PATH, next);
+}
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+app.use(express.json());
+app.use(express.static(__dirname));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+function normalizeSceneMedia(scene = {}) {
+    if (!scene || typeof scene !== 'object') return scene;
+    const nextScene = { ...scene };
+    const sfxFile = nextScene.soundEffect?.file;
+    if (sfxFile) {
+        const sfxPath = path.join(__dirname, 'public', 'sfx', sfxFile);
+        if (!fs.existsSync(sfxPath)) delete nextScene.soundEffect;
+    }
+    nextScene.backgroundMusicEnabled = nextScene.backgroundMusicEnabled !== false;
+    if ('backgroundMusicVolume' in nextScene) {
+        const bgmVolume = Number(nextScene.backgroundMusicVolume);
+        nextScene.backgroundMusicVolume = Number.isFinite(bgmVolume)
+            ? Math.max(0, Math.min(100, bgmVolume))
+            : 100;
+    } else {
+        nextScene.backgroundMusicVolume = 100;
+    }
+    return nextScene;
+}
+
+// Return current segments so the dashboard can show them
+app.get('/segments', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    try {
+        const rawSegments = readJsonFile(CONTENT_PATH, []);
+        const segments = Array.isArray(rawSegments) ? rawSegments.map(normalizeSceneMedia) : [];
+        res.json(segments);
+    } catch { res.json([]); }
+});
+
+app.get('/draft-status', (req, res) => {
+    const projectDraft = readJsonFile(PROJECT_DRAFT_PATH, null);
+    const library = readJsonFile(SCENE_DRAFT_LIBRARY_PATH, {});
+    const libraryList = Object.values(library)
+        .map(d => ({ name: d.name, savedAt: d.savedAt }))
+        .sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    res.json({
+        project: projectDraft ? { savedAt: projectDraft.savedAt || null } : null,
+        library: libraryList,
+    });
+});
+
+app.post('/save-project-draft', (req, res) => {
+    try {
+        const payload = {
+            savedAt: new Date().toISOString(),
+            settings: readSettings(),
+            segments: readJsonFile(CONTENT_PATH, []),
+        };
+        writeJsonFile(PROJECT_DRAFT_PATH, payload);
+        res.json({ ok: true, savedAt: payload.savedAt, sceneCount: payload.segments.length });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/load-project-draft', (req, res) => {
+    try {
+        const payload = readJsonFile(PROJECT_DRAFT_PATH, null);
+        if (!payload) return res.status(404).json({ error: 'No project draft found.' });
+        writeJsonFile(CONTENT_PATH, Array.isArray(payload.segments) ? payload.segments : []);
+        if (payload.settings && typeof payload.settings === 'object') {
+            writeJsonFile(SETTINGS_PATH, payload.settings);
+        }
+        res.json({ ok: true, savedAt: payload.savedAt || null, sceneCount: Array.isArray(payload.segments) ? payload.segments.length : 0 });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Save a named scene draft to the persistent library (index-independent)
+app.post('/save-scene-draft', (req, res) => {
+    try {
+        const { index, name } = req.body;
+        const segments = readJsonFile(CONTENT_PATH, []);
+        if (!Number.isInteger(index) || index < 0 || index >= segments.length) {
+            return res.status(400).json({ error: 'Invalid scene index.' });
+        }
+        const draftName = (typeof name === 'string' && name.trim()) ? name.trim() : null;
+        if (!draftName) return res.status(400).json({ error: 'A name is required to save a scene draft.' });
+        const savedAt = new Date().toISOString();
+        const library = readJsonFile(SCENE_DRAFT_LIBRARY_PATH, {});
+        library[draftName] = { name: draftName, savedAt, scene: segments[index] };
+        writeJsonFile(SCENE_DRAFT_LIBRARY_PATH, library);
+        res.json({ ok: true, savedAt, name: draftName });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Load a named draft from the library into a scene slot
+app.post('/load-scene-draft', (req, res) => {
+    try {
+        const { index, name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Draft name is required.' });
+        const library = readJsonFile(SCENE_DRAFT_LIBRARY_PATH, {});
+        const saved = library[name];
+        if (!saved?.scene) return res.status(404).json({ error: `No draft named "${name}" found.` });
+        const segments = readJsonFile(CONTENT_PATH, []);
+        if (!Number.isInteger(index) || index < 0 || index >= segments.length) {
+            return res.status(400).json({ error: 'Invalid scene index.' });
+        }
+        segments[index] = saved.scene;
+        writeJsonFile(CONTENT_PATH, segments);
+        res.json({ ok: true, savedAt: saved.savedAt || null, name: saved.name });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Delete a named draft from the library
+app.post('/delete-scene-draft', (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Draft name is required.' });
+        const library = readJsonFile(SCENE_DRAFT_LIBRARY_PATH, {});
+        if (!library[name]) return res.status(404).json({ error: `No draft named "${name}" found.` });
+        delete library[name];
+        writeJsonFile(SCENE_DRAFT_LIBRARY_PATH, library);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// List all named drafts in the library (metadata only, no scene data)
+app.get('/scene-draft-library', (req, res) => {
+    try {
+        const library = readJsonFile(SCENE_DRAFT_LIBRARY_PATH, {});
+        const list = Object.values(library).map(d => ({ name: d.name, savedAt: d.savedAt }));
+        list.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+        res.json(list);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Download a remote video to public/backgrounds/ and return the local filename
+async function downloadVideo(url) {
+    if (!fs.existsSync('./public/backgrounds')) fs.mkdirSync('./public/backgrounds', { recursive: true });
+    const axios = require('axios');
+    const filename = `pexels-${Date.now()}.mp4`;
+    const dest = `./public/backgrounds/${filename}`;
+    const response = await axios.get(url, { responseType: 'stream', timeout: 55000 });
+    await new Promise((resolve, reject) => {
+        const writer = fs.createWriteStream(dest);
+        response.data.pipe(writer);
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+        // Abort if download stalls for more than 55 seconds
+        const stall = setTimeout(() => {
+            writer.destroy();
+            reject(new Error('Video download timed out'));
+        }, 55000);
+        writer.on('finish', () => clearTimeout(stall));
+        writer.on('error', () => clearTimeout(stall));
+    });
+    return filename;
+}
+
+// Replace the video for one segment by searching Pexels with a new query
+app.post('/replace-video', async (req, res) => {
+    const { index, query } = req.body;
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    try {
+        const axios = require('axios');
+        const result = await axios.get(
+            `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait`,
+            { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
+        );
+        if (!result.data.videos?.length) return res.status(404).json({ error: 'No videos found' });
+        const idx = result.data.videos.length > 1 ? 1 : 0;
+        const chosen = result.data.videos[idx];
+        const remoteUrl = chosen.video_files.sort((a, b) => b.width - a.width)[0].link;
+
+        const filename = await downloadVideo(remoteUrl);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url  = filename;
+        segments[index].video_duration  = null;
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ url: `/public/backgrounds/${filename}`, local: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Replace the video for one segment by fetching a specific Pexels video page URL
+app.post('/replace-video-by-url', async (req, res) => {
+    const { index, url } = req.body;
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    try {
+        const axios = require('axios');
+        // Extract the numeric video ID from a Pexels page URL like:
+        // https://www.pexels.com/video/dartboard-close-up-with-darts-hitting-target-34071374/
+        const pageMatch = url.match(/pexels\.com\/video\/[^/]*?-(\d+)\/?$/);
+        if (!pageMatch) {
+            return res.status(400).json({ error: 'Could not extract a video ID from the URL. Make sure it is a Pexels video page URL.' });
+        }
+        const videoId = pageMatch[1];
+        // Fetch video details from the Pexels API
+        const result = await axios.get(
+            `https://api.pexels.com/videos/videos/${videoId}`,
+            { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
+        );
+        const video = result.data;
+        if (!video || !video.video_files || !video.video_files.length) {
+            return res.status(404).json({ error: 'No video files found for this Pexels video.' });
+        }
+        // Pick the highest quality file
+        const remoteUrl = video.video_files.sort((a, b) => b.width - a.width)[0].link;
+        const filename = await downloadVideo(remoteUrl);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url  = filename;
+        segments[index].video_duration  = null;
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ url: `/public/backgrounds/${filename}`, local: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Search Pixabay for a video and download it
+app.post('/replace-video-pixabay', async (req, res) => {
+    const { index, query } = req.body;
+    const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+    try {
+        const axios = require('axios');
+        const result = await axios.get(
+            `https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&per_page=5&video_type=film&order=popular`,
+            { timeout: 15000 }
+        );
+        if (!result.data.hits?.length) return res.status(404).json({ error: 'No Pixabay videos found for that query' });
+        const chosen = result.data.hits[0];
+        // Prefer large (4K) → medium (1080p) → small → tiny
+        const vids = chosen.videos;
+        const remoteUrl = (vids.large?.url && vids.large.size > 0 ? vids.large.url :
+                           vids.medium?.url ? vids.medium.url :
+                           vids.small?.url  ? vids.small.url  : vids.tiny.url);
+        const filename = await downloadVideo(remoteUrl);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url  = filename;
+        segments[index].video_duration  = null;
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ url: `/public/backgrounds/${filename}`, local: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Fetch a specific Pixabay video by page URL and download it
+// Supports URLs like: https://pixabay.com/videos/radio-tower-night-view-211067/
+app.post('/replace-video-pixabay-url', async (req, res) => {
+    const { index, url } = req.body;
+    const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+    try {
+        const axios = require('axios');
+        // Extract the numeric ID from the end of the URL slug, e.g. "211067"
+        const pageMatch = url.match(/pixabay\.com\/videos\/[^/]*?-(\d+)\/?$/);
+        if (!pageMatch) {
+            return res.status(400).json({ error: 'Could not extract a video ID from the URL. Make sure it is a Pixabay video page URL (e.g. https://pixabay.com/videos/radio-tower-night-view-211067/)' });
+        }
+        const videoId = pageMatch[1];
+        const result = await axios.get(
+            `https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&id=${videoId}`,
+            { timeout: 15000 }
+        );
+        if (!result.data.hits?.length) return res.status(404).json({ error: 'No Pixabay video found for that ID' });
+        const chosen = result.data.hits[0];
+        const vids = chosen.videos;
+        const remoteUrl = (vids.large?.url && vids.large.size > 0 ? vids.large.url :
+                           vids.medium?.url ? vids.medium.url :
+                           vids.small?.url  ? vids.small.url  : vids.tiny.url);
+        const filename = await downloadVideo(remoteUrl);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url  = filename;
+        segments[index].video_duration  = null;
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ url: `/public/backgrounds/${filename}`, local: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Upload an overlay image with editable placement, crop, and fade settings
+app.post('/upload-overlay', upload.single('image'), (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        const filename = req.file.filename;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        const existingList = Array.isArray(segments[index].overlayImages) && segments[index].overlayImages.length
+            ? segments[index].overlayImages
+            : (segments[index].overlayImage?.src ? [segments[index].overlayImage] : []);
+        const existing = existingList[existingList.length - 1] || segments[index].overlayImage || {};
+        const fallbackX = existing.x ?? ({ left: 18, center: 50, right: 82 }[existing.hPos || 'center'] ?? 50);
+        const fallbackY = existing.y ?? ({ top: 18, center: 50, bottom: 82 }[existing.vPos || 'center'] ?? 50);
+        const overlay = {
+            src: `overlays/${filename}`,
+            x: fallbackX,
+            y: fallbackY,
+            size: existing.size || 55,
+            zOrder: existing.zOrder || 15,
+            cropEnabled: !!existing.cropEnabled,
+            cropScale: existing.cropScale || 1,
+            cropX: existing.cropX || 50,
+            cropY: existing.cropY || 50,
+            rotation: existing.rotation || 0,
+            aspectRatio: existing.aspectRatio || 1,
+            animation: ['static', 'fade-in', 'fade-out', 'fade-both', 'fade', 'fader'].includes(existing.animation) ? (existing.animation === 'fade' ? 'fade-both' : existing.animation) : 'fade-both',
+            fadeInDuration: existing.fadeInDuration || 1.5,
+            fadeOutDuration: existing.fadeOutDuration || 1.5,
+            faderDuration: Math.max(0.5, Math.min(10, Number(existing.faderDuration) || 1)),
+            startAt: existing.startAt || 0,
+            endAt: existing.endAt ?? null,
+        };
+        segments[index].overlayImages = [...existingList, overlay];
+        segments[index].overlayImage = segments[index].overlayImages[0] || overlay;
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ src: overlay.src, overlay, previewUrl: `/public/overlays/${filename}` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Upload a background image and assign it to a segment (with Ken Burns in Remotion)
+app.post('/upload-image', upload.single('image'), (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        const filename = req.file.filename;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url  = filename;
+        segments[index].background_type = 'image';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ filename, previewUrl: `/public/backgrounds/${filename}` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Upload a local video file and assign it to a segment
+app.post('/upload-video', upload.single('video'), (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        const filename = req.file.filename; // e.g. "upload-1234567890.mp4"
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url = filename; // stored as filename, Background.tsx picks it up from backgrounds/
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ filename, previewUrl: `/public/backgrounds/${filename}` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/upload-scene-audio', upload.single('audio'), async (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        if (!req.file) return res.status(400).json({ error: 'No MP3 file uploaded.' });
+        if (path.extname(req.file.filename).toLowerCase() != '.mp3') {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ error: 'Please upload an MP3 file for scene audio.' });
+        }
+        const duration = await mp3Duration(req.file.path);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].customAudioFile = req.file.filename;
+        segments[index].audioFile = req.file.filename;
+        segments[index].duration = duration;
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ filename: req.file.filename, previewUrl: `/public/voiceovers/${req.file.filename}`, duration });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/clear-scene-audio', (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        delete segments[index].customAudioFile;
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/upload-scene-sfx', upload.single('audio'), (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        if (!req.file) return res.status(400).json({ error: 'No sound effect file uploaded.' });
+        const ext = path.extname(req.file.filename).toLowerCase();
+        const allowed = ['.mp3', '.wav', '.m4a', '.aac', '.ogg'];
+        if (!allowed.includes(ext)) {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ error: 'Upload an audio file such as MP3, WAV, M4A, AAC, or OGG.' });
+        }
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        const existing = segments[index].soundEffect || {};
+        segments[index].soundEffect = {
+            file: req.file.filename,
+            startAt: existing.startAt ?? 0,
+            volume: existing.volume ?? 1,
+        };
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ filename: req.file.filename, previewUrl: `/public/sfx/${req.file.filename}` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/clear-scene-sfx', (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        delete segments[index].soundEffect;
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// List videos available in public/stockvideo/
+app.get('/stock-videos', (req, res) => {
+    try {
+        const dir = './public/stockvideo';
+        if (!fs.existsSync(dir)) return res.json([]);
+        const files = fs.readdirSync(dir).filter(f => /\.(mp4|mov|webm)$/i.test(f));
+        res.json(files);
+    } catch { res.json([]); }
+});
+
+app.get('/music-files', (req, res) => {
+    try {
+        const dir = './public/music';
+        if (!fs.existsSync(dir)) return res.json([]);
+        const files = fs.readdirSync(dir)
+            .filter(f => /\.(mp3|wav|m4a|aac|ogg)$/i.test(f))
+            .sort((a, b) => a.localeCompare(b));
+        res.json(files);
+    } catch {
+        res.json([]);
+    }
+});
+
+app.post('/upload-custom-music', upload.single('audio'), (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No MP3 file uploaded.' });
+        if (path.extname(req.file.filename).toLowerCase() !== '.mp3') {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ error: 'Please upload an MP3 file for background music.' });
+        }
+        const settings = readSettings();
+        const updated = {
+            ...settings,
+            backgroundMusicCustomFile: req.file.filename,
+            backgroundMusicUseCustom: true,
+            backgroundMusicRandom: false,
+        };
+        fs.writeFileSync('./src/VideoSettings.json', JSON.stringify(updated, null, 2));
+        res.json({ filename: req.file.filename, previewUrl: `/public/music/${req.file.filename}` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Assign a stock video to a segment
+app.post('/use-stock-video', (req, res) => {
+    try {
+        const { index, filename } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_url = `stockvideo/${filename}`; // Background.tsx resolves via staticFile()
+        segments[index].background_type = 'video';
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Read/write VideoSettings.json
+function readSettings() {
+    try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')); }
+    catch {
+        return {
+            voice: 'gtts',
+            voicevoxSpeaker: 'ずんだもん',
+            textStyle: 'box',
+            glowColor: '#00ffff',
+            glowSize: 1,
+            font: 'noto',
+            blockColor: '#ffdd00',
+            textColor: '#000000',
+            textStrokeColor: '#000000',
+            textStrokeSize: 0,
+            boxBorderRadius: 20,
+            blockBorderRadius: 10,
+            videoSizePreset: '9:16',
+            outputWidth: 1080,
+            outputHeight: 1920,
+            backgroundMusicRandom: true,
+            backgroundMusicFile: '',
+            backgroundMusicUseCustom: false,
+            backgroundMusicCustomFile: '',
+        };
+    }
+}
+function applyStylesToContent(settings) {
+    try {
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments.forEach(seg => {
+            seg.textStyle  = settings.textStyle  || 'box';
+            seg.glowColor  = settings.glowColor  || '#00ffff';
+            seg.glowSize   = settings.glowSize   ?? 1;
+            seg.font       = settings.font       || 'noto';
+            seg.blockColor = settings.blockColor || '#ffdd00';
+            seg.textColor  = settings.textColor  || '#000000';
+            seg.textStrokeColor = settings.textStrokeColor || '#000000';
+            seg.textStrokeSize  = settings.textStrokeSize  ?? 0;
+            seg.boxBorderRadius = settings.boxBorderRadius ?? 20;
+            seg.blockBorderRadius = settings.blockBorderRadius ?? 10;
+            delete seg.textStrokeColorOverride;
+            delete seg.textStrokeSizeOverride;
+            if (!seg.textAnimation) seg.textAnimation = 'pop';
+        });
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+    } catch(e) { console.log('Could not apply styles to Content.json:', e.message); }
+}
+
+app.get('/settings', (req, res) => res.json(readSettings()));
+
+app.post('/settings', (req, res) => {
+    try {
+        const updated = { ...readSettings(), ...req.body };
+        writeJsonFile(SETTINGS_PATH, updated);
+        applyStylesToContent(updated);
+        res.json({ ok: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Proxy to VOICEVOX speakers list
+app.get('/voicevox-speakers', async (req, res) => {
+    try {
+        const axios = require('axios');
+        const { data } = await axios.get('http://localhost:50021/speakers');
+        // Return flat list: [{ name, styleName, id }]
+        const flat = data.flatMap(s => s.styles.map(style => ({
+            speaker: s.name, style: style.name, id: style.id
+        })));
+        res.json(flat);
+    } catch(e) {
+        res.status(503).json({ error: 'VOICEVOX not running at localhost:50021' });
+    }
+});
+
+function normalizePreviewText(text = '') {
+    return String(text).replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function shouldUseVoicevox(settings = {}, voiceSettings = {}) {
+    return settings.voice === 'voicevox' || !!String(voiceSettings.voicevoxSpeaker || '').trim();
+}
+
+function contentUsesVoicevox(segments = [], settings = {}) {
+    return settings.voice === 'voicevox' || segments.some(seg => String(seg.voicevoxSpeaker || '').trim());
+}
+
+function buildShortPreviewText(text = '') {
+    const normalized = normalizePreviewText(text);
+    const firstLine = normalized.split('\n').map(line => line.trim()).find(Boolean) || normalized;
+    if (!firstLine) return '';
+    return firstLine.length > 60 ? `${firstLine.slice(0, 60).trim()}…` : firstLine;
+}
+
+async function getVoicevoxPreviewSpeakerId(speakerName) {
+    const axios = require('axios');
+    const { data: speakers } = await axios.get('http://localhost:50021/speakers');
+    for (const speaker of speakers) {
+        if (speaker.name === speakerName) return speaker.styles[0].id;
+    }
+    for (const speaker of speakers) {
+        if (speaker.name.includes(speakerName) || speakerName.includes(speaker.name)) return speaker.styles[0].id;
+    }
+    throw new Error(`VOICEVOX speaker not found: ${speakerName}`);
+}
+
+async function synthesizeVoicePreview(text, settings, voiceSettings, outputPath) {
+    if (shouldUseVoicevox(settings, voiceSettings)) {
+        const axios = require('axios');
+        const speakerName = voiceSettings.voicevoxSpeaker || settings.voicevoxSpeaker || 'ずんだもん';
+        const speakerId = await getVoicevoxPreviewSpeakerId(speakerName);
+        const { data: query } = await axios.post(
+            `http://localhost:50021/audio_query?text=${encodeURIComponent(text)}&speaker=${speakerId}`,
+            {},
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        if (voiceSettings.voiceSpeed != null) query.speedScale = Number(voiceSettings.voiceSpeed);
+        if (voiceSettings.voicePitch != null) query.pitchScale = Number(voiceSettings.voicePitch);
+        if (voiceSettings.voiceVolume != null) query.volumeScale = Number(voiceSettings.voiceVolume);
+        const { data: audio } = await axios.post(
+            `http://localhost:50021/synthesis?speaker=${speakerId}`,
+            query,
+            { headers: { 'Content-Type': 'application/json' }, responseType: 'arraybuffer' }
+        );
+        fs.writeFileSync(outputPath, Buffer.from(audio));
+        return { approximate: false };
+    }
+
+    const gTTS = require('gtts');
+    const lang = /[\u3040-\u30FF\u4E00-\u9FFF]/.test(text) ? 'ja' : 'en';
+    await new Promise((resolve, reject) => {
+        const gtts = new gTTS(text, lang);
+        gtts.save(outputPath, (err) => err ? reject(err) : resolve());
+    });
+    return { approximate: true };
+}
+
+app.post('/preview-voice', async (req, res) => {
+    try {
+        const { text, mode, voiceSpeed, voicePitch, voiceVolume, voicevoxSpeaker } = req.body;
+        const fullText = normalizePreviewText(text);
+        const previewText = mode === 'short' ? buildShortPreviewText(fullText) : fullText;
+        if (!previewText) return res.status(400).json({ error: 'Add some voice text first.' });
+
+        const previewDir = path.join(__dirname, 'public', 'voice-previews');
+        if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
+
+        const settings = readSettings();
+        const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const useVoicevox = shouldUseVoicevox(settings, { voicevoxSpeaker });
+        const ext = useVoicevox ? 'wav' : 'mp3';
+        const filename = `preview-${stamp}.${ext}`;
+        const outputPath = path.join(previewDir, filename);
+
+        const result = await synthesizeVoicePreview(previewText, settings, {
+            voiceSpeed,
+            voicePitch,
+            voiceVolume,
+            voicevoxSpeaker,
+        }, outputPath);
+
+        res.json({ ok: true, url: `/public/voice-previews/${filename}`, approximate: result.approximate });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Add a new blank scene (optionally at a specific position)
+app.post('/add-scene', (req, res) => {
+    try {
+        const { afterIndex, text, voiceover_text, resetAll } = req.body;
+        const settings = readSettings();
+        const segments = resetAll ? [] : JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        const newScene = {
+            text: text !== undefined ? text : '新しいシーン',
+            voiceover_text: voiceover_text !== undefined ? voiceover_text : '',
+            background_url: '',
+            background_type: 'video',
+            duration: 5,
+            textStyle: settings.textStyle || 'box',
+            textAnimation: 'pop',
+            textFadeInDuration: 1.5,
+            textFadeOutDuration: 1.5,
+            glowColor:  settings.glowColor  || '#00ffff',
+            glowSize:   settings.glowSize   ?? 1,
+            font:       settings.font       || 'noto',
+            blockColor: settings.blockColor || '#ffdd00',
+            textColor:  settings.textColor  || '#000000',
+            textStrokeColor: settings.textStrokeColor || '#000000',
+            textStrokeSize:  settings.textStrokeSize  ?? 0,
+            boxBorderRadius: settings.boxBorderRadius ?? 20,
+            blockBorderRadius: settings.blockBorderRadius ?? 10,
+            sceneFadeInDuration: 1.5,
+            sceneFadeOutDuration: 1.5,
+            textNoWrap: true,
+        };
+        const insertAt = (afterIndex !== undefined && afterIndex >= 0) ? afterIndex + 1 : segments.length;
+        segments.splice(insertAt, 0, newScene);
+        mapSceneDraftIndices((index) => index >= insertAt ? index + 1 : index);
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true, index: insertAt });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Duplicate a scene (deep copy inserted immediately after the original)
+app.post('/duplicate-scene', (req, res) => {
+    try {
+        const { index } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (!Number.isInteger(index) || index < 0 || index >= segments.length) {
+            return res.status(400).json({ error: 'Invalid scene index.' });
+        }
+        const copy = JSON.parse(JSON.stringify(segments[index]));
+        const insertAt = index + 1;
+        segments.splice(insertAt, 0, copy);
+        mapSceneDraftIndices((idx) => idx >= insertAt ? idx + 1 : idx);
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true, index: insertAt });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete a scene by index
+app.post('/delete-scene', (req, res) => {
+    try {
+        const { index } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (index < 0 || index >= segments.length) return res.status(400).json({ error: 'Invalid index' });
+        segments.splice(index, 1);
+        mapSceneDraftIndices((draftIndex) => {
+            if (draftIndex === index) return null;
+            return draftIndex > index ? draftIndex - 1 : draftIndex;
+        });
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/move-scene', (req, res) => {
+    try {
+        const { index, direction } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (!Number.isInteger(index) || index < 0 || index >= segments.length) {
+            return res.status(400).json({ error: 'Invalid scene index.' });
+        }
+        const targetIndex = direction === 'up' ? index - 1 : direction === 'down' ? index + 1 : index;
+        if (targetIndex < 0 || targetIndex >= segments.length) {
+            return res.status(400).json({ error: `This scene cannot move ${direction}.` });
+        }
+        const [scene] = segments.splice(index, 1);
+        segments.splice(targetIndex, 0, scene);
+        reorderSceneDraftIndices(index, targetIndex);
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true, index: targetIndex });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Reorder a scene from one index to another (drag-and-drop)
+app.post('/reorder-scene', (req, res) => {
+    try {
+        const { fromIndex, toIndex } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (!Number.isInteger(fromIndex) || fromIndex < 0 || fromIndex >= segments.length) {
+            return res.status(400).json({ error: 'Invalid fromIndex.' });
+        }
+        if (!Number.isInteger(toIndex) || toIndex < 0 || toIndex >= segments.length) {
+            return res.status(400).json({ error: 'Invalid toIndex.' });
+        }
+        if (fromIndex === toIndex) return res.json({ ok: true });
+        const [scene] = segments.splice(fromIndex, 1);
+        segments.splice(toIndex, 0, scene);
+        reorderSceneDraftIndices(fromIndex, toIndex);
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Update text position, style override, extra text layers, shapes, and color overrides for a segment
+app.post('/update-scene-texts', (req, res) => {
+    try {
+        const {
+            index, text, textPosition, textAlign, textAnimation, textFadeInDuration, textFadeOutDuration, extraTexts, mainTextStyleOverride,
+            overlayImage, overlayImages, overlayShapes, voiceover_text, voiceoverRichText, voiceEmphasis, voicevoxSpeaker,
+            mainTextStartAt, mainTextEndAt,
+            sceneAnimation, soundEffect, sceneFadeInDuration, sceneFadeOutDuration,
+            backgroundMusicEnabled, backgroundMusicVolume, textNoWrap, textBoxWidth, textPadding,
+        } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (text                  !== undefined) segments[index].text                  = text;
+        if (textPosition          !== undefined) segments[index].textPosition          = textPosition;
+        if (textAlign             !== undefined) segments[index].textAlign             = textAlign;
+        if (textAnimation         !== undefined) segments[index].textAnimation         = textAnimation;
+        if (textFadeInDuration    !== undefined) segments[index].textFadeInDuration    = textFadeInDuration;
+        if (textFadeOutDuration   !== undefined) segments[index].textFadeOutDuration   = textFadeOutDuration;
+        if (extraTexts            !== undefined) segments[index].extraTexts            = extraTexts;
+        if (mainTextStyleOverride !== undefined) segments[index].mainTextStyleOverride = mainTextStyleOverride;
+        if (overlayImages         !== undefined) {
+            segments[index].overlayImages = Array.isArray(overlayImages) ? overlayImages : [];
+            segments[index].overlayImage = overlayImage !== undefined ? overlayImage : (segments[index].overlayImages[0] || null);
+        } else if (overlayImage   !== undefined) {
+            segments[index].overlayImage = overlayImage;
+            segments[index].overlayImages = overlayImage?.src ? [overlayImage] : [];
+        }
+        if (overlayShapes         !== undefined) segments[index].overlayShapes         = overlayShapes;
+        if (sceneAnimation        !== undefined) segments[index].sceneAnimation        = sceneAnimation;
+        if (sceneFadeInDuration   !== undefined) segments[index].sceneFadeInDuration   = sceneFadeInDuration;
+        if (sceneFadeOutDuration  !== undefined) segments[index].sceneFadeOutDuration  = sceneFadeOutDuration;
+        if (backgroundMusicEnabled !== undefined) segments[index].backgroundMusicEnabled = backgroundMusicEnabled !== false;
+        if (backgroundMusicVolume  !== undefined) {
+            const bgmVolume = Number(backgroundMusicVolume);
+            segments[index].backgroundMusicVolume = Number.isFinite(bgmVolume)
+                ? Math.max(0, Math.min(100, bgmVolume))
+                : 100;
+        }
+        if (soundEffect           !== undefined) {
+            if (soundEffect && soundEffect.file) segments[index].soundEffect = soundEffect;
+            else delete segments[index].soundEffect;
+        }
+        if (textNoWrap             !== undefined) segments[index].textNoWrap             = textNoWrap === true;
+        if (textPadding !== undefined) {
+            const p = Number(textPadding);
+            if (textPadding === null) delete segments[index].textPadding;
+            else if (Number.isFinite(p) && p >= 0 && p <= 200) segments[index].textPadding = p;
+        }
+        if (textBoxWidth            !== undefined) {
+            const w = Number(textBoxWidth);
+            if (textBoxWidth === null) delete segments[index].textBoxWidth;
+            else if (Number.isFinite(w) && w > 0 && w <= 200) segments[index].textBoxWidth = w;
+        }
+        if (voiceover_text        !== undefined) segments[index].voiceover_text        = voiceover_text;
+        if (voiceoverRichText     !== undefined) segments[index].voiceoverRichText     = voiceoverRichText;
+        if (voiceEmphasis         !== undefined) segments[index].voiceEmphasis         = voiceEmphasis;
+        if (voicevoxSpeaker       !== undefined) segments[index].voicevoxSpeaker       = voicevoxSpeaker;
+        // Nullable fields: null = delete (revert to default), number/string = set
+        const nullableFields = [
+             'textX', 'textY',
+            'rotation', 'fontSize',
+            'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride',
+            'boxBorderRadius', 'blockBorderRadius',
+            'mainTextStartAt', 'mainTextEndAt',
+            'voiceSpeed', 'voicePitch', 'voiceVolume',
+            'backgroundScale', 'backgroundX', 'backgroundY', 'kenBurns',
+        ];
+        nullableFields.forEach(f => {
+            if (f in req.body) {
+                if (req.body[f] === null) delete segments[index][f];
+                else segments[index][f] = req.body[f];
+            }
+        });
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update only the duration of a scene (used by global timeline drag-resize)
+app.post('/update-scene-duration', (req, res) => {
+    try {
+        const { index, duration } = req.body;
+        const d = parseFloat(duration);
+        if (!Number.isFinite(d) || d < 0.1) return res.status(400).json({ error: 'Invalid duration' });
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        if (!segments[index]) return res.status(404).json({ error: 'Scene not found' });
+        segments[index].duration = Math.round(d * 10) / 10;
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Set a static colour or gradient background on a segment
+app.post('/set-background-style', (req, res) => {
+    try {
+        const { index, type, color, gradientStart, gradientEnd, gradientDirection } = req.body;
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        segments[index].background_type = type; // 'color' | 'gradient' | 'video'
+        if (type === 'color') {
+            segments[index].background_color = color;
+            segments[index].background_url = '';
+        } else if (type === 'gradient') {
+            segments[index].gradient_start     = gradientStart;
+            segments[index].gradient_end       = gradientEnd;
+            segments[index].gradient_direction = gradientDirection || 'to bottom';
+            segments[index].background_url = '';
+        }
+        // type === 'video' or 'image': leave background_url untouched
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Detect Japanese text (hiragana, katakana, kanji)
+function isJapanese(text) {
+    return /[\u3040-\u30FF\u4E00-\u9FFF]/.test(text);
+}
+
+io.on('connection', (socket) => {
+    socket.on('start-batch', async (data) => {
+        const scripts = data.scripts.filter(s => s.trim() !== "").slice(0, 2);
+        const contentType = data.contentType || 'stock'; // 'stock' | 'captions'
+
+        // Palette of visually distinct dark/rich colours for captions-only random mode
+        const RANDOM_PALETTE = [
+            '#0f172a','#1e1b4b','#1a0533','#0c1a2e','#0f2027','#1a1a2e',
+            '#0d0d0d','#1e3a5f','#2d1b69','#0a2342','#1a0a2e','#0f3460',
+            '#16213e','#1b1b2f','#2c003e','#0d1b2a','#1a2744','#0a1628'
+        ];
+
+        for (let i = 0; i < scripts.length; i++) {
+            try {
+                const script = scripts[i];
+                const japanese = isJapanese(script);
+
+                socket.emit('log', `📋 Script ${i + 1}: ${japanese ? '🇯🇵 Japanese mode' : '🇺🇸 English mode'} • Mode: ${contentType === 'captions' ? '🎨 Captions Only' : '🎬 Stock Backgrounds'}`);
+
+                fs.writeFileSync('temp_input.txt', script);
+
+                // Step 1: Parse script → Content.json
+                // For captions-only mode, use a stripped parser that skips Pexels fetching
+                const parserScript = contentType === 'captions' ? 'parser-captions.js' : 'parser.js';
+                socket.emit('log', `🔍 Parsing script${contentType === 'captions' ? ' (captions only — skipping stock video fetch)' : ''}...`);
+                await new Promise((resolve, reject) => {
+                    const parserProc = spawn('node', [parserScript], { shell: false });
+                    parserProc.stdout.on('data', d => socket.emit('log', d.toString().trim()));
+                    parserProc.stderr.on('data', d => socket.emit('log', d.toString().trim()));
+                    parserProc.on('close', code => code === 0 ? resolve() : reject(new Error(`Parser exited with code ${code}`)));
+                });
+                socket.emit('log', '✅ Script parsed into segments');
+
+                // For captions-only: assign brand or random colours to each scene
+                if (contentType === 'captions') {
+                    socket.emit('log', '🎨 Applying background colours...');
+                    const segments = readJsonFile(CONTENT_PATH, []);
+                    const mediaLib = readMediaLibrary();
+                    const brandColors = (mediaLib.brandColors || []).map(c => c.color).filter(Boolean);
+                    const palette = brandColors.length > 0 ? brandColors : RANDOM_PALETTE;
+                    let paletteIndex = Math.floor(Math.random() * palette.length);
+                    segments.forEach((seg, idx) => {
+                        const color = palette[paletteIndex % palette.length];
+                        paletteIndex++;
+                        seg.background_url = '';
+                        seg.background_type = 'color';
+                        seg.background_color = color;
+                    });
+                    writeJsonFile(CONTENT_PATH, segments);
+                    socket.emit('log', `✅ Assigned ${brandColors.length > 0 ? 'brand' : 'random'} colours to ${segments.length} scene(s)`);
+                }
+
+                // Step 1b: Apply current style settings to all parsed segments
+                applyStylesToContent(readSettings());
+
+                // Step 2: Generate voiceovers
+                socket.emit('log', '🎙️ Generating voiceovers...');
+                const voiceSettings = readSettings();
+                const segmentsForVoice = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+                const audioScriptName = contentUsesVoicevox(segmentsForVoice, voiceSettings)
+                    ? 'generate-audio-voicevox.js'
+                    : japanese ? 'generate-audio-ja.js' : 'generate-audio.js';
+                await new Promise((resolve, reject) => {
+                    const audioProc = spawn('node', [audioScriptName], { shell: false });
+                    audioProc.stdout.on('data', d => socket.emit('log', d.toString().trim()));
+                    audioProc.stderr.on('data', d => socket.emit('log', d.toString().trim()));
+                    audioProc.on('close', code => code === 0 ? resolve() : reject(new Error(`Audio gen exited with code ${code}`)));
+                });
+                socket.emit('log', '✅ Voiceovers ready');
+
+                // Step 3: Render video
+                const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
+                const finalName = `${title}_${Date.now()}.mp4`;
+
+                socket.emit('log', '🎬 Rendering video (this takes a few minutes)...');
+                const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+                render.stdout.on('data', (d) => socket.emit('log', d.toString().trim()));
+                render.stderr.on('data', (d) => socket.emit('log', d.toString().trim()));
+                await new Promise((res) => render.on('close', res));
+
+                if (!fs.existsSync('renders')) fs.mkdirSync('renders');
+                fs.renameSync('out/1.mp4', `renders/${finalName}`);
+                socket.emit('status', { msg: `✅ Done: renders/${finalName}`, progress: ((i + 1) / scripts.length) * 100 });
+                socket.emit('log', `✅ Saved to renders/${finalName}`);
+
+            } catch (err) {
+                socket.emit('log', '❌ Error: ' + err.message);
+            }
+        }
+
+        socket.emit('status', { msg: '🏁 Batch complete!', progress: 100 });
+    });
+
+    // Re-render only (after manually replacing videos)
+    socket.on('render-only', async () => {
+        try {
+            const japanese = (() => {
+                try {
+                    const segs = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+                    return segs.some(s => /[\u3040-\u30FF\u4E00-\u9FFF]/.test(s.voiceover_text));
+                } catch { return false; }
+            })();
+            const voiceSettings2 = readSettings();
+            const segmentsForVoice2 = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+            const audioCmd2 = contentUsesVoicevox(segmentsForVoice2, voiceSettings2)
+                ? 'node generate-audio-voicevox.js'
+                : japanese ? 'node generate-audio-ja.js' : 'node generate-audio.js';
+
+            socket.emit('log', '🎙️ Re-generating voiceovers...');
+            execSync(audioCmd2, { stdio: 'pipe' });
+            socket.emit('log', '✅ Voiceovers ready');
+
+            socket.emit('log', '🎬 Rendering...');
+            const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+            render.stdout.on('data', d => socket.emit('log', d.toString().trim()));
+            render.stderr.on('data', d => socket.emit('log', d.toString().trim()));
+            await new Promise(res => render.on('close', res));
+
+            const finalName = `render_${Date.now()}.mp4`;
+            if (!fs.existsSync('renders')) fs.mkdirSync('renders');
+            fs.renameSync('out/1.mp4', `renders/${finalName}`);
+            socket.emit('render-done', { file: `renders/${finalName}` });
+            socket.emit('log', `✅ Saved: renders/${finalName}`);
+        } catch (err) {
+            socket.emit('log', '❌ Error: ' + err.message);
+        }
+    });
+});
+
+// ─────────────────────────────────────────
+// MEDIA LIBRARY ROUTES
+// ─────────────────────────────────────────
+
+function readMediaLibrary() {
+    const defaults = { brandColors: [], brandImages: [] };
+    try {
+        const data = readJsonFile(MEDIA_LIBRARY_PATH, defaults);
+        if (!Array.isArray(data.brandColors)) data.brandColors = [];
+        if (!Array.isArray(data.brandImages)) data.brandImages = [];
+        return data;
+    } catch { return defaults; }
+}
+
+function writeMediaLibrary(data) {
+    writeJsonFile(MEDIA_LIBRARY_PATH, data);
+}
+
+// GET full media library
+app.get('/media-library', (req, res) => {
+    res.json(readMediaLibrary());
+});
+
+// POST add or update a brand colour
+app.post('/media-library/add-color', (req, res) => {
+    try {
+        const { color, name } = req.body;
+        if (!color || !/^#[0-9a-f]{3,8}$/i.test(color)) {
+            return res.status(400).json({ error: 'Invalid colour value.' });
+        }
+        const lib = readMediaLibrary();
+        // Avoid exact duplicates by hex value
+        if (!lib.brandColors.find(c => c.color.toLowerCase() === color.toLowerCase())) {
+            lib.brandColors.push({ color: color.toLowerCase(), name: name || '', addedAt: new Date().toISOString() });
+            writeMediaLibrary(lib);
+        }
+        res.json({ ok: true, brandColors: lib.brandColors });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST remove a brand colour by hex value
+app.post('/media-library/remove-color', (req, res) => {
+    try {
+        const { color } = req.body;
+        const lib = readMediaLibrary();
+        lib.brandColors = lib.brandColors.filter(c => c.color.toLowerCase() !== (color || '').toLowerCase());
+        writeMediaLibrary(lib);
+        res.json({ ok: true, brandColors: lib.brandColors });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST update brand colour name
+app.post('/media-library/update-color-name', (req, res) => {
+    try {
+        const { color, name } = req.body;
+        const lib = readMediaLibrary();
+        const entry = lib.brandColors.find(c => c.color.toLowerCase() === (color || '').toLowerCase());
+        if (entry) entry.name = name || '';
+        writeMediaLibrary(lib);
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST upload a brand image
+app.post('/upload-brand-image', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No image uploaded.' });
+        const lib = readMediaLibrary();
+        const entry = {
+            filename: req.file.filename,
+            originalName: req.file.originalname,
+            addedAt: new Date().toISOString(),
+            url: `/public/brand/${req.file.filename}`,
+        };
+        lib.brandImages.push(entry);
+        writeMediaLibrary(lib);
+        res.json({ ok: true, image: entry, brandImages: lib.brandImages });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST delete a brand image
+app.post('/media-library/delete-image', (req, res) => {
+    try {
+        const { filename } = req.body;
+        if (!filename) return res.status(400).json({ error: 'Filename required.' });
+        const lib = readMediaLibrary();
+        lib.brandImages = lib.brandImages.filter(img => img.filename !== filename);
+        writeMediaLibrary(lib);
+        // Also delete the actual file
+        const filePath = path.join(__dirname, 'public', 'brand', filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        res.json({ ok: true, brandImages: lib.brandImages });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─────────────────────────────────────────
+// AUTO-UPDATE ROUTES
+// ─────────────────────────────────────────
+const UPDATE_REPO_RAW = 'https://raw.githubusercontent.com/keithforit/pc-auto-vid-updates/main';
+const UPDATABLE_FILES = ['index.html', 'server.js', 'parser-captions.js', 'parser.js'];
+
+function getLocalVersion() {
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'version.json'), 'utf8')).version || '0.0.0'; }
+    catch { return '0.0.0'; }
+}
+
+// GET /version — returns the local installed version
+app.get('/version', (req, res) => {
+    res.json({ version: getLocalVersion() });
+});
+
+function compareVersions(a, b) {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+        if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+        if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    }
+    return 0;
+}
+
+// GET /check-update  — returns { current, latest, upToDate, notes }
+app.get('/check-update', async (req, res) => {
+    try {
+        const https = require('https');
+        const data = await new Promise((resolve, reject) => {
+            https.get(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`, r => {
+                let body = '';
+                r.on('data', c => body += c);
+                r.on('end', () => resolve(body));
+            }).on('error', reject);
+        });
+        const remote = JSON.parse(data);
+        const local = getLocalVersion();
+        res.json({
+            current: local,
+            latest: remote.version,
+            notes: remote.notes || '',
+            date: remote.date || '',
+            upToDate: compareVersions(local, remote.version) >= 0
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Could not reach update server: ' + e.message });
+    }
+});
+
+// POST /apply-update  — downloads and replaces updatable files, then restarts
+app.post('/apply-update', async (req, res) => {
+    try {
+        const https = require('https');
+        function downloadFile(url) {
+            return new Promise((resolve, reject) => {
+                https.get(url, r => {
+                    const chunks = [];
+                    r.on('data', c => chunks.push(c));
+                    r.on('end', () => resolve(Buffer.concat(chunks)));
+                }).on('error', reject);
+            });
+        }
+        // Fetch remote version.json first
+        const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`);
+        const remote = JSON.parse(versionBuf.toString());
+        const filesToUpdate = remote.files || UPDATABLE_FILES;
+        // Download and replace each file
+        for (const file of filesToUpdate) {
+            const buf = await downloadFile(`${UPDATE_REPO_RAW}/${file}?t=${Date.now()}`);
+            fs.writeFileSync(path.join(__dirname, file), buf);
+        }
+        // Update local version.json
+        fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ version: remote.version }, null, 2));
+        res.json({ ok: true, version: remote.version, notes: remote.notes });
+        // Restart the server after a short delay so the response can be sent
+        setTimeout(() => {
+            console.log(`\n🔄 Restarting after update to v${remote.version}...`);
+            server.close(() => {
+                console.log('Server closed, restarting...');
+                io.removeAllListeners();
+                server.listen(3000, () => {
+                    console.log('🚀 Dashboard at http://localhost:3000');
+                });
+            });
+        }, 1500);
+    } catch (e) {
+        res.status(500).json({ error: 'Update failed: ' + e.message });
+    }
+});
+
+server.listen(3000, () => {
+    console.log('🚀 Dashboard at http://localhost:3000');
+    exec('open http://localhost:3000');
+});

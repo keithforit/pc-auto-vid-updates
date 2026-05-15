@@ -1,0 +1,4 @@
+{
+  "version": "1.2.4",
+  "notes": "Fix: Copy/Paste style buttons now work correctly with proper event handling"
+}
