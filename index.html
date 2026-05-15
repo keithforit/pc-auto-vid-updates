@@ -5858,7 +5858,7 @@
         btn.textContent = '✅ Pasted!';
         setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
         addEditorLog(`✅ Scene ${i+1} style updated`);
-        return loadScenes();
+        return loadCreateScenes();
       })
       .catch(err => alert('Error pasting style: ' + err.message));
   }
