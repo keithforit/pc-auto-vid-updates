@@ -5856,8 +5856,10 @@
   }
 
   async function pasteSceneStyle(i, evt) {
+    console.log('pasteSceneStyle called with i=', i, 'evt=', evt, '_copiedStyle=', _copiedStyle);
     if (!_copiedStyle) return alert('No style copied. Copy a style from another scene first.');
     const btn = evt?.target || event?.target;
+    console.log('btn element:', btn);
     if (!btn) return alert('Error: button not found');
     try {
       console.log('Pasting style to scene', i, 'with:', _copiedStyle);
