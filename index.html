@@ -5854,23 +5854,24 @@
       .catch(err => alert('Error copying style: ' + err.message));
   }
 
-  function pasteSceneStyle(i) {
+  async function pasteSceneStyle(i) {
     if (!_copiedStyle) return alert('No style copied. Copy a style from another scene first.');
     const btn = event?.target;
     if (!btn) return alert('Error: button not found');
-    fetch('/update-scene-texts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index: i, ..._copiedStyle })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to paste style');
-        btn.textContent = '✅ Pasted!';
-        setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
-        addEditorLog(`✅ Scene ${i+1} style updated`);
-        return loadCreateScenes();
-      })
-      .catch(err => alert('Error pasting style: ' + err.message));
+    try {
+      const res = await fetch('/update-scene-texts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: i, ..._copiedStyle })
+      });
+      if (!res.ok) throw new Error('Failed to paste style');
+      btn.textContent = '✅ Pasted!';
+      setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
+      addEditorLog(`✅ Scene ${i+1} style updated`);
+      await loadCreateScenes();
+    } catch (err) {
+      alert('Error pasting style: ' + err.message);
+    }
   }
 
   function buildSingleExtraTextPreviewHTML(i, j, et, seg) {
