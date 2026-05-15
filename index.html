@@ -5859,17 +5859,23 @@
     const btn = event?.target;
     if (!btn) return alert('Error: button not found');
     try {
+      console.log('Pasting style to scene', i, 'with:', _copiedStyle);
       const res = await fetch('/update-scene-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ index: i, ..._copiedStyle })
       });
-      if (!res.ok) throw new Error('Failed to paste style');
+      const data = await res.json();
+      console.log('Paste response:', data);
+      if (!res.ok) throw new Error(data.error || 'Failed to paste style');
       btn.textContent = '✅ Pasted!';
       setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
       addEditorLog(`✅ Scene ${i+1} style updated`);
+      // Reload all scenes to reflect changes
       await loadCreateScenes();
+      console.log('Scenes reloaded after paste');
     } catch (err) {
+      console.error('Paste error:', err);
       alert('Error pasting style: ' + err.message);
     }
   }
