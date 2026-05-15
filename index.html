@@ -4112,8 +4112,8 @@
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn sm ghost" type="button" onclick="saveMainTextContent(${i})">${(I18N[window._appLang||'en']||I18N.en).save_text}</button>
                 <button class="btn sm red" type="button" onclick="deleteMainText(${i})">${(I18N[window._appLang||'en']||I18N.en).del_orig_text}</button>
-                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i})" title="Copy all text styling from this scene">📋 Copy Style</button>
-                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i})" title="Paste style to this scene">📌 Paste Style</button>
+                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="Copy all text styling from this scene">📋 Copy Style</button>
+                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="Paste style to this scene">📌 Paste Style</button>
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:6px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
@@ -5817,8 +5817,8 @@
   }
 
   let _copiedStyle = null;
-  function copySceneStyle(i) {
-    const btn = event?.target;
+  function copySceneStyle(i, evt) {
+    const btn = evt?.target || event?.target;
     if (!btn) return alert('Error: button not found');
     fetch('/segments')
       .then(res => res.json())
@@ -5848,15 +5848,16 @@
           mainTextStyleOverride: effectiveStyle,
           textAnimation: seg.textAnimation,
         };
+        console.log('Copied style from scene', i, ':', _copiedStyle);
         btn.textContent = '✅ Copied!';
         setTimeout(() => btn.textContent = '📋 Copy Style', 2000);
       })
       .catch(err => alert('Error copying style: ' + err.message));
   }
 
-  async function pasteSceneStyle(i) {
+  async function pasteSceneStyle(i, evt) {
     if (!_copiedStyle) return alert('No style copied. Copy a style from another scene first.');
-    const btn = event?.target;
+    const btn = evt?.target || event?.target;
     if (!btn) return alert('Error: button not found');
     try {
       console.log('Pasting style to scene', i, 'with:', _copiedStyle);
