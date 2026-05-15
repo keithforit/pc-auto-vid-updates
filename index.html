@@ -5875,8 +5875,8 @@
       btn.textContent = '✅ Pasted!';
       setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
       addEditorLog(`✅ Scene ${i+1} style updated`);
-      // Reload all scenes to reflect changes
-      await loadCreateScenes();
+      // Reload all scenes to reflect changes - use loadSegments for full editor with previews
+      await loadSegments();
       console.log('Scenes reloaded after paste');
     } catch (err) {
       console.error('Paste error:', err);
