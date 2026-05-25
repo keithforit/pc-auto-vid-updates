@@ -1,33 +1,30 @@
 {
-  "name": "tmp-app",
+  "name": "tiktok-auto-gen",
   "version": "1.0.0",
-  "description": "My Remotion video",
-  "repository": {},
-  "license": "UNLICENSED",
-  "private": true,
+  "description": "Batch Video Factory",
+  "main": "server.js",
+  "scripts": {
+    "dev": "remotion studio",
+    "factory": "node server.js",
+    "render": "node generate-audio.js && npx remotion render src/index.ts 1 --force --concurrency=1"
+  },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
+    "@remotion/bundler": "4.0.434",
     "@remotion/cli": "4.0.434",
+    "@remotion/media": "4.0.434",
+    "@remotion/renderer": "4.0.434",
+    "@remotion/studio": "4.0.434",
+    "@remotion/tailwind-v4": "4.0.434",
+    "axios": "^1.13.6",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "gtts": "^0.2.1",
+    "mp3-duration": "^1.1.0",
+    "multer": "^2.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.434",
-    "@remotion/tailwind-v4": "4.0.434",
-    "tailwindcss": "4.0.0"
-  },
-  "devDependencies": {
-    "@remotion/eslint-config-flat": "4.0.434",
-    "@types/react": "19.2.7",
-    "@types/web": "0.0.166",
-    "eslint": "9.19.0",
-    "prettier": "3.8.1",
-    "typescript": "5.9.3"
-  },
-  "scripts": {
-    "dev": "remotion studio",
-    "build": "remotion bundle",
-    "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
-  },
-  "sideEffects": [
-    "*.css"
-  ]
+    "socket.io": "^4.7.2"
+  }
 }

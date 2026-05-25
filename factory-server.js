@@ -7,6 +7,8 @@ const { execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const https = require("https");
+const { URL } = require("url");
 
 const app = express();
 const server = http.createServer(app);
@@ -76,6 +78,69 @@ app.post("/render", async (req, res) => {
         });
 
         res.send({ success: true });
+    } catch (e) {
+        res.status(500).send({ error: e.message });
+    }
+});
+
+app.post("/fetch-pixabay", async (req, res) => {
+    const { pixabayUrl } = req.body;
+    try {
+        if (!pixabayUrl || !pixabayUrl.includes("pixabay.com/videos")) {
+            return res.status(400).send({ error: "Invalid Pixabay URL" });
+        }
+
+        const videoIdMatch = pixabayUrl.match(/pixabay\.com\/videos\/[\w-]+-(\d+)/);
+        if (!videoIdMatch) {
+            return res.status(400).send({ error: "Could not extract video ID from URL" });
+        }
+
+        const videoId = videoIdMatch[1];
+        const bgDir = path.join(__dirname, "public/backgrounds");
+        if (!fs.existsSync(bgDir)) fs.mkdirSync(bgDir, { recursive: true });
+
+        const filename = `pixabay-${videoId}.mp4`;
+        const filepath = path.join(bgDir, filename);
+
+        if (fs.existsSync(filepath)) {
+            return res.json({ filename, cached: true });
+        }
+
+        io.emit("status", `📥 Fetching Pixabay video metadata...`);
+
+        https.get(pixabayUrl, { headers: { "User-Agent": "Mozilla/5.0" } }, (response) => {
+            let html = "";
+            response.on("data", (chunk) => { html += chunk; });
+            response.on("end", () => {
+                try {
+                    // Extract video URL from HTML
+                    const videoUrlMatch = html.match(/["']url["']\s*:\s*["'](https:\/\/[^"']*\/videos\/[^"']*\.mp4[^"']*)/);
+                    const videoUrl = videoUrlMatch ? videoUrlMatch[1] : null;
+
+                    if (!videoUrl) {
+                        return res.status(400).send({ error: "Could not extract video URL from Pixabay page" });
+                    }
+
+                    io.emit("status", `📥 Downloading Pixabay video...`);
+                    const file = fs.createWriteStream(filepath);
+                    https.get(videoUrl, (vid_res) => {
+                        vid_res.pipe(file);
+                        file.on("finish", () => {
+                            file.close();
+                            io.emit("status", `✅ Pixabay video ready: ${filename}`);
+                            res.json({ filename, cached: false });
+                        });
+                    }).on("error", (err) => {
+                        fs.unlink(filepath, () => {});
+                        res.status(500).send({ error: `Download failed: ${err.message}` });
+                    });
+                } catch (e) {
+                    res.status(500).send({ error: e.message });
+                }
+            });
+        }).on("error", (err) => {
+            res.status(500).send({ error: `Failed to fetch page: ${err.message}` });
+        });
     } catch (e) {
         res.status(500).send({ error: e.message });
     }

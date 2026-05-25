@@ -135,7 +135,7 @@
     :root { --thumb-w: 96px; --thumb-h: 170px; }
     .video-thumb { width: var(--thumb-w); height: var(--thumb-h); object-fit: cover; border-radius: 8px; background: var(--bg-input); border: 1px solid var(--border); display:block; }
     .no-video { width: var(--thumb-w); height: var(--thumb-h); border-radius: 8px; background: var(--bg-input); border: 2px dashed var(--border-mid); display: flex; align-items: center; justify-content: center; font-size: 28px; }
-    .thumb-wrap { position: relative; width: var(--thumb-w); flex-shrink: 0; }
+    .thumb-wrap { position: sticky; top: 16px; width: var(--thumb-w); flex-shrink: 0; }
     .thumb-audio-controls {
       position: absolute; right: 6px; bottom: 6px; z-index: 60; display: flex; gap: 6px;
     }
@@ -526,8 +526,8 @@
     .stl-handle-r { right: -5px; cursor: e-resize; }
     .stl-grip { width: 3px; height: 12px; background: rgba(255,255,255,0.3); border-radius: 2px; transition: background 0.1s; }
     .stl-handle:hover .stl-grip { background: rgba(255,255,255,0.75); }
-    .stl-fadein  { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(to right, rgba(0,0,0,0.55), transparent); pointer-events: none; border-radius: 5px 0 0 5px; }
-    .stl-fadeout { position: absolute; right: 0; top: 0; bottom: 0; background: linear-gradient(to left,  rgba(0,0,0,0.55), transparent); pointer-events: none; border-radius: 0 5px 5px 0; }
+    .stl-fadein  { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(to right, rgba(0,0,0,0.55), transparent); border-radius: 5px 0 0 5px; cursor: ew-resize; }
+    .stl-fadeout { position: absolute; right: 0; top: 0; bottom: 0; background: linear-gradient(to left,  rgba(0,0,0,0.55), transparent); border-radius: 0 5px 5px 0; cursor: ew-resize; }
     .stl-anim-badge { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 7px; background: rgba(0,0,0,0.35); color: rgba(255,255,255,0.65); padding: 1px 4px; border-radius: 3px; pointer-events: none; white-space: nowrap; }
 
     /* ── Media Library ── */
@@ -748,6 +748,7 @@
         <button class="btn sm blue" onclick="loadSegments()" data-i18n="load_scenes">🔄 Load Scenes</button>
         <button class="btn sm ghost" type="button" onclick="saveProjectDraft()" data-i18n="save_project_draft">💾 Save Project Draft</button>
         <button class="btn sm ghost" type="button" onclick="restoreProjectDraft()" data-i18n="restore_project_draft">↩ Restore Project Draft</button>
+        <button class="btn sm" type="button" id="global-bgm-btn" onclick="toggleAllScenesBgm()" title="Toggle background music on/off for all scenes" style="background:#1e293b;border:1px solid #334155;">🎵 BGM: ON</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--text-dim);white-space:nowrap;" data-i18n="thumb_size">Thumbnail size:</span>
@@ -1267,7 +1268,15 @@
       save_text: "Save text",
       del_orig_text: "Delete original text",
       position: "Position",
-      align: "Align",
+      align: "Text align",
+      align_h: "Align H",
+      align_v: "Align V",
+      pos_align_left: "Align left — snaps to left, vertical position unchanged",
+      pos_h_center: "Center horizontally — snaps to horizontal center, vertical position unchanged",
+      pos_align_right: "Align right — snaps to right, vertical position unchanged",
+      pos_align_top: "Align top — snaps to top, horizontal position unchanged",
+      pos_v_center: "Center vertically — snaps to vertical center, horizontal position unchanged",
+      pos_align_bottom: "Align bottom — snaps to bottom, horizontal position unchanged",
       text_style: "Text style:",
       box: "Box",
       glow: "Glow",
@@ -1320,7 +1329,47 @@
       block_solid: "Block (solid)",
       glow_size: "Glow size",
       square: "Square",
-      landscape: "Landscape"
+      landscape: "Landscape",
+      // Video speed & overlay (buildCard labels)
+      speed_label: 'Speed:',
+      bg_overlay: 'Background Overlay',
+      overlay_none: 'None',
+      overlay_dark: 'Dark',
+      overlay_spotlight: 'Spotlight',
+      opacity_label: 'Opacity:',
+      radius_label: 'Radius:',
+      softness_label: 'Softness:',
+      // Update overlay
+      update_overlay_title: 'Installing Update…',
+      update_overlay_preparing: 'Preparing…',
+      update_overlay_downloading: 'Downloading…',
+      update_overlay_restarting: 'Server restarting — please wait…',
+      update_overlay_back_online: '✅ Back online!',
+      update_overlay_reloading: 'Reloading…',
+      update_overlay_file_of: (cur, total) => `File ${cur} of ${total}`,
+      // BGM global toggle
+      bgm_on: '🎵 BGM: ON',
+      bgm_off: '🎵 BGM: OFF',
+      bgm_scene_on: 'ON',
+      bgm_scene_off: 'OFF',
+      // Scene loading
+      scenes_loading: 'Loading scenes...',
+      scenes_empty: 'No segments found. Generate a video first.',
+      // Production
+      production_log_title: '📋 Production Log',
+      // Settings panel
+      settings_panel_title: '⚙️ Settings',
+      settings_voice_speed: 'Voice Speed',
+      settings_voice_pitch: 'Voice Pitch',
+      settings_voice_volume: 'Voice Volume',
+      // BGM scene status
+      bgm_vol_status: (vol) => `Background music follows project music at ${vol}% volume for this scene.`,
+      bgm_removed: 'Background music is removed for this scene.',
+      // Misc
+      copy_style: 'Copy Style',
+      paste_style: 'Paste Style',
+      try_again: 'Try again',
+      reload_now: '🔄 Reload Now'
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1473,7 +1522,15 @@
       save_text: "テキストを保存",
       del_orig_text: "オリジナルテキストを削除",
       position: "位置",
-      align: "揃え",
+      align: "テキスト揃え",
+      align_h: "横揃え",
+      align_v: "縦揃え",
+      pos_align_left: "左揃え — 左にスナップ（縦位置は変わりません）",
+      pos_h_center: "左右中央揃え — 横方向の中央にスナップ（縦位置は変わりません）",
+      pos_align_right: "右揃え — 右にスナップ（縦位置は変わりません）",
+      pos_align_top: "上揃え — 上にスナップ（横位置は変わりません）",
+      pos_v_center: "上下中央揃え — 縦方向の中央にスナップ（横位置は変わりません）",
+      pos_align_bottom: "下揃え — 下にスナップ（横位置は変わりません）",
       text_style: "テキストスタイル:",
       box: "ボックス",
       glow: "グロー",
@@ -1526,7 +1583,47 @@
       block_solid: "ブロック（単色）",
       glow_size: "グローサイズ",
       square: "正方形",
-      landscape: "横長"
+      landscape: "横長",
+      // Video speed & overlay (buildCard labels)
+      speed_label: 'スピード:',
+      bg_overlay: '背景オーバーレイ',
+      overlay_none: 'なし',
+      overlay_dark: 'ダーク',
+      overlay_spotlight: 'スポットライト',
+      opacity_label: '不透明度:',
+      radius_label: '半径:',
+      softness_label: 'ぼかし:',
+      // Update overlay
+      update_overlay_title: '更新をインストール中…',
+      update_overlay_preparing: '準備中…',
+      update_overlay_downloading: 'ダウンロード中…',
+      update_overlay_restarting: 'サーバーを再起動しています — お待ちください…',
+      update_overlay_back_online: '✅ オンラインに戻りました！',
+      update_overlay_reloading: '再読み込み中…',
+      update_overlay_file_of: (cur, total) => `ファイル ${cur} / ${total}`,
+      // BGM global toggle
+      bgm_on: '🎵 BGM: オン',
+      bgm_off: '🎵 BGM: オフ',
+      bgm_scene_on: 'オン',
+      bgm_scene_off: 'オフ',
+      // Scene loading
+      scenes_loading: 'シーンを読み込んでいます...',
+      scenes_empty: 'セグメントが見つかりません。まず動画を生成してください。',
+      // Production
+      production_log_title: '📋 制作ログ',
+      // Settings panel
+      settings_panel_title: '⚙️ 設定',
+      settings_voice_speed: '音声スピード',
+      settings_voice_pitch: '音声ピッチ',
+      settings_voice_volume: '音声音量',
+      // BGM scene status
+      bgm_vol_status: (vol) => `このシーンでは ${vol}% 音量でプロジェクトBGMを使用します。`,
+      bgm_removed: 'このシーンではBGMを使用しません。',
+      // Misc
+      copy_style: 'スタイルをコピー',
+      paste_style: 'スタイルを貼り付け',
+      try_again: '再試行',
+      reload_now: '🔄 今すぐ再読み込み'
     }
   };
 
@@ -1580,6 +1677,12 @@
       document.querySelectorAll('[data-i18n-btn="btn_generate"]').forEach(el => { el.textContent = t.btn_generate; });
       document.querySelectorAll('[data-i18n-btn="btn_add_new_scene"]').forEach(el => { el.textContent = t.btn_add_new_scene; });
     }
+    // Update global BGM button label if visible
+    const bgmBtn = document.getElementById('global-bgm-btn');
+    if (bgmBtn) {
+      const isOn = bgmBtn.dataset.bgmOn === '1';
+      bgmBtn.textContent = isOn ? t.bgm_on : t.bgm_off;
+    }
     // Re-render scene draft status counts with translated strings
     if (typeof renderSceneDraftStatuses === 'function') renderSceneDraftStatuses();
     if (typeof renderProjectDraftStatus === 'function') renderProjectDraftStatus();
@@ -1593,6 +1696,10 @@
     // Check for updates on load and periodically
     autoCheckForUpdates();
     setInterval(autoCheckForUpdates, 30 * 60 * 1000); // Check every 30 minutes
+    // Initialize createDraftStarted so "New Scene" doesn't wipe existing scenes
+    fetch('/segments').then(r => r.json()).then(segs => {
+      if (Array.isArray(segs) && segs.length > 0) createDraftStarted = true;
+    }).catch(() => {});
   });
 
   /* ── Restore theme + lang on load ── */
@@ -1606,8 +1713,12 @@
       if (label) label.textContent = 'Light';
     }
     const savedLang = localStorage.getItem('pc-lang');
-    if (savedLang && savedLang !== 'en') {
-      setTimeout(() => setAppLang(savedLang), 0);
+    if (savedLang) {
+      if (savedLang !== 'en') setTimeout(() => setAppLang(savedLang), 0);
+    } else {
+      // Auto-detect from OS/browser language — only runs on first visit
+      const sysLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+      if (sysLang.startsWith('ja')) setTimeout(() => setAppLang('ja'), 0);
     }
   })();
 
@@ -1621,7 +1732,8 @@
     _restoreVoicePreviewButton();
     document.querySelectorAll('.tab').forEach((t,i)   => t.classList.toggle('active', TAB_NAMES[i] === name));
     document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', TAB_NAMES[i] === name));
-    if (name === 'scenes')   { loadSegments(); loadStockFiles(); }
+    if (name === 'create')   { loadCreateScenes(); }
+    if (name === 'scenes')   { loadSegments(); }
     if (name === 'settings') { loadSettingsUI(); }
     if (name === 'media')    { loadMediaLibrary(); }
     // if (name === 'timeline') { loadGlobalTimeline(); }
@@ -1899,16 +2011,43 @@
     }
   }
 
+  let _batchRunning = false;
+
+  function _setBatchBtn(running) {
+    _batchRunning = running;
+    const btn = document.getElementById('startBtn');
+    if (!btn) return;
+    if (running) {
+      btn.textContent = '⏹ STOP PRODUCTION';
+      btn.style.background = '#dc2626';
+      btn.disabled = false;
+    } else {
+      const lang = window._appLang || 'en';
+      btn.textContent = (I18N[lang] || I18N.en).btn_start_production || '▶ START PRODUCTION';
+      btn.style.background = '';
+      btn.disabled = false;
+    }
+  }
+
   function startBatch() {
+    if (_batchRunning) {
+      socket.emit('cancel-batch');
+      return;
+    }
     const logWindow = document.getElementById('log-window');
     const scripts = [document.getElementById('s1').value];
     const contentType = document.querySelector('input[name="content-type"]:checked')?.value || 'stock';
-    logWindow.innerHTML=''; addLog('Starting batch...');
-    document.getElementById('startBtn').disabled=true;
-    document.getElementById('status-text').textContent='Running...';
-    document.getElementById('progress-bar').style.width='0%';
+    logWindow.innerHTML = ''; addLog('Starting batch...');
+    _setBatchBtn(true);
+    document.getElementById('status-text').textContent = 'Running...';
+    document.getElementById('progress-bar').style.width = '0%';
     socket.emit('start-batch', { scripts, contentType });
   }
+
+  socket.on('batch-cancelled', () => {
+    _setBatchBtn(false);
+    document.getElementById('status-text').textContent = '⏹ Cancelled';
+  });
   socket.on('status', d => {
     if (scenesRerenderActive) {
       document.getElementById('scenes-rerender-status').textContent = d.msg;
@@ -1919,7 +2058,7 @@
     } else {
       document.getElementById('status-text').textContent = d.msg;
       document.getElementById('progress-bar').style.width = d.progress + '%';
-      if (d.progress >= 100) document.getElementById('startBtn').disabled = false;
+      if (d.progress >= 100) _setBatchBtn(false);
     }
   });
   // socket 'log' is handled in the Re-render section below (routes to correct panel)
@@ -2543,13 +2682,14 @@
     return `calc(var(--thumb-w, 96px) * ${ratio.toFixed(6)})`;
   }
 
-  function calcPreviewStyle(vPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
+  function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
     const jc = vPos==='top' ? 'flex-start' : vPos==='center' ? 'center' : 'flex-end';
-    // Always stretch so tprev-inner fills full width; text-align handles horizontal alignment
-    const ai = 'stretch';
+    // hPos = horizontal screen position (where the text block sits on screen)
+    // textAlign = CSS text-align within the text block
+    const ai = hPos==='left' ? 'flex-start' : hPos==='right' ? 'flex-end' : 'center';
     const fs  = previewFontSize(fontSize);
     const rot = rotation || 0;
-    let inner = `text-align:${hAlign};font-size:${fs};`;
+    let inner = `text-align:${textAlign};font-size:${fs};`;
     if (rot) inner += `transform:rotate(${rot}deg);`;
     // text-shadow and -webkit-text-stroke do NOT support calc() — use real px
     const _tw = getThumbWPx();
@@ -2567,7 +2707,7 @@
     } else {
       inner += `background:rgba(0,0,0,0.72);color:${textColor || '#ffffff'};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(boxBorderRadius*_sc).toFixed(1)}px;`;
     }
-    return { wrap: `justify-content:${jc};align-items:${ai};padding:${(vPos==='top'?6*_sc:0).toFixed(1)}px ${(hAlign==='right'?3*_sc:0).toFixed(1)}px ${(vPos==='bottom'?12*_sc:0).toFixed(1)}px ${(hAlign==='left'?3*_sc:0).toFixed(1)}px`, inner };
+    return { wrap: `justify-content:${jc};align-items:${ai};padding:${(vPos==='top'?6*_sc:0).toFixed(1)}px ${(hPos==='right'?3*_sc:0).toFixed(1)}px ${(vPos==='bottom'?12*_sc:0).toFixed(1)}px ${(hPos==='left'?3*_sc:0).toFixed(1)}px`, inner };
   }
 
   // Free-position mode: text placed at exact X/Y % within the thumbnail
@@ -2600,8 +2740,9 @@
 
   function buildTextPreviewHTML(i, seg) {
     const hasFreePos = seg.textX !== undefined && seg.textY !== undefined;
-    const vPos    = seg.textPosition || 'center';
-    const hAlign  = seg.textAlign    || 'center';
+    const vPos    = seg.textPosition  || 'center';
+    const hPos    = seg.textHPosition || 'center';
+    const hAlign  = seg.textAlign     || 'center';
     const style   = seg.mainTextStyleOverride || seg.textStyle || 'box';
     const rotation = seg.rotation || 0;
     const fontSize = seg.fontSize  || 70;
@@ -2619,7 +2760,7 @@
     const textFadeOutDuration = seg.textFadeOutDuration ?? 1.5;
     const { wrap, inner } = hasFreePos
       ? calcPreviewStyleFree(seg.textX, seg.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
-      : calcPreviewStyle(vPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      : calcPreviewStyle(vPos, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const rawText = seg.text || '';
     const txt = rawText.length > 55 ? rawText.slice(0,55)+'…' : rawText;
     const previewDisplay = rawText.trim() ? 'flex' : 'none';
@@ -2657,7 +2798,8 @@
   function getPreviewTimelineTiming(startAt, endAt, sceneDuration, windowMs = 980, realTime = false) {
     const safeDuration = Math.max(0.5, Number(sceneDuration) || 5);
     const safeStart = Math.max(0, Math.min(safeDuration, Number(startAt) || 0));
-    const parsedEnd = endAt !== '' && endAt != null && !isNaN(Number(endAt)) ? Number(endAt) : safeDuration;
+    const endAtExplicit = endAt !== '' && endAt != null && !isNaN(Number(endAt));
+    const parsedEnd = endAtExplicit ? Number(endAt) : safeDuration;
     const safeEnd = Math.max(safeStart, Math.min(safeDuration, parsedEnd));
     const activeRatio = Math.max(0.08, (safeEnd - safeStart) / safeDuration);
     const effectiveWindow = realTime ? Math.round(safeDuration * 1000) : windowMs;
@@ -2667,39 +2809,60 @@
       sceneDuration: safeDuration,
       startAt: safeStart,
       endAt: safeEnd,
+      endAtExplicit,
     };
   }
 
   function buildPreviewAnimationValue(animation, fadeInSeconds = 1.5, fadeOutSeconds = 1.5, timing = null, realTime = false) {
-    const toMs = realTime ? (s, _fb) => Math.round(s * 1000) : previewEffectDurationMs;
-    const delayMs = Math.max(0, Math.round(Number(timing?.delayMs) || 0));
-    const activeMs = timing?.activeMs != null && Number.isFinite(Number(timing.activeMs))
-      ? Math.max(realTime ? 50 : 220, Math.round(Number(timing.activeMs)))
-      : null;
+    if (!animation || animation === 'static') return '';
+
+    const sceneDur = timing?.sceneDuration || 5;
+    const startAtSec = timing?.startAt ?? 0;
+    const fadeInEndSec = startAtSec + (fadeInSeconds || 0);
+    // endAt = when fade-out STARTS (not when element disappears).
+    // If user didn't explicitly set endAt, default to sceneDur - fadeOutSeconds so fade-out has room.
+    const rawFadeOutStart = timing?.endAtExplicit ? (timing?.endAt ?? sceneDur) : Math.max(fadeInEndSec, sceneDur - (fadeOutSeconds || 0));
+    const fadeOutStartSec = Math.max(fadeInEndSec, Math.min(sceneDur, rawFadeOutStart));
+    const fadeOutEndSec = Math.min(sceneDur, fadeOutStartSec + (fadeOutSeconds || 0));
+    const hasExplicitEnd = timing?.endAtExplicit === true;
+
+    const secToMs = (sec) => Math.round(sec * 1000);
+    const visStartMs  = secToMs(startAtSec);
+    const fadeInEndMs = secToMs(fadeInEndSec);
+    const holdEndMs   = secToMs(fadeOutStartSec);
+    const visEndMs    = Math.max(holdEndMs + 50, secToMs(fadeOutEndSec));
+    const animDur     = Math.max(200, visEndMs - visStartMs);
+
     if (animation === 'pop') {
-      const popAnim = `preview-pop 460ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms 1 both`;
-      // Only add fade-out if endAt is explicitly set and less than scene duration
-      const hasExplicitEnd = timing?.endAt != null && timing?.sceneDuration != null &&
-        timing.endAt < timing.sceneDuration - 0.1;
-      if (activeMs != null && hasExplicitEnd) {
-        const popEndMs = delayMs + 460; // pop-in finishes at ~460ms after delay
-        const fadeOutMs = Math.max(realTime ? 50 : 100, Math.round(activeMs * 0.2));
-        // fade-out starts after pop-in finishes, at the end of the active window
-        const fadeOutDelay = Math.max(popEndMs, delayMs + activeMs - fadeOutMs);
+      const popAnim = `preview-pop 460ms cubic-bezier(0.22, 1, 0.36, 1) ${visStartMs}ms 1 both`;
+      if (hasExplicitEnd) {
+        const fadeOutMs = Math.max(100, Math.round((fadeOutSeconds || 0.3) * 1000));
+        const fadeOutDelay = Math.max(visStartMs + 460, secToMs(fadeOutStartSec));
         return `${popAnim}, preview-fade-out ${fadeOutMs}ms ease-in ${fadeOutDelay}ms 1 both`;
       }
       return popAnim;
     }
-    if (animation === 'fade') {
-      const baseFadeInMs = toMs(fadeInSeconds, 520);
-      const baseFadeOutMs = toMs(fadeOutSeconds, 520);
-      const fadeInMs = activeMs != null ? Math.min(baseFadeInMs, Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.42))) : baseFadeInMs;
-      const fadeOutMs = activeMs != null ? Math.min(baseFadeOutMs, Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.42))) : baseFadeOutMs;
-      const holdMs = activeMs != null ? Math.max(realTime ? 0 : 80, activeMs - fadeInMs - fadeOutMs) : 260;
-      return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms 1 both, preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${delayMs + fadeInMs + holdMs}ms 1 both`;
+
+    if (animation === 'wipe') {
+      const wipeMs = Math.max(200, Math.round((fadeInSeconds || 0.5) * 1000));
+      return `preview-wipe ${wipeMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${visStartMs}ms 1 both`;
     }
-    if (animation === 'wipe') return `preview-wipe ${toMs(fadeInSeconds, 560)}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms 1 both`;
-    return '';
+
+    // fade / fade-in / fade-out / fade-both — unified looping keyframe
+    const inPct   = (Math.min(99, (fadeInEndMs  - visStartMs) / animDur * 100)).toFixed(2);
+    const holdPct = (Math.min(99.5, Math.max(parseFloat(inPct) + 0.5, (holdEndMs - visStartMs) / animDur * 100))).toFixed(2);
+    const mode = animation === 'fade' ? 'fade-both' : animation;
+
+    const keyId = `pv-${Math.random().toString(36).substr(2,6)}`;
+    const s = document.createElement('style');
+    if (mode === 'fade-in')
+      s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}100%{opacity:1}}`;
+    else if (mode === 'fade-out')
+      s.textContent = `@keyframes ${keyId}{0%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+    else
+      s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+    document.head.appendChild(s);
+    return `${keyId} ${animDur}ms linear ${visStartMs}ms infinite`;
   }
 
   function positionTextPreviewStrip(i) {
@@ -2723,7 +2886,9 @@
     el.style.animation = 'none';
     el.style.clipPath = '';
     el.style.opacity = '1'; // explicitly reset to visible before reflow
-    el.style.transform = ''; // clear any leftover transform from previous animation
+    // NOTE: do NOT clear el.style.transform — free-pos elements use translate(-50%,-50%)
+    // for centering and clearing it causes a rightward jump. Keyframe-based transforms
+    // (from pop animation) are cleared by setting animation:none above.
     void el.offsetWidth; // force reflow to clear animation state
     el.style.opacity = ''; // let the new animation control opacity
     const value = buildPreviewAnimationValue(animation, fadeInSeconds, fadeOutSeconds, timing, realTime);
@@ -2816,9 +2981,9 @@
     const sBtn    = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
     const aBtn    = document.querySelector(`#alignrow-${i} .pos-btn.active`);
     const animBtn = document.querySelector(`#mainanimrow-${i} .pos-btn.active`);
-    const style   = sBtn ? sBtn.textContent.trim().toLowerCase() : 'box';
-    const hAlign  = aBtn ? ['left','center','right'][Array.from(aBtn.parentElement.children).indexOf(aBtn)] : 'center';
-    const animation = animBtn ? ['static','pop','fade','wipe'][Array.from(animBtn.parentElement.children).indexOf(animBtn)] : 'pop';
+    const style    = sBtn ? sBtn.textContent.trim().toLowerCase() : 'box';
+    const textAlign = aBtn ? ['left','center','right'][Array.from(aBtn.parentElement.children).indexOf(aBtn)] : 'center';
+    const animation = animBtn?.dataset.anim || 'pop';
     const rotation = parseInt(document.getElementById(`rotation-${i}`)?.value) || 0;
     const fontSize = parseInt(document.getElementById(`fontsize-${i}`)?.value)  || 70;
     const fadeInDuration = parseFloat(document.getElementById(`textfadein-${i}`)?.value) || 1.5;
@@ -2831,15 +2996,17 @@
       const x = parseFloat(document.getElementById(`fpx-${i}`)?.value) || 50;
       const y = parseFloat(document.getElementById(`fpy-${i}`)?.value) || 50;
       const { wrap, inner } = calcPreviewStyleFree(x, y, style,
-        el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', hAlign, rotation, fontSize,
+        el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', textAlign, rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
         el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
       el.setAttribute('style', `${wrap};display:${hasText ? 'flex' : 'none'}`);
       innerEl.setAttribute('style', inner);
     } else {
-      const vBtn  = document.querySelector(`#posrow-${i} .pos-btn.active`);
-      const vPos  = vBtn ? ['top','center','bottom'][Array.from(vBtn.parentElement.children).indexOf(vBtn)] : 'center';
-      const { wrap, inner } = calcPreviewStyle(vPos, hAlign, style,
+      const hPosBtn = document.querySelector(`#hposrow-${i} .pos-btn.active`);
+      const vPosBtn = document.querySelector(`#vposrow-${i} .pos-btn.active`);
+      const hPos    = hPosBtn?.dataset.hpos || 'center';
+      const vPos    = vPosBtn?.dataset.vpos || 'center';
+      const { wrap, inner } = calcPreviewStyle(vPos, hPos, textAlign, style,
         el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
         el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
@@ -2954,8 +3121,8 @@
     const sBtn    = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
     const aBtn    = document.querySelector(`#alignrow-${i} .pos-btn.active`);
     // Fall back to the data attribute on the preview element (set from seg.textStyle at render time)
-    const style   = sBtn ? sBtn.dataset.style || sBtn.textContent.trim().toLowerCase() : (el.dataset.style || 'box');
-    const hAlign  = aBtn ? ['left','center','right'][Array.from(aBtn.parentElement.children).indexOf(aBtn)] : 'center';
+    const style    = sBtn ? sBtn.dataset.style || sBtn.textContent.trim().toLowerCase() : (el.dataset.style || 'box');
+    const textAlign = aBtn ? ['left','center','right'][Array.from(aBtn.parentElement.children).indexOf(aBtn)] : 'center';
     const rotation = parseInt(document.getElementById(`rotation-${i}`)?.value) || 0;
     const fontSize = parseInt(document.getElementById(`fontsize-${i}`)?.value)  || 70;
     const textStrokeColor = el.dataset.stroke || '#000000';
@@ -2965,7 +3132,7 @@
     const blockBorderRadius = parseInt(el.dataset.blockradius) ?? 10;
     const { wrap, inner } = calcPreviewStyleFree(x, y, style,
       el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff',
-      hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      textAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     el.setAttribute('style', wrap);
     innerEl.setAttribute('style', inner);
     // Re-apply no-wrap and textBoxWidth after style rebuild
@@ -3055,11 +3222,13 @@
       if (!thumbWrap) return;
       const rect = thumbWrap.getBoundingClientRect();
       if (mainTextEl.dataset.freepos !== '1') {
-        const vBtn = document.querySelector(`#posrow-${i} .pos-btn.active`);
-        const aBtn = document.querySelector(`#alignrow-${i} .pos-btn.active`);
-        const vIdx = vBtn ? Array.from(vBtn.parentElement.children).indexOf(vBtn) : 2;
-        const hIdx = aBtn ? Array.from(aBtn.parentElement.children).indexOf(aBtn) : 1;
-        applyFreePos(i, [15, 50, 85][hIdx], [12, 50, 85][vIdx], false);
+        const hPosBtn = document.querySelector(`#hposrow-${i} .pos-btn.active`);
+        const vPosBtn = document.querySelector(`#vposrow-${i} .pos-btn.active`);
+        const hPos = hPosBtn?.dataset.hpos || 'center';
+        const vPos = vPosBtn?.dataset.vpos || 'center';
+        const snapX = { left: 15, center: 50, right: 85 }[hPos] ?? 50;
+        const snapY = { top: 12, center: 50, bottom: 85 }[vPos] ?? 50;
+        applyFreePos(i, snapX, snapY, false);
       }
       const startFX = parseFloat(document.getElementById(`fpx-${i}`)?.value) || 50;
       const startFY = parseFloat(document.getElementById(`fpy-${i}`)?.value) || 50;
@@ -3076,11 +3245,11 @@
       if (!thumbWrap) return;
       const rect = thumbWrap.getBoundingClientRect();
       if (extraTextEl.dataset.freepos !== '1') {
-        const vBtn = document.querySelector(`#et-posrow-${i}-${j} .pos-btn.active`);
-        const aBtn = document.querySelector(`#et-alignrow-${i}-${j} .pos-btn.active`);
-        const vIdx = vBtn ? Array.from(vBtn.parentElement.children).indexOf(vBtn) : 0;
-        const hIdx = aBtn ? Array.from(aBtn.parentElement.children).indexOf(aBtn) : 1;
-        applyExtraFreePos(i, j, [15, 50, 85][hIdx], [12, 50, 85][vIdx], false);
+        const hBtn = document.querySelector(`#et-hposrow-${i}-${j} .pos-btn.active`);
+        const vBtn = document.querySelector(`#et-vposrow-${i}-${j} .pos-btn.active`);
+        const snapX = _hSnap[hBtn?.dataset.hpos || 'center'] ?? 50;
+        const snapY = _vSnap[vBtn?.dataset.vpos || 'center'] ?? 50;
+        applyExtraFreePos(i, j, snapX, snapY, false);
       }
       const startFX = parseFloat(document.getElementById(`et-fpx-${i}-${j}`)?.value) || 50;
       const startFY = parseFloat(document.getElementById(`et-fpy-${i}-${j}`)?.value) || 50;
@@ -3330,15 +3499,70 @@
     const status = document.getElementById(`bgm-status-${i}`);
     if (slider) slider.disabled = !enabled;
     if (number) number.disabled = !enabled;
-    if (status) status.textContent = enabled
-      ? `Background music follows the project music at ${Math.round(getSceneBgmVolume(i))}% volume for this scene.`
-      : 'Background music is removed for this scene.';
+    if (status) {
+      const tB = (I18N[window._appLang||'en']||I18N.en);
+      status.textContent = enabled
+        ? tB.bgm_vol_status(Math.round(getSceneBgmVolume(i)))
+        : tB.bgm_removed;
+    }
   }
 
   function onSceneBgmEnabledChange(i) {
     updateSceneBgmControlsState(i);
     if (activeThumbnailPreview?.sceneIndex === i) applyThumbnailMuteState();
     saveVoiceSettings(i);
+    refreshGlobalBgmBtn();
+  }
+
+  function refreshGlobalBgmBtn(segs) {
+    // Can be called with a segments array (from loadSegments) or reads DOM checkboxes
+    let enabledCount = 0, total = 0;
+    if (segs) {
+      segs.forEach(s => { total++; if (s.backgroundMusicEnabled !== false) enabledCount++; });
+    } else {
+      document.querySelectorAll('[id^="bgm-enabled-"]').forEach(cb => { total++; if (cb.checked) enabledCount++; });
+    }
+    _setGlobalBgmBtn(total === 0 || enabledCount >= total / 2);
+  }
+
+  function _setGlobalBgmBtn(on) {
+    const btn = document.getElementById('global-bgm-btn');
+    if (!btn) return;
+    btn.dataset.bgmOn = on ? '1' : '0';
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    if (on) {
+      btn.textContent = t.bgm_on || '🎵 BGM: ON';
+      btn.style.background = '#065f46';
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#d1fae5';
+    } else {
+      btn.textContent = t.bgm_off || '🎵 BGM: OFF';
+      btn.style.background = '#1e293b';
+      btn.style.borderColor = '#475569';
+      btn.style.color = '#94a3b8';
+    }
+  }
+
+  async function toggleAllScenesBgm() {
+    const btn = document.getElementById('global-bgm-btn');
+    const newState = btn?.dataset.bgmOn !== '1'; // flip current state
+    _setGlobalBgmBtn(newState);
+    // Update all scene checkboxes and controls in DOM
+    document.querySelectorAll('[id^="bgm-enabled-"]').forEach(cb => {
+      cb.checked = newState;
+      const idx = parseInt(cb.id.replace('bgm-enabled-', ''));
+      if (!isNaN(idx)) updateSceneBgmControlsState(idx);
+    });
+    // Save to server for all scenes in parallel
+    const res = await fetch('/segments');
+    const segs = await res.json();
+    await Promise.all(segs.map((_, i) =>
+      fetch('/update-scene-texts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: i, backgroundMusicEnabled: newState })
+      })
+    ));
+    addEditorLog(`🎵 Background music ${newState ? 'enabled' : 'disabled'} for all scenes`);
   }
 
   function onSceneBgmVolumeSliderInput(i, value) {
@@ -3482,7 +3706,13 @@
   }
 
   async function fetchGeneratedVoicePreviewUrl(i, mode = 'full') {
-    const text = getVoiceEditorPlainText(i);
+    let text = getVoiceEditorPlainText(i);
+    if (!text) {
+      try {
+        const segs = await fetch('/segments').then(r => r.json());
+        text = (segs[i]?.voiceover_text || '').trim();
+      } catch {}
+    }
     if (!text) return '';
     const res = await fetch('/preview-voice', {
       method: 'POST',
@@ -3733,6 +3963,47 @@
   const stlPPS = {};  // pixels-per-second per scene index
   function stlGetPPS(i) { return stlPPS[i] || 60; }
 
+  function stlFadeDown(evt, dir) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    const el = evt.target.closest('.stl-fadein, .stl-fadeout');
+    if (!el) return;
+    const sceneIdx = parseInt(el.dataset.scene);
+    const itemType = el.dataset.type;
+    const itemIdx = parseInt(el.dataset.idx);
+    const bar = el.closest('.stl-bar');
+    const track = el.closest('.stl-track');
+    if (!bar || !track) return;
+
+    const startX = evt.clientX;
+    const barRect = bar.getBoundingClientRect();
+    const trackRect = track.getBoundingClientRect();
+    const pps = stlGetPPS(sceneIdx);
+    const seg = JSON.parse(sessionStorage.getItem(`_seg_${sceneIdx}`) || '{}');
+
+    function onMove(e) {
+      const deltaX = e.clientX - startX;
+      const deltaSec = deltaX / pps;
+      const fieldId = dir === 'in'
+        ? `overlay-fadein-${sceneIdx}-${itemIdx}`
+        : `overlay-fadeout-${sceneIdx}-${itemIdx}`;
+      const input = document.getElementById(fieldId);
+      if (!input) return;
+      const currentVal = parseFloat(input.value) || 1.5;
+      const newVal = Math.max(0.25, Math.min(5, currentVal + deltaSec));
+      input.value = String(newVal);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function onUp(e) {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   function stlBuildRuler(duration, pps, totalWidth) {
     let html = '';
     const minPx = 50;
@@ -3751,15 +4022,15 @@
     return html;
   }
 
-  function stlAnimOverlays(anim, fadeIn, fadeOut, spanSec) {
+  function stlAnimOverlays(anim, fadeIn, fadeOut, spanSec, sceneIdx, itemType, itemIdx) {
     if (!spanSec || spanSec <= 0) return '';
     const hasFadeIn  = fadeIn  > 0 && (anim === 'fade' || anim === 'fade-in'  || anim === 'fade-both' || anim === 'pop' || !anim || anim === 'static');
     const hasFadeOut = fadeOut > 0 && (anim === 'fade' || anim === 'fade-out' || anim === 'fade-both' || anim === 'pop' || !anim || anim === 'static');
     const fiPct = hasFadeIn  ? Math.min(45, (fadeIn  / spanSec) * 100) : 0;
     const foPct = hasFadeOut ? Math.min(45, (fadeOut / spanSec) * 100) : 0;
     let html = '';
-    if (fiPct > 0) html += `<div class="stl-fadein"  style="width:${fiPct}%"></div>`;
-    if (foPct > 0) html += `<div class="stl-fadeout" style="width:${foPct}%"></div>`;
+    if (fiPct > 0) html += `<div class="stl-fadein" data-scene="${sceneIdx}" data-type="${itemType}" data-idx="${itemIdx}" onmousedown="stlFadeDown(event,'in')" style="width:${fiPct}%"></div>`;
+    if (foPct > 0) html += `<div class="stl-fadeout" data-scene="${sceneIdx}" data-type="${itemType}" data-idx="${itemIdx}" onmousedown="stlFadeDown(event,'out')" style="width:${foPct}%"></div>`;
     return html;
   }
 
@@ -3771,7 +4042,7 @@
   }
 
   function stlBuildBar(opts) {
-    const { label, color, startSec, endSec, duration, pps, leftJs, rightJs, anim, fadeIn, fadeOut } = opts;
+    const { label, color, startSec, endSec, duration, pps, leftJs, rightJs, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx } = opts;
     const leftPx  = Math.max(0, startSec * pps);
     const widthPx = Math.max(10, (endSec - startSec) * pps);
     const spanSec = endSec - startSec;
@@ -3782,16 +4053,16 @@
     return `<div class="stl-bar" style="left:${leftPx}px;width:${widthPx}px;background:${color}">
       ${handles.left}
       <span class="stl-bar-lbl">${label}</span>
-      ${stlAnimOverlays(anim, fadeIn || 0, fadeOut || 0, spanSec)}
+      ${stlAnimOverlays(anim, fadeIn || 0, fadeOut || 0, spanSec, sceneIdx, itemType, itemIdx)}
       ${stlAnimBadge(anim)}
       ${handles.right}
     </div>`;
   }
 
-  function stlRow(rowLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, barLabel, anim, fadeIn, fadeOut) {
+  function stlRow(rowLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, barLabel, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx) {
     return `<div class="stl-row">
       <div class="stl-lbl">${rowLabel}</div>
-      <div class="stl-track">${stlBuildBar({ label: barLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, anim, fadeIn, fadeOut })}</div>
+      <div class="stl-track">${stlBuildBar({ label: barLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx })}</div>
     </div>`;
   }
 
@@ -3834,8 +4105,14 @@
       </div>
     </div>`);
 
-    // ── Voice row (no handles — locked to audio)
-    rows.push(stlRow('Voice', '#2563eb', 0, duration, duration, pps, null, null, 'Voice', null, 0, 0));
+    // ── Voice row — shows actual audio file duration, not scene duration
+    const audioDur = seg.audioDuration != null ? Number(seg.audioDuration) : null;
+    const hasAudioDur = audioDur != null && audioDur > 0;
+    const voiceEnd = hasAudioDur ? Math.min(audioDur, duration) : duration * 0.5;
+    const voiceIsClipped = hasAudioDur && audioDur > duration;
+    const voiceLabel = hasAudioDur ? `${audioDur.toFixed(1)}s${voiceIsClipped ? ' ✂' : ''}` : 'No audio yet';
+    const voiceColor = voiceIsClipped ? '#dc2626' : hasAudioDur ? '#2563eb' : '#475569';
+    rows.push(stlRow('Voice', voiceColor, 0, voiceEnd, duration, pps, null, null, voiceLabel, null, 0, 0));
 
     // ── Main text
     rows.push(stlRow('Main text', '#10b981', mainStart, mainEnd, duration, pps,
@@ -3860,7 +4137,7 @@
       rows.push(stlRow(`Image ${j+1}`, '#a855f7', s, e, duration, pps,
         `stlDown(event,${i},'overlay',${j},'start')`,
         `stlDown(event,${i},'overlay',${j},'end')`,
-        'Image', ov?.animation, ov?.fadeInDuration ?? 1.5, ov?.fadeOutDuration ?? 1.5));
+        'Image', ov?.animation, ov?.fadeInDuration ?? 1.5, ov?.fadeOutDuration ?? 1.5, i, 'overlay', j));
     });
 
     // ── Shapes
@@ -3870,7 +4147,7 @@
       rows.push(stlRow(`Shape ${k+1}`, '#f59e0b', s, e, duration, pps,
         `stlDown(event,${i},'shape',${k},'start')`,
         `stlDown(event,${i},'shape',${k},'end')`,
-        sh?.type === 'circle' ? 'Circle' : 'Shape', sh?.animation, sh?.fadeInDuration ?? 1.5, sh?.fadeOutDuration ?? 1.5));
+        ({circle:'Circle',square:'Square',ribbon:'Ribbon'}[sh?.type] || 'Rect'), sh?.animation, sh?.fadeInDuration ?? 1.5, sh?.fadeOutDuration ?? 1.5));
     });
 
     // ── SFX
@@ -3882,6 +4159,10 @@
         `stlDown(event,${i},'sfx',0,'end')`,
         'Sound FX', null, 0, 0));
     }
+
+    const fitToAudioBtn = audioDur > 0
+      ? `<button class="mini-dur-btn" style="margin-left:6px;padding:2px 8px;font-size:10px;white-space:nowrap;background:${voiceIsClipped ? '#dc2626' : '#2563eb'};color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? '⚠ Fit to audio' : 'Fit to audio'}</button>`
+      : '';
 
     return `<div class="stl-wrap" id="mini-timeline-${i}">
       <div class="stl-header">
@@ -3899,6 +4180,7 @@
           <button class="mini-dur-btn" onclick="setSceneDuration(${i},(parseFloat(document.getElementById('scene-dur-num-${i}').value)||5)+0.5)">+</button>
           <span style="font-size:9px;color:#64748b">s</span>
         </div>
+        ${fitToAudioBtn}
       </div>
       <div class="stl-scroll" id="stl-scroll-${i}">
         <div class="stl-canvas" id="stl-canvas-${i}" style="width:${totalWidth}px">
@@ -3926,18 +4208,21 @@
     const gStart = seg.gradient_start || '#1a1a2e';
     const gEnd   = seg.gradient_end   || '#16213e';
     const gDir   = seg.gradient_direction || 'to bottom';
+    const bgBlur = Math.max(0, Number(seg.backgroundBlur) || 0);
+    const bgBlurPx = bgBlur * 0.2; // 0-100% → 0-20px
+    const bgBlurStyle = bgBlur > 0 ? `filter:blur(${bgBlurPx}px);` : '';
     let thumbHTML = '';
     if (bgType === 'color') {
-      thumbHTML = `<div id="thumb-${i}" class="video-thumb" style="background:${solidColor}"></div>`;
+      thumbHTML = `<div id="thumb-${i}" class="video-thumb" style="background:${solidColor};${bgBlurStyle}"></div>`;
     } else if (bgType === 'gradient') {
-      thumbHTML = `<div id="thumb-${i}" class="video-thumb" style="background:linear-gradient(${gDir},${gStart},${gEnd})"></div>`;
+      thumbHTML = `<div id="thumb-${i}" class="video-thumb" style="background:linear-gradient(${gDir},${gStart},${gEnd});${bgBlurStyle}"></div>`;
     } else if (bgType === 'image' && hasVideo) {
-      thumbHTML = `<img class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="object-fit:cover" />`;
+      thumbHTML = `<img class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="object-fit:cover;${bgBlurStyle}" />`;
     } else if (hasVideo) {
       const bgScale = Math.max(1, Number(seg.backgroundScale) || 1);
       const bgX = Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0));
       const bgY = Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0));
-      thumbHTML = `<video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="${backgroundTransformStyle(bgScale, bgX, bgY)}" autoplay muted loop playsinline></video>`;
+      thumbHTML = `<video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="${backgroundTransformStyle(bgScale, bgX, bgY)}${bgBlurStyle}" autoplay muted loop playsinline></video>`;
     } else {
       thumbHTML = `<div class="no-video" id="thumb-${i}">🎬</div>`;
     }
@@ -3963,6 +4248,7 @@
         <div class="seg-caption" id="seg-caption-${i}">${seg.text || '— No original text'}</div>
         <div class="seg-vo" id="voice-summary-${i}">${escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>')}</div>
         <input type="hidden" id="timeline-duration-${i}" value="${Number(seg.duration)||5}" />
+        <input type="hidden" id="timeline-audioduration-${i}" value="${seg.audioDuration != null ? Number(seg.audioDuration) : ''}" />
 
         <details class="scene-accordion">
           <summary data-i18n="timeline">Timeline</summary>
@@ -4080,7 +4366,7 @@
                 <input type="checkbox" id="bgm-enabled-${i}" ${seg.backgroundMusicEnabled !== false ? 'checked' : ''} onchange="onSceneBgmEnabledChange(${i})" />
                 ${(I18N[window._appLang||'en']||I18N.en).use_proj_bgm}
               </label>
-              <div class="voice-upload-status" id="bgm-status-${i}" style="margin-top:8px">${seg.backgroundMusicEnabled !== false ? `Background music follows the project music at ${Math.round(Math.max(0, Math.min(100, Number(seg.backgroundMusicVolume ?? 100))))}% volume for this scene.` : 'Background music is removed for this scene.'}</div>
+              <div class="voice-upload-status" id="bgm-status-${i}" style="margin-top:8px">${(()=>{const tB=(I18N[window._appLang||'en']||I18N.en);const vol=Math.round(Math.max(0,Math.min(100,Number(seg.backgroundMusicVolume??100))));return seg.backgroundMusicEnabled!==false?tB.bgm_vol_status(vol):tB.bgm_removed;})()}</div>
               <div class="voice-grid" style="margin-top:10px;margin-bottom:0">
                 <span class="voice-lbl">${(I18N[window._appLang||'en']||I18N.en).volume}</span>
                 <input type="range" class="voice-slider" id="bgmvol-${i}" min="0" max="100" step="1"
@@ -4106,7 +4392,7 @@
           <summary data-i18n="main_text">Main Text</summary>
           <div class="scene-accordion-body text-controls">
             <div class="ctrl-label" style="margin-bottom:6px">${(I18N[window._appLang||'en']||I18N.en).orig_scene_text}</div>
-            <textarea id="maintext-${i}" class="extra-text-input" style="min-height:60px;height:60px;max-height:60px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" placeholder="Type the original scene text here...">${escapeHtml(seg.text || '')}</textarea>
+            <textarea id="maintext-${i}" class="extra-text-input" style="min-height:120px;height:120px;max-height:200px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" placeholder="Type the original scene text here...">${escapeHtml(seg.text || '')}</textarea>
             <div class="ctrl-row" style="margin-top:6px;justify-content:space-between;gap:8px;flex-wrap:wrap">
               <div style="font-size:11px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).main_text_hint}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -4127,11 +4413,29 @@
               <span style="font-size:10px;color:#64748b">s (${(I18N[window._appLang||'en']||I18N.en).timing_hint})</span>
             </div>
             <div class="ctrl-row">
-              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).position}</span>
-              <div style="display:flex;gap:4px" id="posrow-${i}">
-                ${[['top','fa-arrow-up','Top'],['center','fa-minus','Middle'],['bottom','fa-arrow-down','Bottom']].map(([p,ic,tt]) => `
-                  <div class="pos-btn icon-btn ${(seg.textPosition||'center')===p?'active':''}"
-                       title="${tt}" onclick="setTextPos(${i},'${p}')"><i class="fas ${ic}"></i></div>`).join('')}
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).align_h}</span>
+              <div style="display:flex;gap:3px" id="hposrow-${i}">
+                ${((_t) => [
+                  ['left',   '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>',   _t.pos_align_left],
+                  ['center', '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', _t.pos_h_center],
+                  ['right',  '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>',  _t.pos_align_right],
+                ].map(([hp, svg, ttl]) => {
+                  const isActive = (seg.textHPosition||'center') === hp;
+                  return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setTextHPos(${i},'${hp}')">${svg}</div>`;
+                }).join(''))((I18N[window._appLang||'en']||I18N.en))}
+              </div>
+            </div>
+            <div class="ctrl-row">
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).align_v}</span>
+              <div style="display:flex;gap:3px" id="vposrow-${i}">
+                ${((_t) => [
+                  ['top',    '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>',    _t.pos_align_top],
+                  ['center', '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', _t.pos_v_center],
+                  ['bottom', '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>',  _t.pos_align_bottom],
+                ].map(([vp, svg, ttl]) => {
+                  const isActive = (seg.textPosition||'center') === vp;
+                  return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setTextVPos(${i},'${vp}')">${svg}</div>`;
+                }).join(''))((I18N[window._appLang||'en']||I18N.en))}
               </div>
             </div>
             <div class="ctrl-row">
@@ -4169,9 +4473,25 @@
             <div class="ctrl-row">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).animate}</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap" id="mainanimrow-${i}">
-                ${[['static','Static'],['pop','Pop'],['fade','Fade'],['wipe','Wipe']].map(([a,lbl]) =>
-                  `<div class="pos-btn style-text-btn ${(seg.textAnimation||'pop')===a?'active':''}" onclick="setTextAnimation(${i},'${a}')">${lbl}</div>`
-                ).join('')}
+                ${[['static','Static'],['pop','Pop'],['fade-in','Fade in'],['fade-out','Fade out'],['fade-both','Fade both'],['wipe','Wipe']].map(([a,lbl]) => {
+                  const ta = seg.textAnimation || 'pop';
+                  const active = ta === a || (a === 'fade-both' && ta === 'fade');
+                  return `<div class="pos-btn style-text-btn ${active?'active':''}" data-anim="${a}" onclick="setTextAnimation(${i},'${a}')">${lbl}</div>`;
+                }).join('')}
+              </div>
+            </div>
+            <div id="textfadedurations-${i}" style="margin-top:4px;display:${['fade','fade-in','fade-out','fade-both'].includes(seg.textAnimation||'pop') ? 'grid' : 'none'};gap:8px;">
+              <div id="textfadeinrow-${i}" class="ctrl-row" style="display:${['fade','fade-in','fade-both'].includes(seg.textAnimation||'pop') ? 'flex' : 'none'};align-items:center;">
+                <span class="ctrl-row-label">Fade in:</span>
+                <select id="textfadein-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
+                  ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeInDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
+                </select>
+              </div>
+              <div id="textfadeoutrow-${i}" class="ctrl-row" style="display:${['fade','fade-out','fade-both'].includes(seg.textAnimation||'pop') ? 'flex' : 'none'};align-items:center;">
+                <span class="ctrl-row-label">Fade out:</span>
+                <select id="textfadeout-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
+                  ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeOutDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
+                </select>
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
@@ -4191,20 +4511,6 @@
               <span style="font-size:10px;color:#64748b">px (block/box only — blank = default)
                 <button class="btn sm ghost" style="padding:1px 6px;font-size:10px" onclick="resetTextPadding(${i})" title="Reset padding to default">↺</button>
               </span>
-            </div>
-            <div id="textfadedurations-${i}" style="margin-top:8px;display:${(seg.textAnimation||'pop')==='fade' ? 'grid' : 'none'};gap:8px;">
-              <div class="ctrl-row" style="align-items:center;">
-                <span class="ctrl-row-label">Fade in:</span>
-                <select id="textfadein-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
-                  ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeInDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
-                </select>
-              </div>
-              <div class="ctrl-row" style="align-items:center;">
-                <span class="ctrl-row-label">Fade out:</span>
-                <select id="textfadeout-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
-                  ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeOutDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
-                </select>
-              </div>
             </div>
 
             <div class="ctrl-row" style="gap:12px;flex-wrap:wrap;margin-top:4px">
@@ -4294,6 +4600,15 @@
                 ${getSceneOverlayList(seg).map((ov, j) => buildOverlayEditorHTML(i, j, ov)).join('')}
               </div>
             </div>
+            <!-- ── Video overlays ── -->
+            <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+              <input type="file" id="ovvid-file-${i}" accept="video/*" onchange="uploadOverlayVideo(${i})" style="display:none" />
+              <button class="btn sm" style="background:#0e7490;width:100%" onclick="document.getElementById('ovvid-file-${i}').click()">🎬 Upload video overlay</button>
+              <div id="overlay-video-list-${i}">
+                ${(seg.overlayVideos||[]).filter(v=>v&&v.src).map((v,j) => buildVideoOverlayEditorHTML(i,j,v)).join('')}
+              </div>
+            </div>
+
             <div id="shapes-${i}">
               ${(seg.overlayShapes||[]).map((sh,k) => buildShapeHTML(i,k,sh)).join('')}
             </div>
@@ -4383,6 +4698,16 @@
                   <span style="font-size:11px;color:#cbd5e1;font-weight:700">Video framing</span>
                   <button class="btn sm ghost" type="button" onclick="resetBackgroundTransform(${i})">Reset</button>
                 </div>
+                <!-- ── Video Fit ── -->
+                <div class="ctrl-row" style="align-items:center;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #1e293b">
+                  <span class="ctrl-row-label">Fit:</span>
+                  <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap" id="videofit-row-${i}">
+                    ${[['cover','🔲 Fill'],['contain-black','⬛ Black Bars'],['contain-blur','🌫 Blur BG']].map(([val,lbl]) => {
+                      const active = (seg.videoFit || 'cover') === val;
+                      return `<button class="pos-btn style-text-btn${active?' active':''}" style="font-size:11px;padding:3px 7px" data-vfit="${val}" onclick="setVideoFit(${i},'${val}')">${lbl}</button>`;
+                    }).join('')}
+                  </div>
+                </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
                   <span class="ctrl-row-label">Scale:</span>
                   <input type="range" id="bgscale-${i}" min="1" max="3" step="0.05" value="${Math.max(1, Number(seg.backgroundScale) || 1)}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
@@ -4393,10 +4718,77 @@
                   <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgx-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0)))}%</span>
                 </div>
-                <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:0">
+                <div class="ctrl-row" style="align-items:center;gap:8px">
                   <span class="ctrl-row-label">Y:</span>
                   <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgy-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0)))}%</span>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                  <span class="ctrl-row-label">Speed:</span>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">
+                    ${[0.25,0.5,0.75,1,1.5,2,3,4].map(s => {
+                      const cur = Math.round((Number(seg.videoSpeed) || 1) * 100);
+                      const active = Math.round(s*100) === cur;
+                      return `<button class="pos-btn style-text-btn${active?' active':''}" style="font-size:11px;padding:3px 7px" onclick="setVideoSpeed(${i},${s})">${s}x</button>`;
+                    }).join('')}
+                  </div>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                  <span class="ctrl-row-label">Audio:</span>
+                  <input type="range" id="vidaudio-${i}" min="0" max="1" step="0.05"
+                         value="${Math.max(0, Math.min(1, Number(seg.videoAudioVolume) || 0))}"
+                         oninput="onVidAudioInput(${i})"
+                         onchange="saveVideoAudioVolume(${i},this.value)" style="flex:1" />
+                  <span id="vidaudio-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${Number(seg.videoAudioVolume) > 0 ? Math.round(Number(seg.videoAudioVolume)*100)+'%' : 'Muted'}</span>
+                  <button id="vidaudio-play-${i}" onclick="previewVideoAudio(${i})" title="Preview audio for 3 seconds" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:5px;width:26px;height:22px;font-size:12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button>
+                </div>
+              </div>
+
+              <!-- ── Background Blur ── -->
+              <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">🌀 Background Blur</div>
+                <div class="ctrl-row" style="align-items:center;gap:8px">
+                  <span class="ctrl-row-label">Blur:</span>
+                  <input type="range" id="bgblur-${i}" min="0" max="100" step="1"
+                         value="${bgBlur}"
+                         oninput="onBgBlurInput(${i},this.value)"
+                         onchange="saveBgBlur(${i})" style="flex:1" />
+                  <span id="bgblur-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgBlur > 0 ? bgBlur + '%' : 'Off'}</span>
+                </div>
+              </div>
+
+              <!-- ── Background Overlay ── -->
+              <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">Background Overlay</div>
+                <div class="ctrl-row" id="overlay-type-row-${i}" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                  ${[['none','None'],['dark','Dark'],['spotlight','Spotlight']].map(([t,lbl]) =>
+                    `<div class="pos-btn style-text-btn${(seg.overlayType||'none')===t?' active':''}" style="font-size:11px" data-otype="${t}" onclick="setOverlayType(${i},'${t}')">${lbl}</div>`
+                  ).join('')}
+                </div>
+                <div id="overlay-controls-${i}" style="display:${(seg.overlayType&&seg.overlayType!=='none')?'block':'none'}">
+                  <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
+                    <span class="ctrl-row-label">Opacity:</span>
+                    <input type="range" id="overlay-opacity-${i}" min="0" max="1" step="0.05"
+                           value="${Number(seg.overlayOpacity)>0||seg.overlayOpacity===0?Number(seg.overlayOpacity):0.5}"
+                           oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
+                    <span id="overlay-opacity-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Math.round((Number(seg.overlayOpacity)>0||seg.overlayOpacity===0?Number(seg.overlayOpacity):0.5)*100)}%</span>
+                  </div>
+                  <div id="overlay-spotlight-controls-${i}" style="display:${seg.overlayType==='spotlight'?'block':'none'}">
+                    <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
+                      <span class="ctrl-row-label">Radius:</span>
+                      <input type="range" id="overlay-radius-${i}" min="5" max="80" step="1"
+                             value="${Number(seg.spotlightRadius)||30}"
+                             oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
+                      <span id="overlay-radius-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Number(seg.spotlightRadius)||30}%</span>
+                    </div>
+                    <div class="ctrl-row" style="align-items:center;gap:8px">
+                      <span class="ctrl-row-label">Softness:</span>
+                      <input type="range" id="overlay-soft-${i}" min="0" max="60" step="1"
+                             value="${Number(seg.spotlightSoftness)||25}"
+                             oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
+                      <span id="overlay-soft-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Number(seg.spotlightSoftness)||25}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -4445,8 +4837,8 @@
                 <span class="brand-swatches-label">🎨 Brand Colours</span>
               </div>
               <div class="colour-presets">
-                ${['#000000','#1a1a2e','#0f3460','#16213e','#1b1b2f','#2c003e','#1a0533','#0d0d0d']
-                  .map(c=>`<div class="colour-preset" style="background:${c}" onclick="setSolidPreset(${i},'${c}')"></div>`).join('')}
+                ${['#ffffff','#000000','#1a1a2e','#0f3460','#16213e','#1b1b2f','#2c003e','#1a0533','#0d0d0d']
+                  .map(c=>`<div class="colour-preset" style="background:${c};${c==='#ffffff'?'border-color:#64748b':''}" onclick="setSolidPreset(${i},'${c}')"></div>`).join('')}
               </div>
               <div class="colour-row">
                 <label>Colour</label>
@@ -4507,7 +4899,7 @@
         </details>
         </div><!-- /scene-body-wrap -->
       </div>
-      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="Preview scene">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="Mute" disabled>🔊</button></div></div>`;
+      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="Preview scene">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="Mute" disabled>🔊</button></div></div>`;
     return card;
   }
 
@@ -4516,7 +4908,7 @@
     row.className='add-scene-row';
     row.innerHTML=`<div class="line"></div><button onclick="openModal(${afterIndex})">＋ Add scene here</button><div class="line"></div>`;
     return row;
-  }  async function loadSegments() {
+  }  async function loadSegments(retries = 1) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
     stopAudioElement(currentVoicePreviewAudio);
@@ -4526,11 +4918,15 @@
     if (!list) return;
     list.innerHTML='<p style="color:#475569">Loading scenes...</p>';
     try {
-      await loadStockFiles();
-      await ensureCurrentSettingsLoaded(true);
+      try { await loadStockFiles(); } catch(e) { console.warn('loadStockFiles failed, continuing:', e); stockFiles = []; }
+      try { await ensureCurrentSettingsLoaded(true); } catch(e) { console.warn('ensureCurrentSettings failed:', e); }
       const res  = await fetch(`/segments?t=${Date.now()}`, { cache: 'no-store' });
       const segs = await res.json();
       if (!Array.isArray(segs) || !segs.length) {
+        if (retries > 0 && res.ok) {
+          setTimeout(() => loadSegments(0), 1500);
+          return;
+        }
         list.innerHTML='';
         const empty = document.createElement('div');
         empty.style.cssText = 'padding:20px 0;display:flex;flex-direction:column;align-items:center;gap:12px;';
@@ -4541,16 +4937,24 @@
       }
       list.innerHTML='';
       segs.forEach((seg,i) => {
-        list.appendChild(buildCard(seg,i));
-        updateSceneBgmControlsState(i);
-        initThumbDrag(i, seg);
-        updateBackgroundTransformPreview(i);
-        updateTextPreview(i);
-        applyTextPreviewAnimation(i, false);
-        applyScenePreviewAnimation(i, seg.sceneAnimation || 'static', false);
-        // Inject brand swatches if media library already loaded
-        if (_mediaLibraryCache.brandColors && _mediaLibraryCache.brandColors.length) {
-          injectBrandSwatches(i);
+        try {
+          list.appendChild(buildCard(seg,i));
+          updateSceneBgmControlsState(i);
+          initThumbDrag(i, seg);
+          updateBackgroundTransformPreview(i);
+          updateTextPreview(i);
+          applyTextPreviewAnimation(i, false);
+          applyScenePreviewAnimation(i, seg.sceneAnimation || 'static', false);
+          // Inject brand swatches if media library already loaded
+          if (_mediaLibraryCache.brandColors && _mediaLibraryCache.brandColors.length) {
+            injectBrandSwatches(i);
+          }
+        } catch (cardErr) {
+          console.error(`Scene ${i+1} failed to render:`, cardErr);
+          const errCard = document.createElement('div');
+          errCard.className = 'segment-card';
+          errCard.innerHTML = `<p style="color:#fca5a5;padding:12px 0">⚠️ Scene ${i+1} failed to render: ${cardErr.message} — <button class="btn sm ghost" onclick="loadSegments()">Retry</button></p>`;
+          list.appendChild(errCard);
         }
       });
       const addBtn = document.createElement('div');
@@ -4559,12 +4963,15 @@
       list.appendChild(addBtn);
       // Re-apply language translations to newly rendered scene card elements
       if (window._appLang && window._appLang !== 'en') setAppLang(window._appLang);
+      // Update global BGM button to reflect current scenes state
+      refreshGlobalBgmBtn(segs);
       // Show the regenerate section now that scenes are loaded
       const scenesRerenderSection = document.getElementById('scenes-rerender-section');
       if (scenesRerenderSection) scenesRerenderSection.style.display = 'block';
-      await refreshDraftStatus();
+      try { await refreshDraftStatus(); } catch (e) { console.warn('Draft status failed:', e); }
     } catch (err) {
-      list.innerHTML='<p style="color:#fca5a5">Could not reload scenes right now. Please try again in a moment.</p>';
+      console.error('loadSegments failed:', err);
+      list.innerHTML=`<p style="color:#fca5a5">Could not reload scenes: ${err.message || err}. <button class="btn sm ghost" onclick="loadSegments()">Try again</button></p>`;
     }
   }
 
@@ -4918,8 +5325,10 @@
     const voiceover_text = document.getElementById('modal-vo').value.trim();
     const isCreateTab = document.getElementById('tab-create')?.classList.contains('active');
     const resetAll = Boolean(isCreateTab && !createDraftStarted);
+    const bgmBtn = document.getElementById('global-bgm-btn');
+    const backgroundMusicEnabled = !bgmBtn || bgmBtn.dataset.bgmOn !== '0';
     closeModal();
-    await fetch('/add-scene',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({afterIndex: resetAll ? -1 : pendingInsertAfter, text, voiceover_text, resetAll}) });
+    await fetch('/add-scene',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({afterIndex: resetAll ? -1 : pendingInsertAfter, text, voiceover_text, resetAll, backgroundMusicEnabled}) });
     if (isCreateTab) createDraftStarted = true;
     addEditorLog(`✅ Scene added`);
     if (document.getElementById('tab-scenes')?.classList.contains('active')) loadSegments();
@@ -4931,18 +5340,19 @@
     const isCreateTab = document.getElementById('tab-create')?.classList.contains('active');
     const resetAll = Boolean(isCreateTab && !createDraftStarted);
     const afterIndex = resetAll ? -1 : pendingInsertAfter;
+    const bgmBtn = document.getElementById('global-bgm-btn');
+    const backgroundMusicEnabled = !bgmBtn || bgmBtn.dataset.bgmOn !== '0';
     // First add a blank scene at the right position
     const addRes = await fetch('/add-scene', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ afterIndex, text: '', voiceover_text: '', resetAll })
+      body: JSON.stringify({ afterIndex, text: '', voiceover_text: '', resetAll, backgroundMusicEnabled })
     });
     const addData = await addRes.json();
     if (addData.error) { addEditorLog(`❌ ${addData.error}`); return; }
     if (isCreateTab) createDraftStarted = true;
-    // Determine the index of the newly inserted scene
-    const segments = await fetch('/segments').then(r => r.json());
-    const newIndex = (afterIndex === -1 || resetAll) ? 0 : afterIndex + 1;
+    // Use the index returned by the server — it is the definitive insert position
+    const newIndex = addData.index;
     // Now load the draft into that scene slot
     const loadRes = await fetch('/load-scene-draft', {
       method: 'POST',
@@ -5055,6 +5465,23 @@
     updateBackgroundTransformPreview(i);
   }
 
+  function onBgBlurInput(i, val) {
+    const pct = Math.max(0, parseFloat(val) || 0);
+    const label = document.getElementById(`bgblur-v-${i}`);
+    if (label) label.textContent = pct > 0 ? pct + '%' : 'Off';
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb) thumb.style.filter = pct > 0 ? `blur(${pct * 0.2}px)` : '';
+  }
+
+  async function saveBgBlur(i) {
+    const pct = Math.max(0, parseFloat(document.getElementById(`bgblur-${i}`)?.value) || 0);
+    onBgBlurInput(i, pct); // keep label in sync
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, backgroundBlur: pct > 0 ? pct : null })
+    });
+  }
+
   async function saveBackgroundTransform(i) {
     const { scale, x, y } = getBackgroundTransformValues(i);
     updateBackgroundTransformPreview(i);
@@ -5097,6 +5524,147 @@
     const data = await res.json();
     if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
     addEditorLog(`✅ Scene ${i+1} Ken Burns ${newVal ? 'enabled' : 'disabled'}`);
+  }
+
+  async function setVideoFit(i, fit) {
+    // Update button active states
+    const row = document.getElementById(`videofit-row-${i}`);
+    if (row) {
+      row.querySelectorAll('[data-vfit]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.vfit === fit);
+      });
+    }
+    // Update thumb video object-fit live
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb && thumb.tagName === 'VIDEO') {
+      if (fit === 'contain-black') {
+        thumb.style.objectFit = 'contain';
+        thumb.style.background = '#000';
+      } else {
+        thumb.style.objectFit = 'cover';
+        thumb.style.background = '';
+      }
+    }
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, videoFit: fit })
+    });
+    addEditorLog(`✅ Scene ${i+1} video fit: ${fit}`);
+  }
+
+  async function setVideoSpeed(i, speed) {
+    // Update button active states
+    const container = document.getElementById(`bg-video-controls-${i}`);
+    if (container) {
+      container.querySelectorAll('.style-text-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === `${speed}x`);
+      });
+    }
+    // Update thumb video playbackRate live if possible
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb && thumb.tagName === 'VIDEO') thumb.playbackRate = speed;
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, videoSpeed: speed })
+    });
+  }
+
+  async function saveVideoAudioVolume(i, value) {
+    const vol = Math.max(0, Math.min(1, parseFloat(value) || 0));
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, videoAudioVolume: vol })
+    });
+  }
+
+  function onVidAudioInput(i) {
+    const slider = document.getElementById(`vidaudio-${i}`);
+    const valEl  = document.getElementById(`vidaudio-v-${i}`);
+    const vol = parseFloat(slider?.value) || 0;
+    if (valEl) valEl.textContent = vol === 0 ? 'Muted' : Math.round(vol * 100) + '%';
+    // Update live volume if preview is active
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb && thumb.tagName === 'VIDEO' && _vidAudioTimers[i]) {
+      thumb.volume = Math.min(1, vol);
+      thumb.muted  = vol === 0;
+    }
+  }
+
+  const _vidAudioTimers = {};
+  function previewVideoAudio(i) {
+    const slider = document.getElementById(`vidaudio-${i}`);
+    const btn    = document.getElementById(`vidaudio-play-${i}`);
+    const thumb  = document.getElementById(`thumb-${i}`);
+
+    // Stop if already previewing
+    if (_vidAudioTimers[i]) {
+      clearTimeout(_vidAudioTimers[i]);
+      delete _vidAudioTimers[i];
+      if (thumb && thumb.tagName === 'VIDEO') thumb.muted = true;
+      if (btn) { btn.textContent = '▶'; btn.style.color = '#94a3b8'; btn.style.borderColor = '#334155'; }
+      return;
+    }
+
+    if (!thumb || thumb.tagName !== 'VIDEO') {
+      addEditorLog('⚠ No video loaded for this scene yet.');
+      return;
+    }
+
+    const vol = Math.max(0, Math.min(1, parseFloat(slider?.value) || 0));
+    thumb.volume = vol;
+    thumb.muted  = false;
+    thumb.play().catch(() => {});
+    if (btn) { btn.textContent = '⏹'; btn.style.color = '#38bdf8'; btn.style.borderColor = '#38bdf8'; }
+
+    _vidAudioTimers[i] = setTimeout(() => {
+      thumb.muted = true;
+      delete _vidAudioTimers[i];
+      if (btn) { btn.textContent = '▶'; btn.style.color = '#94a3b8'; btn.style.borderColor = '#334155'; }
+    }, 3000);
+  }
+
+  function onOverlayInput(i) {
+    const op    = parseFloat(document.getElementById(`overlay-opacity-${i}`)?.value) ?? 0.5;
+    const rad   = parseInt(document.getElementById(`overlay-radius-${i}`)?.value) || 30;
+    const soft  = parseInt(document.getElementById(`overlay-soft-${i}`)?.value) || 25;
+    const ov    = document.getElementById(`overlay-opacity-v-${i}`);
+    const rv    = document.getElementById(`overlay-radius-v-${i}`);
+    const sv    = document.getElementById(`overlay-soft-v-${i}`);
+    if (ov) ov.textContent = `${Math.round(op * 100)}%`;
+    if (rv) rv.textContent = `${rad}%`;
+    if (sv) sv.textContent = `${soft}%`;
+    updateBgOverlayPreview(i);
+  }
+
+  async function setOverlayType(i, type) {
+    // Update button active states using data-id on the container row
+    const typeRow = document.getElementById(`overlay-type-row-${i}`);
+    if (typeRow) {
+      typeRow.querySelectorAll('.style-text-btn').forEach(btn => {
+        const t = btn.getAttribute('data-otype');
+        btn.classList.toggle('active', t === type);
+      });
+    }
+    const controls = document.getElementById(`overlay-controls-${i}`);
+    if (controls) controls.style.display = (type && type !== 'none') ? 'block' : 'none';
+    const spotlightControls = document.getElementById(`overlay-spotlight-controls-${i}`);
+    if (spotlightControls) spotlightControls.style.display = type === 'spotlight' ? 'block' : 'none';
+    updateBgOverlayPreview(i);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, overlayType: type })
+    });
+  }
+
+  async function saveOverlaySettings(i) {
+    const op   = parseFloat(document.getElementById(`overlay-opacity-${i}`)?.value) ?? 0.5;
+    const rad  = parseInt(document.getElementById(`overlay-radius-${i}`)?.value) || 30;
+    const soft = parseInt(document.getElementById(`overlay-soft-${i}`)?.value) || 25;
+    onOverlayInput(i);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, overlayOpacity: op, spotlightRadius: rad, spotlightSoftness: soft })
+    });
   }
 
   function onBgImageTransformInput(i) {
@@ -5184,7 +5752,7 @@
     const url = document.getElementById(`pexels-url-${i}`)?.value?.trim();
     if (!url) return alert('Paste a Pexels video URL first.');
     // Accept both full page URLs and direct video file URLs
-    const pexelsPageMatch = url.match(/pexels\.com\/video\/[^/]*?-(\d+)\/?$/);
+    const pexelsPageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
     if (!pexelsPageMatch && !url.match(/\.mp4/i)) {
       return alert('Please paste a valid Pexels video page URL (e.g. https://www.pexels.com/video/dartboard-close-up-34071374/)');
     }
@@ -5310,7 +5878,13 @@
     const data=await res.json();
     document.getElementById(`card-${i}`).classList.remove('replacing');
     if(data.error){addEditorLog(`❌ ${data.error}`);return;}
-    setThumb(i,data.previewUrl); addEditorLog(`✅ Scene ${i+1} updated with uploaded video`);
+    setThumb(i,data.previewUrl);
+    if(data.durationUpdated && data.videoDuration){
+      await setSceneDuration(i, data.videoDuration);
+      addEditorLog(`✅ Scene ${i+1} duration set to ${data.videoDuration}s to match video`);
+    } else {
+      addEditorLog(`✅ Scene ${i+1} updated with uploaded video`);
+    }
   }
 
   async function uploadSceneAudio(i) {
@@ -5447,17 +6021,31 @@
         <details class="layer-accordion" open>
           <summary>
             <span class="layer-accordion-title">Text Layer ${j + 1}</span>
-            <button class="btn sm red" onclick="event.preventDefault();event.stopPropagation();removeExtraText(${i},${j})">✕ Remove</button>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn sm blue" onclick="event.preventDefault();event.stopPropagation();copyExtraStyle(${i},${j},event)" title="Copy style from this layer">📋 Copy</button>
+              <button class="btn sm purple" onclick="event.preventDefault();event.stopPropagation();pasteExtraStyle(${i},${j},event)" title="Paste style to this layer">📌 Paste</button>
+              <button class="btn sm red" onclick="event.preventDefault();event.stopPropagation();removeExtraText(${i},${j})">✕ Remove</button>
+            </div>
           </summary>
           <div class="layer-accordion-body">
-        <input class="extra-text-input" id="et-input-${i}-${j}" value="${et.text.replace(/"/g,'&quot;')}"
+        <input class="extra-text-input" id="et-input-${i}-${j}" value="${(et.text||'').replace(/"/g,'&quot;')}"
                onblur="saveExtraText(${i})" placeholder="Text content..." />
         <div class="ctrl-row" style="margin-top:6px">
-          <span class="ctrl-row-label">Position:</span>
-          <div style="display:flex;gap:4px" id="et-posrow-${i}-${j}">
-            ${[['top','fa-arrow-up','Top'],['center','fa-minus','Middle'],['bottom','fa-arrow-down','Bottom']].map(([p,ic,tt]) => `
-              <div class="pos-btn icon-btn ${pos===p?'active':''}" title="${tt}"
-                   onclick="setExtraPos(${i},${j},'${p}')"><i class="fas ${ic}"></i></div>`).join('')}
+          <span class="ctrl-row-label">Align H</span>
+          <div style="display:flex;gap:3px" id="et-hposrow-${i}-${j}">
+            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left — preserves vertical position'],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally — preserves vertical position'],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right — preserves vertical position']].map(([hp,svg,ttl]) => {
+              const isActive = (et.textHPosition||'center') === hp;
+              return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setExtraHPos(${i},${j},'${hp}')">${svg}</div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-row-label">Align V</span>
+          <div style="display:flex;gap:3px" id="et-vposrow-${i}-${j}">
+            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top — preserves horizontal position'],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically — preserves horizontal position'],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom — preserves horizontal position']].map(([vp,svg,ttl]) => {
+              const isActive = (et.position||'center') === vp;
+              return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setExtraVPos(${i},${j},'${vp}')">${svg}</div>`;
+            }).join('')}
           </div>
         </div>
         <div class="ctrl-row">
@@ -5613,8 +6201,13 @@
   }
 
   function updateTextFadeDurationUI(i, animation) {
-    const wrap = document.getElementById(`textfadedurations-${i}`);
-    if (wrap) wrap.style.display = animation === 'fade' ? 'grid' : 'none';
+    const wrap   = document.getElementById(`textfadedurations-${i}`);
+    const inRow  = document.getElementById(`textfadeinrow-${i}`);
+    const outRow = document.getElementById(`textfadeoutrow-${i}`);
+    const isFade = ['fade','fade-in','fade-out','fade-both'].includes(animation);
+    if (wrap)   wrap.style.display   = isFade ? 'grid' : 'none';
+    if (inRow)  inRow.style.display  = ['fade','fade-in','fade-both'].includes(animation)  ? 'flex' : 'none';
+    if (outRow) outRow.style.display = ['fade','fade-out','fade-both'].includes(animation) ? 'flex' : 'none';
   }
 
   async function saveMainTextFadeDurations(i) {
@@ -5631,8 +6224,8 @@
   }
 
   async function setTextAnimation(i, animation) {
-    document.querySelectorAll(`#mainanimrow-${i} .pos-btn`).forEach((b, idx) =>
-      b.classList.toggle('active', ['static','pop','fade','wipe'][idx] === animation));
+    document.querySelectorAll(`#mainanimrow-${i} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.anim === animation));
     updateTextFadeDurationUI(i, animation);
     const preview = document.getElementById(`tpreview-${i}`);
     if (preview) preview.dataset.animation = animation;
@@ -5758,16 +6351,82 @@
     });
   }
 
-  async function setTextPos(i, pos) {
-    document.querySelectorAll(`#posrow-${i} .pos-btn`).forEach((b,idx) =>
-      b.classList.toggle('active', ['top','center','bottom'][idx] === pos));
+  // Sets horizontal position only — exits free-pos, keeps current vertical position
+  // Snap values for H and V axes (% of video/preview dimensions)
+  const _hSnap = { left: 15, center: 50, right: 85 };
+  const _vSnap = { top: 12, center: 50, bottom: 85 };
+
+  // Read current X from UI — free-pos input if in free-pos, otherwise compute from H-row snap
+  function _currentX(i) {
     const preview = document.getElementById(`tpreview-${i}`);
-    if (preview) preview.dataset.freepos = '0';
-    if (document.getElementById(`freepos-row-${i}`)) document.getElementById(`freepos-row-${i}`).style.display = 'none';
+    if (preview && preview.dataset.freepos === '1') {
+      return parseFloat(document.getElementById(`fpx-${i}`)?.value) || 50;
+    }
+    const hBtn = document.querySelector(`#hposrow-${i} .pos-btn.active`);
+    return _hSnap[hBtn?.dataset.hpos || 'center'] ?? 50;
+  }
+
+  // Read current Y from UI — free-pos input if in free-pos, otherwise compute from V-row snap
+  function _currentY(i) {
+    const preview = document.getElementById(`tpreview-${i}`);
+    if (preview && preview.dataset.freepos === '1') {
+      return parseFloat(document.getElementById(`fpy-${i}`)?.value) || 50;
+    }
+    const vBtn = document.querySelector(`#vposrow-${i} .pos-btn.active`);
+    return _vSnap[vBtn?.dataset.vpos || 'center'] ?? 50;
+  }
+
+  // Enter free-pos mode and update the X/Y inputs + preview element
+  function _applyAlignPos(i, x, y) {
+    const preview = document.getElementById(`tpreview-${i}`);
+    const fpxEl   = document.getElementById(`fpx-${i}`);
+    const fpyEl   = document.getElementById(`fpy-${i}`);
+    const freeRow = document.getElementById(`freepos-row-${i}`);
+    if (fpxEl) fpxEl.value = x;
+    if (fpyEl) fpyEl.value = y;
+    if (preview) preview.dataset.freepos = '1';
+    if (freeRow) freeRow.style.display = 'flex';
     updateTextPreview(i);
+  }
+
+  // Illustrator-style: snap X only, preserve current Y
+  async function setTextHPos(i, hPos) {
+    const newX     = _hSnap[hPos] ?? 50;
+    const currentY = _currentY(i);
+    document.querySelectorAll(`#hposrow-${i} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    _applyAlignPos(i, newX, currentY);
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ index: i, textPosition: pos, textX: null, textY: null })
+      body: JSON.stringify({ index: i, textHPosition: hPos, textX: newX, textY: currentY })
+    });
+  }
+
+  // Illustrator-style: snap Y only, preserve current X
+  async function setTextVPos(i, vPos) {
+    const newY     = _vSnap[vPos] ?? 50;
+    const currentX = _currentX(i);
+    document.querySelectorAll(`#vposrow-${i} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    _applyAlignPos(i, currentX, newY);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ index: i, textPosition: vPos, textX: currentX, textY: newY })
+    });
+  }
+
+  // Convenience: snap both axes at once (used by resetFreePos → snap grid, etc.)
+  async function setTextPos(i, vPos, hPos) {
+    const newX = _hSnap[hPos] ?? 50;
+    const newY = _vSnap[vPos] ?? 50;
+    document.querySelectorAll(`#hposrow-${i} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    document.querySelectorAll(`#vposrow-${i} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    _applyAlignPos(i, newX, newY);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ index: i, textPosition: vPos, textHPosition: hPos, textX: newX, textY: newY })
     });
   }
 
@@ -5814,6 +6473,50 @@
     if (input) input.value = '';
     await saveMainTextContent(i);
     addEditorLog(`✅ Scene ${i+1} original text removed`);
+  }
+
+  let _copiedExtraStyle = null;
+
+  function copyExtraStyle(i, j, evt) {
+    const btn = evt?.target || event?.target;
+    const styActive  = document.querySelector(`#et-stylerow-${i}-${j} .pos-btn.active`);
+    const textStyle  = styActive  ? ['box','glow','block','shadow','plain'][Array.from(styActive.parentElement.children).indexOf(styActive)] : '';
+    const animActive = document.querySelector(`#et-animrow-${i}-${j} .pos-btn.active`);
+    const animation  = animActive ? ['static','pop','fade','wipe'][Array.from(animActive.parentElement.children).indexOf(animActive)] : 'pop';
+    const fontSize         = parseInt(document.getElementById(`et-fontsize-${i}-${j}`)?.value) || 70;
+    const rotation         = parseInt(document.getElementById(`et-rotation-${i}-${j}`)?.value) || 0;
+    const fadeInDuration   = parseFloat(document.getElementById(`et-fadein-${i}-${j}`)?.value) || 1.5;
+    const fadeOutDuration  = parseFloat(document.getElementById(`et-fadeout-${i}-${j}`)?.value) || 1.5;
+    const _c = (id) => { const el = document.getElementById(id); if (!el) return undefined; if (el.dataset.cleared === '1') return null; return el.value || null; };
+    const _n = (id) => { const el = document.getElementById(id); if (!el) return undefined; const v = el.value.trim(); return v !== '' ? parseFloat(v) : null; };
+    _copiedExtraStyle = {
+      textStyle, animation, fontSize, rotation, fadeInDuration, fadeOutDuration,
+      blockColorOverride:      _c(`et-blockco-${i}-${j}`),
+      textColorOverride:       _c(`et-textco-${i}-${j}`),
+      glowColorOverride:       _c(`et-glowco-${i}-${j}`),
+      glowTextColorOverride:   _c(`et-glowtextco-${i}-${j}`),
+      textStrokeColorOverride: _c(`et-strokeco-${i}-${j}`),
+      textStrokeSizeOverride:  _n(`et-strokesize-${i}-${j}`),
+      glowSizeOverride:        _n(`et-glowsize-${i}-${j}`),
+      boxBorderRadius:         _n(`et-boxradius-${i}-${j}`),
+      blockBorderRadius:       _n(`et-blockradius-${i}-${j}`),
+      textPadding:             _n(`et-padding-${i}-${j}`),
+    };
+    if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = '📋 Copy', 2000); }
+  }
+
+  async function pasteExtraStyle(i, j, evt) {
+    if (!_copiedExtraStyle) return alert('No layer style copied yet. Copy a style from a text layer first.');
+    const btn = evt?.target || event?.target;
+    const ets = getExtraTexts(i);
+    if (!ets[j]) return;
+    // Merge visual style — keep text, position, textAlign, textX, textY, startAt, endAt from target
+    const defined = Object.fromEntries(Object.entries(_copiedExtraStyle).filter(([, v]) => v !== undefined));
+    ets[j] = { ...ets[j], ...defined };
+    const container = document.getElementById(`extratexts-${i}`);
+    container.innerHTML = ets.map((et, newJ) => buildExtraTextHTML(i, newJ, et)).join('');
+    await saveExtraText(i);
+    if (btn) { btn.textContent = '✅ Pasted!'; setTimeout(() => btn.textContent = '📌 Paste', 2000); }
   }
 
   let _copiedStyle = null;
@@ -5889,7 +6592,8 @@
     if (!rawText.trim()) return '';
     const txt = rawText.length > 40 ? `${rawText.slice(0, 40)}…` : rawText;
     const style = et?.textStyle || seg.textStyle || 'box';
-    const hAlign = et?.textAlign || 'center';
+    const hPos  = et?.textHPosition || 'center';  // horizontal screen position
+    const hAlign = et?.textAlign || 'center';      // text formatting align
     const rotation = Number(et?.rotation) || 0;
     const fontSize = Number(et?.fontSize) || 70;
     const glowColor = et?.glowColorOverride || seg.glowColorOverride || seg.glowColor || '#00ffff';
@@ -5905,7 +6609,7 @@
     const hasFreePos = et?.textX != null && et?.textY != null;
     const { wrap, inner } = hasFreePos
       ? calcPreviewStyleFree(et.textX, et.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
-      : calcPreviewStyle(position, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      : calcPreviewStyle(position, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const startAt = et?.startAt ?? null;
     const endAt = et?.endAt ?? null;
     const animation = et?.animation || 'pop';
@@ -5914,6 +6618,39 @@
 
   function buildExtraTextPreviewsHTML(i, seg) {
     return (seg.extraTexts || []).map((et, j) => buildSingleExtraTextPreviewHTML(i, j, et, seg)).join('');
+  }
+
+  function buildBgOverlayPreviewHTML(i, seg) {
+    const ot = seg.overlayType || 'none';
+    const op = seg.overlayOpacity != null ? Number(seg.overlayOpacity) : 0.5;
+    const rad  = Number(seg.spotlightRadius) || 30;
+    const soft = Number(seg.spotlightSoftness) || 25;
+    let bg = '';
+    if (ot === 'spotlight') {
+      bg = `radial-gradient(circle at center, transparent 0%, transparent ${rad}%, rgba(0,0,0,${op}) ${Math.min(100, rad + soft)}%)`;
+    } else if (ot === 'dark') {
+      bg = `rgba(0,0,0,${op})`;
+    }
+    const display = (ot && ot !== 'none') ? '' : 'display:none;';
+    return `<div id="bg-overlay-preview-${i}" style="position:absolute;inset:0;pointer-events:none;border-radius:8px;${display}background:${bg}"></div>`;
+  }
+
+  function updateBgOverlayPreview(i) {
+    const el = document.getElementById(`bg-overlay-preview-${i}`);
+    if (!el) return;
+    const typeRow = document.getElementById(`overlay-type-row-${i}`);
+    const activeBtn = typeRow ? typeRow.querySelector('.style-text-btn.active') : null;
+    const ot = activeBtn ? (activeBtn.dataset.otype || 'none') : 'none';
+    if (!ot || ot === 'none') { el.style.display = 'none'; return; }
+    el.style.display = '';
+    const op   = parseFloat(document.getElementById(`overlay-opacity-${i}`)?.value ?? '0.5');
+    const rad  = parseInt(document.getElementById(`overlay-radius-${i}`)?.value ?? '30') || 30;
+    const soft = parseInt(document.getElementById(`overlay-soft-${i}`)?.value ?? '25') || 25;
+    if (ot === 'spotlight') {
+      el.style.background = `radial-gradient(circle at center, transparent 0%, transparent ${rad}%, rgba(0,0,0,${op}) ${Math.min(100, rad + soft)}%)`;
+    } else {
+      el.style.background = `rgba(0,0,0,${op})`;
+    }
   }
 
   function updateExtraTextPreviewAll(i, extraTexts) {
@@ -5966,10 +6703,10 @@
     const blocks = document.querySelectorAll(`#extratexts-${i} .extra-text-block`);
     return Array.from(blocks).map((_, j) => {
       const text = document.getElementById(`et-input-${i}-${j}`)?.value || '';
-      const posActive = document.querySelector(`#et-posrow-${i}-${j} .pos-btn.active`);
-      const position  = posActive
-        ? ['top','center','bottom'][Array.from(posActive.parentElement.children).indexOf(posActive)]
-        : 'center';
+      const hPosActive = document.querySelector(`#et-hposrow-${i}-${j} .pos-btn.active`);
+      const vPosActive = document.querySelector(`#et-vposrow-${i}-${j} .pos-btn.active`);
+      const textHPosition = hPosActive?.dataset.hpos || 'center';
+      const position      = vPosActive?.dataset.vpos || 'center';
       const styActive   = document.querySelector(`#et-stylerow-${i}-${j} .pos-btn.active`);
       const textStyle   = styActive   ? ['box','glow','block','shadow','plain'][Array.from(styActive.parentElement.children).indexOf(styActive)] : '';
       const animActive  = document.querySelector(`#et-animrow-${i}-${j} .pos-btn.active`);
@@ -6012,7 +6749,7 @@
       if (boxBorderRadius         !== undefined) overrides.boxBorderRadius         = boxBorderRadius;
       if (blockBorderRadius       !== undefined) overrides.blockBorderRadius       = blockBorderRadius;
       if (textPadding             !== undefined) overrides.textPadding             = textPadding;
-      return { text, position, textStyle, animation, textAlign, rotation, fontSize, startAt, endAt, fadeInDuration, fadeOutDuration, textX, textY, ...overrides };
+      return { text, position, textHPosition, textStyle, animation, textAlign, rotation, fontSize, startAt, endAt, fadeInDuration, fadeOutDuration, textX, textY, ...overrides };
     });
   }
 
@@ -6044,17 +6781,50 @@
     saveExtraText(i);
   }
 
-  async function setExtraPos(i, j, pos) {
-    document.querySelectorAll(`#et-posrow-${i}-${j} .pos-btn`).forEach((b,idx) =>
-      b.classList.toggle('active', ['top','center','bottom'][idx] === pos));
-    const xEl = document.getElementById(`et-fpx-${i}-${j}`);
-    const yEl = document.getElementById(`et-fpy-${i}-${j}`);
-    if (xEl) xEl.value = '';
-    if (yEl) yEl.value = '';
-    const preview = document.getElementById(`et-preview-${i}-${j}`);
-    if (preview) preview.dataset.freepos = '0';
-    await saveExtraText(i);
-    addEditorLog(`✅ Scene ${i+1} layer ${j+1} → ${pos}`);
+  // Illustrator-style extra text H align: snap X only, preserve current Y
+  function _currentExtraX(i, j) {
+    const el = document.getElementById(`et-preview-${i}-${j}`);
+    if (el && el.dataset.freepos === '1') {
+      return parseFloat(document.getElementById(`et-fpx-${i}-${j}`)?.value) || 50;
+    }
+    const hBtn = document.querySelector(`#et-hposrow-${i}-${j} .pos-btn.active`);
+    return _hSnap[hBtn?.dataset.hpos || 'center'] ?? 50;
+  }
+
+  function _currentExtraY(i, j) {
+    const el = document.getElementById(`et-preview-${i}-${j}`);
+    if (el && el.dataset.freepos === '1') {
+      return parseFloat(document.getElementById(`et-fpy-${i}-${j}`)?.value) || 50;
+    }
+    const vBtn = document.querySelector(`#et-vposrow-${i}-${j} .pos-btn.active`);
+    return _vSnap[vBtn?.dataset.vpos || 'center'] ?? 50;
+  }
+
+  async function setExtraHPos(i, j, hPos) {
+    const newX     = _hSnap[hPos] ?? 50;
+    const currentY = _currentExtraY(i, j);
+    document.querySelectorAll(`#et-hposrow-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    applyExtraFreePos(i, j, newX, currentY, true);
+  }
+
+  async function setExtraVPos(i, j, vPos) {
+    const newY     = _vSnap[vPos] ?? 50;
+    const currentX = _currentExtraX(i, j);
+    document.querySelectorAll(`#et-vposrow-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    applyExtraFreePos(i, j, currentX, newY, true);
+  }
+
+  // Legacy — kept for any internal calls
+  async function setExtraPos(i, j, vPos, hPos) {
+    const newX = _hSnap[hPos] ?? 50;
+    const newY = _vSnap[vPos] ?? 50;
+    document.querySelectorAll(`#et-hposrow-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    document.querySelectorAll(`#et-vposrow-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    applyExtraFreePos(i, j, newX, newY, true);
   }
 
   async function setExtraStyle(i, j, style) {
@@ -6084,6 +6854,7 @@
     document.querySelectorAll(`#alignrow-${i} .pos-btn`).forEach((b, idx) =>
       b.classList.toggle('active', ['left','center','right'][idx] === align));
     updateTextPreview(i);
+    // Text align only — never touches position (textX/textY/textPosition/textHPosition)
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ index: i, textAlign: align })
@@ -6212,6 +6983,24 @@
         <input type="range" id="overlay-size-${i}-${j}" min="10" max="120" step="1" value="${overlay.size}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
         <span id="overlay-size-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.size)}%</span>
       </div>
+      <div class="ctrl-row">
+        <span class="ctrl-row-label">Align H</span>
+        <div style="display:flex;gap:3px" id="overlay-halign-${i}-${j}">
+          ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left — preserves vertical position',15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally — preserves vertical position',50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right — preserves vertical position',85]].map(([hp,svg,ttl,snapX]) => {
+            const isActive = Math.abs(Math.round(overlay.x) - snapX) < 5;
+            return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setOverlayHAlign(${i},${j},'${hp}')">${svg}</div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-row-label">Align V</span>
+        <div style="display:flex;gap:3px" id="overlay-valign-${i}-${j}">
+          ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top — preserves horizontal position',12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically — preserves horizontal position',50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom — preserves horizontal position',85]].map(([vp,svg,ttl,snapY]) => {
+            const isActive = Math.abs(Math.round(overlay.y) - snapY) < 5;
+            return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setOverlayVAlign(${i},${j},'${vp}')">${svg}</div>`;
+          }).join('')}
+        </div>
+      </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
         <span class="ctrl-row-label">X:</span>
         <input type="range" id="overlayx-${i}-${j}" min="-100" max="200" step="1" value="${Math.round(overlay.x)}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
@@ -6270,24 +7059,58 @@
   }
   function buildOverlayPreviewAnimationValue(mode, fadeInSeconds, fadeOutSeconds, timing, faderDuration, realTime = false) {
     const normalizedMode = mode === 'fade' ? 'fade-both' : (mode || 'fade-both');
+    if (normalizedMode === 'static') return '';
     if (normalizedMode === 'fader') {
       const cycleDurationMs = Math.max(500, Math.round((faderDuration || 1) * 1000));
       return `preview-fader ${cycleDurationMs}ms ease-in-out infinite`;
     }
-    const toMs = realTime ? (s) => Math.round(s * 1000) : (s) => previewEffectDurationMs(s, 520);
-    const delayMs = Math.max(0, Math.round(Number(timing?.delayMs) || 0));
-    const activeMs = Math.max(realTime ? 50 : 220, Math.round(Number(timing?.activeMs) || (realTime ? 50 : 220)));
-    const fadeInMs = Math.min(toMs(fadeInSeconds), Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.45)));
-    const fadeOutMs = Math.min(toMs(fadeOutSeconds), Math.max(realTime ? 50 : 120, Math.round(activeMs * 0.45)));
-    if (normalizedMode === 'static') return '';
-    if (normalizedMode === 'fade-in') return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms infinite both`;
-    if (normalizedMode === 'fade-out') {
-      const fadeOutDelay = delayMs + Math.max(0, activeMs - fadeOutMs);
-      return `preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${fadeOutDelay}ms infinite both`;
+
+    const sceneDur = timing?.sceneDuration || 5;
+    const startAtSec = timing?.startAt ?? 0;
+    const fadeInEndSec = startAtSec + (fadeInSeconds || 0);
+    // endAt = when fade-out STARTS (not when overlay ends).
+    // If user didn't explicitly set endAt, default to sceneDur - fadeOutSeconds so fade-out has room.
+    const rawFadeOutStart = timing?.endAtExplicit ? (timing?.endAt ?? sceneDur) : Math.max(fadeInEndSec, sceneDur - (fadeOutSeconds || 0));
+    const fadeOutStartSec = Math.max(fadeInEndSec, Math.min(sceneDur, rawFadeOutStart));
+    const fadeOutEndSec = Math.min(sceneDur, fadeOutStartSec + (fadeOutSeconds || 0));
+
+    if (realTime) {
+      // Real-time: use actual ms values
+      const animDurationMs = Math.max(50, Math.round((fadeOutEndSec - startAtSec) * 1000));
+      const inPct = ((fadeInSeconds / (fadeOutEndSec - startAtSec)) * 100).toFixed(2);
+      const holdPct = (((fadeOutStartSec - startAtSec) / (fadeOutEndSec - startAtSec)) * 100).toFixed(2);
+      const keyId = `ov-rt-${Math.random().toString(36).substr(2,6)}`;
+      const s = document.createElement('style');
+      if (normalizedMode === 'fade-in') s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}100%{opacity:1}}`;
+      else if (normalizedMode === 'fade-out') s.textContent = `@keyframes ${keyId}{0%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+      else s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+      document.head.appendChild(s);
+      return `${keyId} ${animDurationMs}ms linear ${Math.round(startAtSec * 1000)}ms 1 forwards`;
     }
-    const holdMs = Math.max(realTime ? 0 : 80, activeMs - fadeInMs - fadeOutMs);
-    const totalCycleDurationMs = fadeInMs + holdMs + fadeOutMs;
-    return `preview-fade ${fadeInMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms infinite, preview-fade-out ${fadeOutMs}ms cubic-bezier(0.4, 0, 0.2, 1) ${delayMs + fadeInMs + holdMs}ms infinite`;
+
+    // Preview plays at REAL TIME — animation loops match the actual scene duration
+    const secToMs = (sec) => Math.round(sec * 1000);
+
+    const visStartMs  = secToMs(startAtSec);
+    const fadeInEndMs = secToMs(fadeInEndSec);
+    const holdEndMs   = secToMs(fadeOutStartSec);
+    const visEndMs    = Math.max(holdEndMs + 50, secToMs(fadeOutEndSec));
+    const animDur     = Math.max(200, visEndMs - visStartMs);
+
+    const inPct   = (Math.min(99, (fadeInEndMs  - visStartMs) / animDur * 100)).toFixed(2);
+    const holdPct = (Math.min(99.5, Math.max(parseFloat(inPct) + 0.5, (holdEndMs - visStartMs) / animDur * 100))).toFixed(2);
+
+    const keyId = `ov-${Math.random().toString(36).substr(2,6)}`;
+    const s = document.createElement('style');
+    if (normalizedMode === 'fade-in')
+      s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}100%{opacity:1}}`;
+    else if (normalizedMode === 'fade-out')
+      s.textContent = `@keyframes ${keyId}{0%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+    else
+      s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
+    document.head.appendChild(s);
+    console.log('[overlay-anim]', { sceneDur, startAtSec, fadeOutStartSec, fadeInSeconds, fadeOutSeconds, animDur, inPct, holdPct, keyframe: s.textContent });
+    return `${keyId} ${animDur}ms linear ${visStartMs}ms infinite`;
   }
 
   function buildOverlayPreviewHTML(i, j, rawOverlay, replay = false, sceneDuration = 5, realTime = false) {
@@ -6298,8 +7121,9 @@
     const widthPx = `calc(var(--thumb-w, 96px) * ${widthRatio})`;
     const heightPx = `calc(var(--thumb-w, 96px) * ${heightRatio})`;
     const timing = getPreviewTimelineTiming(overlay.startAt, overlay.endAt, sceneDuration, 980, realTime);
-    const animValue = replay ? buildOverlayPreviewAnimationValue(overlay.animation, overlay.fadeInDuration, overlay.fadeOutDuration, timing, overlay.faderDuration, realTime) : '';
-    const initialOpacity = replay && ['fade-in','fade-both','fade','fader'].includes(overlay.animation) ? 'opacity:0;' : '';
+    const shouldAnimate = replay || ['fade-in','fade-both','fade','fader'].includes(overlay.animation);
+    const animValue = shouldAnimate ? buildOverlayPreviewAnimationValue(overlay.animation, overlay.fadeInDuration, overlay.fadeOutDuration, timing, overlay.faderDuration, realTime) : '';
+    const initialOpacity = shouldAnimate && ['fade-in','fade-both','fade','fader'].includes(overlay.animation) ? 'opacity:0;' : '';
     const animStyle = animValue ? `animation:${animValue};` : '';
     const previewRadius = Math.max(0, Number(overlay.borderRadius) || 0);
     return `<div id="overlay-prev-${i}-${j}" data-drag-seg="${i}" data-drag-overlay="${j}" style="position:absolute;left:${overlay.x}%;top:${overlay.y}%;width:${widthPx};height:${heightPx};transform:translate(-50%,-50%) rotate(${overlay.rotation}deg);overflow:hidden;border-radius:${previewRadius}px;z-index:${overlay.zOrder};pointer-events:auto;cursor:grab;${initialOpacity}${animStyle}"><img src="${overlayResolvedSrc(overlay.src)}" draggable="false" style="width:100%;height:100%;object-fit:${overlay.cropEnabled ? 'cover' : 'contain'};object-position:${overlay.cropX}% ${overlay.cropY}%;transform:${overlay.cropEnabled ? `scale(${overlay.cropScale})` : 'scale(1)'};transform-origin:${overlay.cropX}% ${overlay.cropY}%;pointer-events:none;user-select:none;display:block" /></div>`;
@@ -6413,6 +7237,37 @@
     if (aspectEl) aspectEl.value = String(Math.max(0.25, Math.min(4, Number(aspect) || 1)));
   }
 
+  function setOverlayAlign(i, j, x, y) {
+    const xEl = document.getElementById(`overlayx-${i}-${j}`);
+    const yEl = document.getElementById(`overlayy-${i}-${j}`);
+    const xLbl = document.getElementById(`overlayx-lbl-${i}-${j}`);
+    const yLbl = document.getElementById(`overlayy-lbl-${i}-${j}`);
+    if (xEl) { xEl.value = x; if (xLbl) xLbl.textContent = x + '%'; }
+    if (yEl) { yEl.value = y; if (yLbl) yLbl.textContent = y + '%'; }
+    onOverlayControlInput(i, j);
+    saveOverlay(i);
+  }
+
+  function setOverlayHAlign(i, j, hPos) {
+    const newX = _hSnap[hPos] ?? 50;
+    const xEl  = document.getElementById(`overlayx-${i}-${j}`);
+    const xLbl = document.getElementById(`overlayx-lbl-${i}-${j}`);
+    if (xEl) { xEl.value = newX; if (xLbl) xLbl.textContent = newX + '%'; }
+    document.querySelectorAll(`#overlay-halign-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    saveOverlay(i);
+  }
+
+  function setOverlayVAlign(i, j, vPos) {
+    const newY = _vSnap[vPos] ?? 50;
+    const yEl  = document.getElementById(`overlayy-${i}-${j}`);
+    const yLbl = document.getElementById(`overlayy-lbl-${i}-${j}`);
+    if (yEl) { yEl.value = newY; if (yLbl) yLbl.textContent = newY + '%'; }
+    document.querySelectorAll(`#overlay-valign-${i}-${j} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    saveOverlay(i);
+  }
+
   function setOverlayRotation(i, j, value, save = false) {
     const safe = Math.max(-180, Math.min(180, Math.round(Number(value) || 0)));
     const rangeEl = document.getElementById(`overlay-rot-${i}-${j}`);
@@ -6471,6 +7326,164 @@
     const list = document.getElementById(`overlay-list-${i}`);
     if (!list) return;
     list.innerHTML = overlays.map((overlay, j) => buildOverlayEditorHTML(i, j, overlay)).join('');
+  }
+
+  /* ════════════════════════════════════════════
+     VIDEO OVERLAY helpers
+     ════════════════════════════════════════════ */
+
+  function buildVideoOverlayEditorHTML(i, j, ov = {}) {
+    const x             = Number.isFinite(Number(ov.x))             ? Number(ov.x)             : 50;
+    const y             = Number.isFinite(Number(ov.y))             ? Number(ov.y)             : 50;
+    const size          = Number.isFinite(Number(ov.size))          ? Number(ov.size)          : 80;
+    const aspectRatio   = Number.isFinite(Number(ov.aspectRatio))   ? Number(ov.aspectRatio)   : (16/9);
+    const rotation      = Number.isFinite(Number(ov.rotation))      ? Number(ov.rotation)      : 0;
+    const borderRadius  = Number.isFinite(Number(ov.borderRadius))  ? Number(ov.borderRadius)  : 0;
+    const volume        = Number.isFinite(Number(ov.volume))        ? Number(ov.volume)        : 0;
+    const zOrder        = Number.isFinite(Number(ov.zOrder))        ? Number(ov.zOrder)        : 20;
+    const useAsBlurredBg = !!ov.useAsBlurredBg;
+    const src            = ov.src || '';
+    const vidDur         = ov.videoDurationInSeconds ?? '';
+    const filename       = src.split('/').pop() || src;
+    const previewUrl     = src ? `/public/overlay-videos/${src.includes('/') ? src.split('/').pop() : src}` : '';
+
+    return `<div class="overlay-image-block" data-ovvid-item="${j}" style="margin-top:6px;background:#0f172a;border:1px solid #0e7490;border-radius:8px;overflow:hidden">
+      <details class="layer-accordion" open>
+        <summary>
+          <span class="layer-accordion-title" style="display:flex;align-items:center;gap:6px">
+            🎬 <span style="font-size:12px;color:#e2e8f0;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${filename}</span>
+          </span>
+          <button class="btn sm red" type="button" style="flex-shrink:0" onclick="event.preventDefault();event.stopPropagation();removeOverlayVideo(${i},${j})">✕ Remove</button>
+        </summary>
+        <div class="layer-accordion-body" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+          <input type="hidden" id="ovvid-src-${i}-${j}"    value="${src}" />
+          <input type="hidden" id="ovvid-dur-${i}-${j}"    value="${vidDur}" />
+          <input type="hidden" id="ovvid-aspect-${i}-${j}" value="${aspectRatio.toFixed(4)}" />
+
+          <!-- Blurred background checkbox -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#0c4a6e;border:1px solid #0e7490;border-radius:6px;padding:7px 10px">
+            <input type="checkbox" id="ovvid-blurbg-${i}-${j}" ${useAsBlurredBg?'checked':''} onchange="saveOverlayVideos(${i})" style="width:16px;height:16px;accent-color:#0ea5e9;flex-shrink:0" />
+            <span style="font-size:12px;color:#bae6fd;font-weight:600">Use as blurred background</span>
+          </label>
+
+          <!-- Position X -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">X:</span>
+            <input type="range" id="ovvid-x-${i}-${j}" min="-50" max="150" step="1" value="${Math.round(x)}"
+                   oninput="document.getElementById('ovvid-x-lbl-${i}-${j}').textContent=this.value+'%'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-x-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(x)}%</span>
+          </div>
+          <!-- Position Y -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">Y:</span>
+            <input type="range" id="ovvid-y-${i}-${j}" min="-50" max="150" step="1" value="${Math.round(y)}"
+                   oninput="document.getElementById('ovvid-y-lbl-${i}-${j}').textContent=this.value+'%'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-y-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(y)}%</span>
+          </div>
+          <!-- Size -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">Size:</span>
+            <input type="range" id="ovvid-size-${i}-${j}" min="10" max="150" step="1" value="${Math.round(size)}"
+                   oninput="document.getElementById('ovvid-size-lbl-${i}-${j}').textContent=this.value+'%'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-size-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(size)}%</span>
+          </div>
+          <!-- Rotation -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">Rotate:</span>
+            <input type="range" id="ovvid-rot-${i}-${j}" min="-180" max="180" step="1" value="${Math.round(rotation)}"
+                   oninput="document.getElementById('ovvid-rot-lbl-${i}-${j}').textContent=this.value+'°'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-rot-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(rotation)}°</span>
+          </div>
+          <!-- Corner radius -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">Radius:</span>
+            <input type="range" id="ovvid-radius-${i}-${j}" min="0" max="500" step="5" value="${Math.round(borderRadius)}"
+                   oninput="document.getElementById('ovvid-radius-lbl-${i}-${j}').textContent=this.value+'px'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-radius-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(borderRadius)}px</span>
+          </div>
+          <!-- Volume -->
+          <div class="ctrl-row" style="align-items:center;gap:8px">
+            <span class="ctrl-row-label">Volume:</span>
+            <input type="range" id="ovvid-vol-${i}-${j}" min="0" max="1" step="0.05" value="${volume.toFixed(2)}"
+                   oninput="document.getElementById('ovvid-vol-lbl-${i}-${j}').textContent=this.value>0?Math.round(this.value*100)+'%':'Muted'"
+                   onchange="saveOverlayVideos(${i})" style="flex:1" />
+            <span id="ovvid-vol-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:46px;text-align:right">${volume > 0 ? Math.round(volume*100)+'%' : 'Muted'}</span>
+          </div>
+        </div>
+      </details>
+    </div>`;
+  }
+
+  function getOverlayVideoData(i, j) {
+    return {
+      src:                   document.getElementById(`ovvid-src-${i}-${j}`)?.value    || '',
+      videoDurationInSeconds: parseFloat(document.getElementById(`ovvid-dur-${i}-${j}`)?.value) || null,
+      aspectRatio:            parseFloat(document.getElementById(`ovvid-aspect-${i}-${j}`)?.value) || (16/9),
+      x:                     parseInt(document.getElementById(`ovvid-x-${i}-${j}`)?.value)      ?? 50,
+      y:                     parseInt(document.getElementById(`ovvid-y-${i}-${j}`)?.value)      ?? 50,
+      size:                  parseInt(document.getElementById(`ovvid-size-${i}-${j}`)?.value)   ?? 80,
+      rotation:              parseInt(document.getElementById(`ovvid-rot-${i}-${j}`)?.value)    ?? 0,
+      borderRadius:          parseInt(document.getElementById(`ovvid-radius-${i}-${j}`)?.value) ?? 0,
+      volume:                parseFloat(document.getElementById(`ovvid-vol-${i}-${j}`)?.value)  ?? 0,
+      zOrder:                20,
+      playbackRate:          1,
+      useAsBlurredBg:        document.getElementById(`ovvid-blurbg-${i}-${j}`)?.checked ?? false,
+    };
+  }
+
+  function getOverlayVideoDataAll(i) {
+    return Array.from(document.querySelectorAll(`#overlay-video-list-${i} [data-ovvid-item]`))
+      .map(block => parseInt(block.dataset.ovvidItem))
+      .filter(j => Number.isInteger(j))
+      .map(j => getOverlayVideoData(i, j));
+  }
+
+  async function saveOverlayVideos(i) {
+    const overlayVideos = getOverlayVideoDataAll(i);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, overlayVideos }),
+    });
+  }
+
+  async function uploadOverlayVideo(i) {
+    const fi = document.getElementById(`ovvid-file-${i}`);
+    if (!fi.files[0]) return;
+    const form = new FormData();
+    form.append('video', fi.files[0]);
+    form.append('index', i);
+    fi.value = '';
+    addEditorLog(`🎬 Uploading video overlay for scene ${i+1}...`);
+    document.getElementById(`card-${i}`)?.classList.add('replacing');
+    const res = await fetch('/upload-overlay-video', { method: 'POST', body: form });
+    const data = await res.json();
+    document.getElementById(`card-${i}`)?.classList.remove('replacing');
+    if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
+    addEditorLog(`✅ Video overlay uploaded (${data.videoDurationInSeconds ? data.videoDurationInSeconds.toFixed(1)+'s' : 'unknown duration'})`);
+    // Re-fetch the scene and refresh the list
+    const segsRes = await fetch('/segments');
+    const segs = await segsRes.json();
+    const seg = segs[i];
+    const list = document.getElementById(`overlay-video-list-${i}`);
+    if (list) list.innerHTML = (seg.overlayVideos||[]).filter(v=>v&&v.src).map((v,j) => buildVideoOverlayEditorHTML(i,j,v)).join('');
+  }
+
+  async function removeOverlayVideo(i, j) {
+    const overlayVideos = getOverlayVideoDataAll(i);
+    overlayVideos.splice(j, 1);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, overlayVideos }),
+    });
+    addEditorLog(`✅ Scene ${i+1} video overlay removed`);
+    // Re-render the list
+    const list = document.getElementById(`overlay-video-list-${i}`);
+    if (list) list.innerHTML = overlayVideos.map((v,j) => buildVideoOverlayEditorHTML(i,j,v)).join('');
   }
 
   /* Overlay image */
@@ -6644,9 +7657,12 @@
     const rot     = sh.rotation || 0;
     const zo      = sh.zOrder  || 5;
     const anim    = sh.animation || 'fade';
-    const fadeInDuration = sh.fadeInDuration ?? 1.5;
+    const curve   = sh.borderRadius ?? 0;
+    const fadeInDuration  = sh.fadeInDuration  ?? 1.5;
     const fadeOutDuration = sh.fadeOutDuration ?? 1.5;
-    const faderDuration = sh.faderDuration ?? 1;
+    const faderDuration   = sh.faderDuration   ?? 1;
+    const isSquareOrCircle = (type === 'square' || type === 'circle');
+    const wLabel = isSquareOrCircle ? 'Size:' : 'Width:';
     return `
     <div class="shape-block" id="shape-block-${i}-${k}">
       <details class="layer-accordion" open>
@@ -6666,82 +7682,121 @@
       <input type="hidden" id="shapez-${i}-${k}" value="${zo}" />
       <input type="hidden" id="shape-startat-${i}-${k}" value="${sh.startAt ?? 0}" />
       <input type="hidden" id="shape-endat-${i}-${k}" value="${sh.endAt ?? ''}" />
+
+      <!-- Type -->
       <div class="ctrl-row">
         <span class="ctrl-row-label">Type:</span>
-        <div style="display:flex;gap:4px" id="shapetype-${i}-${k}">
-          <div class="pos-btn style-text-btn ${type==='rectangle'?'active':''}"
-               onclick="setShapeType(${i},${k},'rectangle')">Rect</div>
-          <div class="pos-btn style-text-btn ${type==='circle'?'active':''}"
-               onclick="setShapeType(${i},${k},'circle')">Circle</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="shapetype-${i}-${k}">
+          <div class="pos-btn style-text-btn ${type==='rectangle'?'active':''}" onclick="setShapeType(${i},${k},'rectangle')">Rect</div>
+          <div class="pos-btn style-text-btn ${type==='square'?'active':''}"    onclick="setShapeType(${i},${k},'square')">Square</div>
+          <div class="pos-btn style-text-btn ${type==='circle'?'active':''}"    onclick="setShapeType(${i},${k},'circle')">Circle</div>
+          <div class="pos-btn style-text-btn ${type==='ribbon'?'active':''}"    onclick="setShapeType(${i},${k},'ribbon')">Ribbon</div>
         </div>
       </div>
-      <div class="ctrl-row">
-        <span class="ctrl-row-label">Animate:</span>
-        <div style="display:flex;gap:4px;flex-wrap:wrap" id="shapeanim-${i}-${k}">
-          ${[['static','Static'],['fade','Fade'],['wipe','Wipe'],['fader','Fader']].map(([a,lbl]) =>
-            `<div class="pos-btn style-text-btn ${anim===a?'active':''}" onclick="setShapeAnimation(${i},${k},'${a}')">${lbl}</div>`
-          ).join('')}
+
+      <!-- Size -->
+      <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Size</div>
+        <div class="ctrl-row" style="margin:0">
+          <span class="ctrl-row-label" id="shape-w-label-${i}-${k}">${wLabel}</span>
+          <input type="number" class="num-input" id="shapew-${i}-${k}" min="1" max="300"
+                 value="${w}" onchange="onShapeWidthChange(${i},${k})" />
+          <span style="font-size:10px;color:#64748b;margin-left:2px">%</span>
+        </div>
+        <div class="ctrl-row" id="shape-h-row-${i}-${k}" style="margin:0;display:${isSquareOrCircle?'none':'flex'}">
+          <span class="ctrl-row-label">Height:</span>
+          <input type="number" class="num-input" id="shapeh-${i}-${k}" min="1" max="300"
+                 value="${h}" onchange="saveShapes(${i})" />
+          <span style="font-size:10px;color:#64748b;margin-left:2px">%</span>
+        </div>
+        <div class="ctrl-row" id="shape-curve-row-${i}-${k}" style="align-items:center;gap:8px;margin:0;display:${type==='circle'?'none':'flex'}">
+          <span class="ctrl-row-label">Curve:</span>
+          <input type="range" id="shapecurve-${i}-${k}" min="0" max="50" step="1" value="${curve}"
+                 oninput="document.getElementById('shapecurve-v-${i}-${k}').textContent=this.value+'%';saveShapes(${i})"
+                 style="flex:1" />
+          <span id="shapecurve-v-${i}-${k}" style="font-size:11px;color:#94a3b8;min-width:32px;text-align:right">${curve}%</span>
         </div>
       </div>
-      <div id="shapefaderdurations-${i}-${k}" style="margin-top:6px;display:${anim==='fader' ? 'grid' : 'none'};gap:8px;">
-        <div class="ctrl-row" style="align-items:center;">
-          <span class="ctrl-row-label">Fader speed:</span>
+
+      <!-- Color & Opacity -->
+      <div class="ctrl-row" style="margin-top:6px">
+        <span class="ctrl-row-label">Color:</span>
+        <input type="color" class="mini-color" id="shapecolor-${i}-${k}" value="${color}" oninput="saveShapes(${i})" />
+        <span style="font-size:9px;color:#64748b;margin-left:8px">Opacity</span>
+        <input type="number" class="num-input" id="shapeopa-${i}-${k}" min="0" max="100"
+               value="${opacity}" onchange="saveShapes(${i})" style="width:46px;margin-left:4px" />
+        <span style="font-size:10px;color:#64748b">%</span>
+      </div>
+
+      <!-- Position -->
+      <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Position</div>
+        <div class="ctrl-row" style="margin:0">
+          <span class="ctrl-row-label">Align H</span>
+          <div style="display:flex;gap:3px" id="shape-halign-${i}-${k}">
+            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left',15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally',50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right',85]].map(([hp,svg,ttl,snapX]) => {
+              const isActive = Math.abs(Math.round(x) - snapX) < 5;
+              return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setShapeHAlign(${i},${k},'${hp}')">${svg}</div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ctrl-row" style="margin:0">
+          <span class="ctrl-row-label">Align V</span>
+          <div style="display:flex;gap:3px" id="shape-valign-${i}-${k}">
+            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top',12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically',50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom',85]].map(([vp,svg,ttl,snapY]) => {
+              const isActive = Math.abs(Math.round(y) - snapY) < 5;
+              return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setShapeVAlign(${i},${k},'${vp}')">${svg}</div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ctrl-row" style="margin:0">
+          <span class="ctrl-row-label">X / Y:</span>
+          <input type="number" class="num-input" id="shapex-${i}-${k}" min="-100" max="200" value="${x}" onchange="saveShapes(${i})" />
+          <span style="font-size:10px;color:#64748b">%</span>
+          <input type="number" class="num-input" id="shapey-${i}-${k}" min="-100" max="200" value="${y}" onchange="saveShapes(${i})" style="margin-left:4px" />
+          <span style="font-size:10px;color:#64748b">%</span>
+        </div>
+        <div class="ctrl-row" style="margin:0">
+          <span class="ctrl-row-label">Rotate:</span>
+          <input type="number" class="num-input" id="shaperot-${i}-${k}" min="-360" max="360" step="5" value="${rot}" onchange="saveShapes(${i})" />
+          <span style="font-size:10px;color:#64748b;margin-left:2px">°</span>
+          <button class="btn sm ghost rot-quick" onclick="document.getElementById('shaperot-${i}-${k}').value=45;saveShapes(${i})">45</button>
+          <button class="btn sm ghost rot-quick" onclick="document.getElementById('shaperot-${i}-${k}').value=-45;saveShapes(${i})">-45</button>
+        </div>
+      </div>
+
+      <!-- Animation -->
+      <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Animation</div>
+        <div class="ctrl-row" style="margin:0">
+          <div style="display:flex;gap:4px;flex-wrap:wrap" id="shapeanim-${i}-${k}">
+            ${[['static','Static'],['fade','Fade'],['wipe','Wipe'],['fader','Fader']].map(([a,lbl]) =>
+              `<div class="pos-btn style-text-btn ${anim===a?'active':''}" onclick="setShapeAnimation(${i},${k},'${a}')">${lbl}</div>`
+            ).join('')}
+          </div>
+        </div>
+        <div id="shapefaderdurations-${i}-${k}" style="display:${anim==='fader'?'flex':'none'};align-items:center;gap:6px;margin:0">
+          <span class="ctrl-row-label">Speed:</span>
           <select id="shapefader-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
             ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${Number(faderDuration)===v?'selected':''}>${v}s per cycle</option>`).join('')}
           </select>
         </div>
-      </div>
-      <div id="shapefadedurations-${i}-${k}" style="margin-top:6px;display:${anim==='fade' ? 'grid' : 'none'};gap:8px;">
-        <div class="ctrl-row" style="align-items:center;">
-          <span class="ctrl-row-label">Fade in:</span>
-          <select id="shapefadein-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
-            ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeInDuration)===v?'selected':''}>${v}s</option>`).join('')}
-          </select>
+        <div id="shapefadedurations-${i}-${k}" style="display:${anim==='fade'?'flex':'none'};flex-direction:column;gap:4px;margin:0">
+          <div class="ctrl-row" style="margin:0">
+            <span class="ctrl-row-label">Fade in:</span>
+            <select id="shapefadein-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
+              ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeInDuration)===v?'selected':''}>${v}s</option>`).join('')}
+            </select>
+          </div>
+          <div class="ctrl-row" style="margin:0">
+            <span class="ctrl-row-label">Fade out:</span>
+            <select id="shapefadeout-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
+              ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeOutDuration)===v?'selected':''}>${v}s</option>`).join('')}
+            </select>
+          </div>
         </div>
-        <div class="ctrl-row" style="align-items:center;">
-          <span class="ctrl-row-label">Fade out:</span>
-          <select id="shapefadeout-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
-            ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeOutDuration)===v?'selected':''}>${v}s</option>`).join('')}
-          </select>
-        </div>
       </div>
-      <div class="ctrl-row">
-        <span class="ctrl-row-label">Color:</span>
-        <input type="color" class="mini-color" id="shapecolor-${i}-${k}" value="${color}"
-               oninput="saveShapes(${i})" />
-        <span style="font-size:9px;color:#64748b;margin-left:6px">Opacity</span>
-        <input type="number" class="num-input" id="shapeopa-${i}-${k}" min="0" max="100"
-               value="${opacity}" onchange="saveShapes(${i})" style="width:46px" />
-        <span style="font-size:10px;color:#64748b">%</span>
-      </div>
-      <div class="ctrl-row">
-        <span class="ctrl-row-label">X / Y:</span>
-        <input type="number" class="num-input" id="shapex-${i}-${k}" min="-100" max="200"
-               value="${x}" onchange="saveShapes(${i})" />
-        <span style="font-size:10px;color:#64748b">%</span>
-        <input type="number" class="num-input" id="shapey-${i}-${k}" min="-100" max="200"
-               value="${y}" onchange="saveShapes(${i})" style="margin-left:4px" />
-        <span style="font-size:10px;color:#64748b">%</span>
-      </div>
-      <div class="ctrl-row">
-        <span class="ctrl-row-label">W / H:</span>
-        <input type="number" class="num-input" id="shapew-${i}-${k}" min="1" max="300"
-               value="${w}" onchange="saveShapes(${i})" />
-        <span style="font-size:10px;color:#64748b">%</span>
-        <input type="number" class="num-input" id="shapeh-${i}-${k}" min="1" max="300"
-               value="${h}" onchange="saveShapes(${i})" style="margin-left:4px" />
-        <span style="font-size:10px;color:#64748b">%</span>
-      </div>
-      <div class="ctrl-row">
-        <span class="ctrl-row-label">Rotate:</span>
-        <input type="number" class="num-input" id="shaperot-${i}-${k}" min="-360" max="360" step="5"
-               value="${rot}" onchange="saveShapes(${i})" />
-        <span style="font-size:10px;color:#64748b;margin-left:2px">°</span>
-        <button class="btn sm ghost rot-quick"
-                onclick="document.getElementById('shaperot-${i}-${k}').value=45;saveShapes(${i})">45</button>
-        <button class="btn sm ghost rot-quick"
-                onclick="document.getElementById('shaperot-${i}-${k}').value=-45;saveShapes(${i})">-45</button>
-      </div>
+
         </div>
       </details>
     </div>`;
@@ -6761,14 +7816,18 @@
 
   function buildShapePreviewsHTML(i, seg, realTime = false) {
     return (seg.overlayShapes || []).map((sh, k) => {
-      const wRatio = ((sh.width  || 30) / 100).toFixed(6);
-      const hRatio = ((sh.height || 15) / 100).toFixed(6);
-      const anim = sh.animation || 'fade';
+      const shType  = sh.type || 'rectangle';
+      const wRatio  = ((sh.width  || 30) / 100).toFixed(6);
+      const hRatio  = (shType === 'square' || shType === 'circle') ? wRatio : ((sh.height || 15) / 100).toFixed(6);
+      const anim    = sh.animation || 'fade';
+      const br      = Math.max(0, Math.min(50, sh.borderRadius ?? 0));
+      const bRadius = shType === 'circle' ? '50%' : `${br}%`;
+      const clipPth = shType === 'ribbon' ? 'polygon(0% 0%,100% 0%,90% 50%,100% 100%,0% 100%,10% 50%)' : '';
       return `<div id="shape-prev-${i}-${k}" data-drag-seg="${i}" data-drag-shape="${k}" data-animation="${anim}"` +
         ` style="position:absolute;left:${sh.x||50}%;top:${sh.y||50}%;` +
         `width:calc(var(--thumb-w, 96px) * ${wRatio});height:calc(var(--thumb-w, 96px) * ${hRatio});background:${sh.color||'#f59e0b'};` +
         `opacity:${sh.opacity??1};` +
-        `border-radius:${(sh.type||'rectangle')==='circle'?'50%':'0'};` +
+        `border-radius:${bRadius};${clipPth?`clip-path:${clipPth};`:''}` +
         `transform:translate(-50%,-50%) rotate(${sh.rotation||0}deg);z-index:${sh.zOrder||5};${shapePreviewAnimationStyle(sh, seg.duration || 5, realTime)}` +
         `pointer-events:auto;cursor:grab"></div>`;
     }).join('');
@@ -6779,15 +7838,23 @@
     return Array.from(blocks).map((_, k) => {
       const typeActive = document.querySelector(`#shapetype-${i}-${k} .pos-btn.active`);
       const animActive = document.querySelector(`#shapeanim-${i}-${k} .pos-btn.active`);
+      const _typeText = typeActive?.textContent?.trim().toLowerCase();
+      const _typeMap = { rect: 'rectangle', square: 'square', circle: 'circle', ribbon: 'ribbon' };
+      const _type = _typeMap[_typeText] || 'rectangle';
+      const _w = parseFloat(document.getElementById(`shapew-${i}-${k}`)?.value) || 30;
+      const _h = (_type === 'square' || _type === 'circle')
+        ? _w
+        : (parseFloat(document.getElementById(`shapeh-${i}-${k}`)?.value) || 15);
       return {
-        type:     typeActive?.textContent?.trim().toLowerCase() === 'circle' ? 'circle' : 'rectangle',
+        type: _type,
         animation: animActive ? ['static','fade','wipe','fader'][Array.from(animActive.parentElement.children).indexOf(animActive)] : 'fade',
         color:    document.getElementById(`shapecolor-${i}-${k}`)?.value   || '#ffffff',
         opacity:  (parseInt(document.getElementById(`shapeopa-${i}-${k}`)?.value)  || 100) / 100,
         x:        parseFloat(document.getElementById(`shapex-${i}-${k}`)?.value)   || 50,
         y:        parseFloat(document.getElementById(`shapey-${i}-${k}`)?.value)   || 50,
-        width:    parseFloat(document.getElementById(`shapew-${i}-${k}`)?.value)   || 30,
-        height:   parseFloat(document.getElementById(`shapeh-${i}-${k}`)?.value)   || 15,
+        width:    _w,
+        height:   _h,
+        borderRadius: parseInt(document.getElementById(`shapecurve-${i}-${k}`)?.value) || 0,
         rotation: parseInt(document.getElementById(`shaperot-${i}-${k}`)?.value)   || 0,
         zOrder:   parseInt(document.getElementById(`shapez-${i}-${k}`)?.value)     || 5,
         startAt:  parseFloat(document.getElementById(`shape-startat-${i}-${k}`)?.value) || 0,
@@ -6818,7 +7885,9 @@
       endAt: sfxEndRaw && !isNaN(parseFloat(sfxEndRaw)) ? parseFloat(sfxEndRaw) : null,
       volume: parseFloat(document.getElementById(`sfxvol-${i}`)?.value) || 1,
     } : null;
-    return { duration, mainText, extraTexts, overlayImages, overlayImage: overlayImages[0] || null, overlayShapes, soundEffect };
+    const audioDurationRaw = document.getElementById(`timeline-audioduration-${i}`)?.value;
+    const audioDuration = audioDurationRaw !== '' && audioDurationRaw != null ? parseFloat(audioDurationRaw) : null;
+    return { duration, audioDuration, mainText, extraTexts, overlayImages, overlayImage: overlayImages[0] || null, overlayShapes, soundEffect };
   }
 
   function refreshMiniTimeline(i) {
@@ -6996,6 +8065,24 @@
     }
   }
 
+  function setShapeHAlign(i, k, hPos) {
+    const newX = _hSnap[hPos] ?? 50;
+    const xEl  = document.getElementById(`shapex-${i}-${k}`);
+    if (xEl) xEl.value = newX;
+    document.querySelectorAll(`#shape-halign-${i}-${k} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.hpos === hPos));
+    saveShapes(i);
+  }
+
+  function setShapeVAlign(i, k, vPos) {
+    const newY = _vSnap[vPos] ?? 50;
+    const yEl  = document.getElementById(`shapey-${i}-${k}`);
+    if (yEl) yEl.value = newY;
+    document.querySelectorAll(`#shape-valign-${i}-${k} .pos-btn`).forEach(b =>
+      b.classList.toggle('active', b.dataset.vpos === vPos));
+    saveShapes(i);
+  }
+
   async function saveShapes(i) {
     const shapes = getShapes(i);
     updateShapePreviewAll(i, shapes);
@@ -7037,7 +8124,35 @@
 
   function setShapeType(i, k, type) {
     document.querySelectorAll(`#shapetype-${i}-${k} .pos-btn`).forEach((b, idx) =>
-      b.classList.toggle('active', ['rectangle','circle'][idx] === type));
+      b.classList.toggle('active', ['rectangle','square','circle','ribbon'][idx] === type));
+    const isSquareOrCircle = type === 'square' || type === 'circle';
+    // Show/hide height row
+    const hRow = document.getElementById(`shape-h-row-${i}-${k}`);
+    if (hRow) hRow.style.display = isSquareOrCircle ? 'none' : 'flex';
+    // Adapt width label
+    const wLabel = document.getElementById(`shape-w-label-${i}-${k}`);
+    if (wLabel) wLabel.textContent = isSquareOrCircle ? 'Size:' : 'Width:';
+    // Show/hide curve slider (circle is always round — no curve control needed)
+    const curveRow = document.getElementById(`shape-curve-row-${i}-${k}`);
+    if (curveRow) curveRow.style.display = type === 'circle' ? 'none' : 'flex';
+    // Sync height = width for square/circle
+    if (isSquareOrCircle) {
+      const wEl = document.getElementById(`shapew-${i}-${k}`);
+      const hEl = document.getElementById(`shapeh-${i}-${k}`);
+      if (wEl && hEl) hEl.value = wEl.value;
+    }
+    saveShapes(i);
+  }
+
+  function onShapeWidthChange(i, k) {
+    // Keep height in sync for square and circle
+    const typeActive = document.querySelector(`#shapetype-${i}-${k} .pos-btn.active`);
+    const typeText = typeActive?.textContent?.trim().toLowerCase();
+    if (typeText === 'square' || typeText === 'circle') {
+      const wEl = document.getElementById(`shapew-${i}-${k}`);
+      const hEl = document.getElementById(`shapeh-${i}-${k}`);
+      if (wEl && hEl) hEl.value = wEl.value;
+    }
     saveShapes(i);
   }
 
@@ -7898,28 +9013,116 @@
     const applyBtn = document.getElementById('apply-update-btn');
     const checkBtn = document.getElementById('check-update-btn');
     if (!confirm('This will download and install the latest update, then restart the app. Continue?')) return;
+
     applyBtn.disabled = true;
     checkBtn.disabled = true;
     applyBtn.textContent = 'Installing…';
     statusEl.style.color = '#94a3b8';
-    statusEl.textContent = 'Downloading update…';
+    statusEl.textContent = 'Installing update…';
+
+    // Show full-screen overlay
+    const overlay  = document.getElementById('update-overlay');
+    const uovTitle  = document.getElementById('uov-title');
+    const uovBar    = document.getElementById('uov-bar');
+    const uovCounts = document.getElementById('uov-counts');
+    const uovFile   = document.getElementById('uov-file');
+    const uovStatus = document.getElementById('uov-status');
+    if (overlay) overlay.style.display = 'flex';
+
+    // Listen for per-file download progress emitted by the server
+    function onProgress({ file, current, total }) {
+      const tProg = (I18N[window._appLang||'en']||I18N.en);
+      const pct = Math.round((current / total) * 100);
+      if (uovBar)    uovBar.style.width = pct + '%';
+      if (uovCounts) uovCounts.textContent = tProg.update_overlay_file_of(current, total);
+      if (uovFile)   uovFile.textContent   = file;
+      if (uovStatus) uovStatus.textContent = tProg.update_overlay_downloading;
+    }
+    socket.on('update-progress', onProgress);
+
+    const uovReloadBtn = document.getElementById('uov-reload-btn');
+
+    // Guard so we only trigger the reload once
+    let reloaded = false;
+    function doReload() {
+      if (reloaded) return;
+      reloaded = true;
+      if (uovReloadBtn) uovReloadBtn.style.display = 'none';
+      const tR = (I18N[window._appLang||'en']||I18N.en);
+      if (uovTitle)  uovTitle.textContent  = tR.update_overlay_back_online;
+      if (uovStatus) uovStatus.textContent = tR.update_overlay_reloading;
+      // Clear dismissal flag so the banner can show for the next available update
+      sessionStorage.removeItem('update-banner-dismissed');
+      setTimeout(() => location.reload(), 400);
+    }
+
     try {
-      const res = await fetch('/apply-update', { method: 'POST' });
+      const res  = await fetch('/apply-update', { method: 'POST' });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      statusEl.style.color = '#10b981';
-      statusEl.textContent = `✅ Updated to v${data.version}! The app is restarting — please refresh this page in a few seconds.`;
-      applyBtn.style.display = 'none';
-      // Auto-reload after 4 seconds
-      setTimeout(() => location.reload(), 4000);
+
+      // All files downloaded — server is now restarting
+      socket.off('update-progress', onProgress);
+      const tUpdate = (I18N[window._appLang||'en']||I18N.en);
+      if (uovBar)    uovBar.style.width    = '100%';
+      if (uovTitle)  uovTitle.textContent  = `✅ Updated to v${data.version}`;
+      if (uovCounts) uovCounts.textContent = '';
+      if (uovFile)   uovFile.textContent   = '';
+      if (uovStatus) uovStatus.textContent = tUpdate.update_overlay_restarting;
+      statusEl.style.color    = '#10b981';
+      statusEl.textContent    = `✅ Updated to v${data.version}! Restarting…`;
+      applyBtn.style.display  = 'none';
+
+      // Primary: detect socket reconnection (fires as soon as server is back up)
+      socket.once('connect', doReload);
+
+      // Fallback: poll /ping every 800 ms in case socket takes longer to reconnect
+      const pingTimer = setInterval(async () => {
+        try {
+          const r = await fetch('/ping');
+          if (r.ok) { clearInterval(pingTimer); doReload(); }
+        } catch (_) { /* server still restarting */ }
+      }, 800);
+
+      // Last-resort fallback: show a manual "Reload Now" button after 6 s
+      setTimeout(() => {
+        if (reloaded) return;
+        const tLR = (I18N[window._appLang||'en']||I18N.en);
+        if (uovReloadBtn) {
+          uovReloadBtn.textContent = tLR.reload_now;
+          uovReloadBtn.style.display = 'block';
+        }
+      }, 6000);
+
     } catch (err) {
+      socket.off('update-progress', onProgress);
+      if (overlay) overlay.style.display = 'none';
       statusEl.style.color = '#ef4444';
       statusEl.textContent = '❌ Update failed: ' + err.message;
-      applyBtn.disabled = false;
-      checkBtn.disabled = false;
+      applyBtn.disabled    = false;
+      checkBtn.disabled    = false;
       applyBtn.textContent = '⬇️ Download & Install Update';
     }
   }
 </script>
+
+<!-- ── Full-screen update overlay ─────────────────────────────────────────── -->
+<div id="update-overlay" style="
+    display:none;position:fixed;inset:0;z-index:99999;
+    background:rgba(10,15,28,0.96);
+    flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    font-family:inherit;
+">
+  <div style="font-size:52px;line-height:1">🔄</div>
+  <h2 id="uov-title" data-i18n="update_overlay_title" style="margin:0;font-size:22px;color:#f8fafc;font-weight:700">Installing Update…</h2>
+  <!-- progress bar -->
+  <div style="width:420px;max-width:90vw;background:#1e293b;border-radius:8px;overflow:hidden;height:10px;box-shadow:0 0 0 1px #334155">
+    <div id="uov-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width 0.35s ease;border-radius:8px"></div>
+  </div>
+  <div id="uov-counts" data-i18n="update_overlay_preparing" style="color:#64748b;font-size:12px">Preparing…</div>
+  <div id="uov-file"   style="color:#94a3b8;font-size:13px;font-family:monospace;letter-spacing:0.02em;max-width:90vw;text-align:center;word-break:break-all"></div>
+  <div id="uov-status" data-i18n="update_overlay_downloading" style="color:#475569;font-size:12px;margin-top:4px">Downloading files…</div>
+  <button id="uov-reload-btn" onclick="location.reload()" style="display:none;margin-top:8px;padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.4)">🔄 Reload Now</button>
+</div>
 </body>
 </html>

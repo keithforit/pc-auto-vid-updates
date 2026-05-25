@@ -7,6 +7,15 @@ const path = require('path');
 const multer = require('multer');
 const mp3Duration = require('mp3-duration');
 
+// Load .env file if present
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+    fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+        const match = line.match(/^([^#=]+)=(.*)$/);
+        if (match) process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
+    });
+}
+
 // Uploaded files land in public/backgrounds/, public/overlays/, public/voiceovers/, public/sfx/, or public/brand/ depending on route
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -20,7 +29,9 @@ const storage = multer.diskStorage({
                         ? './public/music/'
                         : req.path === '/upload-brand-image'
                             ? './public/brand/'
-                            : './public/backgrounds/';
+                            : req.path === '/upload-overlay-video'
+                                ? './public/overlay-videos/'
+                                : './public/backgrounds/';
         if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
         cb(null, dest);
     },
@@ -119,6 +130,43 @@ function normalizeSceneMedia(scene = {}) {
         nextScene.backgroundMusicVolume = 100;
     }
     return nextScene;
+}
+
+// Pre-render validation: strip any asset references whose files are missing from disk.
+// Returns a list of warning strings (empty = all good).
+function validateContentForRender(logFn) {
+    try {
+        const segs = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        let changed = false;
+        const warnings = [];
+        segs.forEach((seg, idx) => {
+            // SFX
+            if (seg.soundEffect?.file) {
+                const p = path.join(__dirname, 'public', 'sfx', seg.soundEffect.file);
+                if (!fs.existsSync(p)) {
+                    warnings.push(`Scene ${idx + 1}: SFX file "${seg.soundEffect.file}" not found — removed from render`);
+                    delete seg.soundEffect;
+                    changed = true;
+                }
+            }
+            // Custom voiceover
+            if (seg.voiceover_audio) {
+                const p = path.join(__dirname, 'public', 'voiceovers', seg.voiceover_audio);
+                if (!fs.existsSync(p)) {
+                    warnings.push(`Scene ${idx + 1}: Voiceover file "${seg.voiceover_audio}" not found — removed from render`);
+                    delete seg.voiceover_audio;
+                    changed = true;
+                }
+            }
+        });
+        if (changed) {
+            writeJsonFile('./src/Content.json', segs);
+            warnings.forEach(w => logFn && logFn('⚠️ ' + w));
+        }
+        return warnings;
+    } catch (e) {
+        return [];
+    }
 }
 
 // Return current segments so the dashboard can show them
@@ -239,6 +287,50 @@ app.get('/scene-draft-library', (req, res) => {
 });
 
 // Download a remote video to public/backgrounds/ and return the local filename
+// Probe a local video file for its duration using ffprobe.
+// Returns the duration in seconds (rounded to 2 dp), or null if ffprobe fails / is unavailable.
+async function getVideoDuration(filepath) {
+    const { execFile } = require('child_process');
+    return new Promise((resolve) => {
+        execFile('ffprobe', [
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            filepath,
+        ], (err, stdout) => {
+            if (err) { resolve(null); return; }
+            try {
+                const data = JSON.parse(stdout);
+                const dur = parseFloat(data.format?.duration);
+                resolve(Number.isFinite(dur) && dur > 0 ? Math.round(dur * 100) / 100 : null);
+            } catch { resolve(null); }
+        });
+    });
+}
+
+// Probe a local video file for its display aspect ratio.
+// Returns a number (width/height rounded to 3 dp) or null if unavailable.
+async function getVideoAspectRatio(filepath) {
+    const { execFile } = require('child_process');
+    return new Promise((resolve) => {
+        execFile('ffprobe', [
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_streams',
+            '-select_streams', 'v:0',
+            filepath,
+        ], (err, stdout) => {
+            if (err) { resolve(null); return; }
+            try {
+                const data = JSON.parse(stdout);
+                const stream = data.streams?.[0];
+                if (!stream || !stream.width || !stream.height) { resolve(null); return; }
+                resolve(Math.round((stream.width / stream.height) * 1000) / 1000);
+            } catch { resolve(null); }
+        });
+    });
+}
+
 async function downloadVideo(url) {
     if (!fs.existsSync('./public/backgrounds')) fs.mkdirSync('./public/backgrounds', { recursive: true });
     const axios = require('axios');
@@ -264,7 +356,7 @@ async function downloadVideo(url) {
 // Replace the video for one segment by searching Pexels with a new query
 app.post('/replace-video', async (req, res) => {
     const { index, query } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
     try {
         const axios = require('axios');
         const result = await axios.get(
@@ -277,9 +369,10 @@ app.post('/replace-video', async (req, res) => {
         const remoteUrl = chosen.video_files.sort((a, b) => b.width - a.width)[0].link;
 
         const filename = await downloadVideo(remoteUrl);
+        const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
-        segments[index].video_duration  = null;
+        segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ url: `/public/backgrounds/${filename}`, local: true });
@@ -291,12 +384,12 @@ app.post('/replace-video', async (req, res) => {
 // Replace the video for one segment by fetching a specific Pexels video page URL
 app.post('/replace-video-by-url', async (req, res) => {
     const { index, url } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
     try {
         const axios = require('axios');
         // Extract the numeric video ID from a Pexels page URL like:
         // https://www.pexels.com/video/dartboard-close-up-with-darts-hitting-target-34071374/
-        const pageMatch = url.match(/pexels\.com\/video\/[^/]*?-(\d+)\/?$/);
+        const pageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
         if (!pageMatch) {
             return res.status(400).json({ error: 'Could not extract a video ID from the URL. Make sure it is a Pexels video page URL.' });
         }
@@ -313,9 +406,10 @@ app.post('/replace-video-by-url', async (req, res) => {
         // Pick the highest quality file
         const remoteUrl = video.video_files.sort((a, b) => b.width - a.width)[0].link;
         const filename = await downloadVideo(remoteUrl);
+        const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
-        segments[index].video_duration  = null;
+        segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ url: `/public/backgrounds/${filename}`, local: true });
@@ -342,9 +436,10 @@ app.post('/replace-video-pixabay', async (req, res) => {
                            vids.medium?.url ? vids.medium.url :
                            vids.small?.url  ? vids.small.url  : vids.tiny.url);
         const filename = await downloadVideo(remoteUrl);
+        const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
-        segments[index].video_duration  = null;
+        segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ url: `/public/backgrounds/${filename}`, local: true });
@@ -377,9 +472,10 @@ app.post('/replace-video-pixabay-url', async (req, res) => {
                            vids.medium?.url ? vids.medium.url :
                            vids.small?.url  ? vids.small.url  : vids.tiny.url);
         const filename = await downloadVideo(remoteUrl);
+        const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
-        segments[index].video_duration  = null;
+        segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ url: `/public/backgrounds/${filename}`, local: true });
@@ -444,15 +540,64 @@ app.post('/upload-image', upload.single('image'), (req, res) => {
 });
 
 // Upload a local video file and assign it to a segment
-app.post('/upload-video', upload.single('video'), (req, res) => {
+app.post('/upload-video', upload.single('video'), async (req, res) => {
     try {
         const index = parseInt(req.body.index);
         const filename = req.file.filename; // e.g. "upload-1234567890.mp4"
+        const videoDuration = await getVideoDuration(req.file.path);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
-        segments[index].background_url = filename; // stored as filename, Background.tsx picks it up from backgrounds/
+        const isFirstVideo = !segments[index].background_url;
+        segments[index].background_url  = filename; // stored as filename, Background.tsx picks it up from backgrounds/
+        segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
+        // Auto-set scene duration to video length on first upload to a new scene
+        let durationUpdated = false;
+        if (isFirstVideo && videoDuration) {
+            segments[index].duration = videoDuration;
+            durationUpdated = true;
+        }
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
-        res.json({ filename, previewUrl: `/public/backgrounds/${filename}` });
+        res.json({ filename, previewUrl: `/public/backgrounds/${filename}`, videoDuration, durationUpdated });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Upload a video file as a positioned overlay for a scene
+app.post('/upload-overlay-video', upload.single('video'), async (req, res) => {
+    try {
+        const index = parseInt(req.body.index);
+        if (!req.file) return res.status(400).json({ error: 'No video file uploaded.' });
+        const filename = req.file.filename;
+        const [videoDurationInSeconds, aspectRatio] = await Promise.all([
+            getVideoDuration(req.file.path),
+            getVideoAspectRatio(req.file.path),
+        ]);
+        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+        const existing = Array.isArray(segments[index].overlayVideos) ? segments[index].overlayVideos : [];
+        const newOv = {
+            src: filename,
+            x: 50,
+            y: 50,
+            size: 80,
+            aspectRatio: aspectRatio ?? (16 / 9),
+            rotation: 0,
+            borderRadius: 0,
+            zOrder: 20,
+            volume: 0,
+            playbackRate: 1,
+            videoDurationInSeconds: videoDurationInSeconds ?? null,
+            useAsBlurredBg: false,
+        };
+        segments[index].overlayVideos = [...existing, newOv];
+        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+        res.json({
+            filename,
+            previewUrl: `/public/overlay-videos/${filename}`,
+            videoDurationInSeconds,
+            aspectRatio,
+            overlayIndex: existing.length,
+        });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -470,6 +615,7 @@ app.post('/upload-scene-audio', upload.single('audio'), async (req, res) => {
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].customAudioFile = req.file.filename;
         segments[index].audioFile = req.file.filename;
+        segments[index].audioDuration = duration;
         segments[index].duration = duration;
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ filename: req.file.filename, previewUrl: `/public/voiceovers/${req.file.filename}`, duration });
@@ -754,7 +900,7 @@ app.post('/preview-voice', async (req, res) => {
 // Add a new blank scene (optionally at a specific position)
 app.post('/add-scene', (req, res) => {
     try {
-        const { afterIndex, text, voiceover_text, resetAll } = req.body;
+        const { afterIndex, text, voiceover_text, resetAll, backgroundMusicEnabled } = req.body;
         const settings = readSettings();
         const segments = resetAll ? [] : JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         const newScene = {
@@ -779,6 +925,7 @@ app.post('/add-scene', (req, res) => {
             sceneFadeInDuration: 1.5,
             sceneFadeOutDuration: 1.5,
             textNoWrap: true,
+            backgroundMusicEnabled: backgroundMusicEnabled !== false,
         };
         const insertAt = (afterIndex !== undefined && afterIndex >= 0) ? afterIndex + 1 : segments.length;
         segments.splice(insertAt, 0, newScene);
@@ -868,8 +1015,8 @@ app.post('/reorder-scene', (req, res) => {
 app.post('/update-scene-texts', (req, res) => {
     try {
         const {
-            index, text, textPosition, textAlign, textAnimation, textFadeInDuration, textFadeOutDuration, extraTexts, mainTextStyleOverride,
-            overlayImage, overlayImages, overlayShapes, voiceover_text, voiceoverRichText, voiceEmphasis, voicevoxSpeaker,
+            index, text, textPosition, textHPosition, textAlign, textAnimation, textFadeInDuration, textFadeOutDuration, extraTexts, mainTextStyleOverride,
+            overlayImage, overlayImages, overlayShapes, overlayVideos, voiceover_text, voiceoverRichText, voiceEmphasis, voicevoxSpeaker,
             mainTextStartAt, mainTextEndAt,
             sceneAnimation, soundEffect, sceneFadeInDuration, sceneFadeOutDuration,
             backgroundMusicEnabled, backgroundMusicVolume, textNoWrap, textBoxWidth, textPadding,
@@ -877,6 +1024,7 @@ app.post('/update-scene-texts', (req, res) => {
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         if (text                  !== undefined) segments[index].text                  = text;
         if (textPosition          !== undefined) segments[index].textPosition          = textPosition;
+        if (textHPosition         !== undefined) segments[index].textHPosition         = textHPosition;
         if (textAlign             !== undefined) segments[index].textAlign             = textAlign;
         if (textAnimation         !== undefined) segments[index].textAnimation         = textAnimation;
         if (textFadeInDuration    !== undefined) segments[index].textFadeInDuration    = textFadeInDuration;
@@ -891,6 +1039,7 @@ app.post('/update-scene-texts', (req, res) => {
             segments[index].overlayImages = overlayImage?.src ? [overlayImage] : [];
         }
         if (overlayShapes         !== undefined) segments[index].overlayShapes         = overlayShapes;
+        if (overlayVideos         !== undefined) segments[index].overlayVideos         = Array.isArray(overlayVideos) ? overlayVideos : [];
         if (sceneAnimation        !== undefined) segments[index].sceneAnimation        = sceneAnimation;
         if (sceneFadeInDuration   !== undefined) segments[index].sceneFadeInDuration   = sceneFadeInDuration;
         if (sceneFadeOutDuration  !== undefined) segments[index].sceneFadeOutDuration  = sceneFadeOutDuration;
@@ -922,13 +1071,14 @@ app.post('/update-scene-texts', (req, res) => {
         if (voicevoxSpeaker       !== undefined) segments[index].voicevoxSpeaker       = voicevoxSpeaker;
         // Nullable fields: null = delete (revert to default), number/string = set
         const nullableFields = [
-             'textX', 'textY',
+             'textX', 'textY', 'backgroundBlur',
             'rotation', 'fontSize',
             'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride',
             'boxBorderRadius', 'blockBorderRadius',
             'mainTextStartAt', 'mainTextEndAt',
             'voiceSpeed', 'voicePitch', 'voiceVolume',
             'backgroundScale', 'backgroundX', 'backgroundY', 'kenBurns',
+            'videoSpeed', 'overlayType', 'overlayOpacity', 'spotlightRadius', 'spotlightSoftness', 'videoAudioVolume', 'videoFit',
         ];
         nullableFields.forEach(f => {
             if (f in req.body) {
@@ -986,6 +1136,37 @@ io.on('connection', (socket) => {
         const scripts = data.scripts.filter(s => s.trim() !== "").slice(0, 2);
         const contentType = data.contentType || 'stock'; // 'stock' | 'captions'
 
+        // ── Cancellation support ──────────────────────────────────────────
+        let cancelled = false;
+        let activeProc = null;
+
+        const cancelHandler = () => {
+            cancelled = true;
+            if (activeProc) {
+                try { activeProc.kill('SIGTERM'); } catch (_) {}
+                activeProc = null;
+            }
+            socket.emit('log', '⏹ Production cancelled.');
+            socket.emit('batch-cancelled');
+        };
+        socket.once('cancel-batch', cancelHandler);
+
+        // Helper: spawn a process, stream its output, reject on non-zero exit
+        const runProc = (cmd, args, opts = {}) => new Promise((resolve, reject) => {
+            if (cancelled) return reject(new Error('cancelled'));
+            const proc = spawn(cmd, args, opts);
+            activeProc = proc;
+            const fwd = d => d.toString().split('\n').filter(l => l.trim()).forEach(l => socket.emit('log', l));
+            proc.stdout?.on('data', fwd);
+            proc.stderr?.on('data', fwd);
+            proc.on('close', code => {
+                activeProc = null;
+                if (cancelled) return reject(new Error('cancelled'));
+                code === 0 ? resolve() : reject(new Error(`Process exited with code ${code}`));
+            });
+        });
+        // ─────────────────────────────────────────────────────────────────
+
         // Palette of visually distinct dark/rich colours for captions-only random mode
         const RANDOM_PALETTE = [
             '#0f172a','#1e1b4b','#1a0533','#0c1a2e','#0f2027','#1a1a2e',
@@ -994,6 +1175,7 @@ io.on('connection', (socket) => {
         ];
 
         for (let i = 0; i < scripts.length; i++) {
+            if (cancelled) break;
             try {
                 const script = scripts[i];
                 const japanese = isJapanese(script);
@@ -1003,15 +1185,10 @@ io.on('connection', (socket) => {
                 fs.writeFileSync('temp_input.txt', script);
 
                 // Step 1: Parse script → Content.json
-                // For captions-only mode, use a stripped parser that skips Pexels fetching
                 const parserScript = contentType === 'captions' ? 'parser-captions.js' : 'parser.js';
                 socket.emit('log', `🔍 Parsing script${contentType === 'captions' ? ' (captions only — skipping stock video fetch)' : ''}...`);
-                await new Promise((resolve, reject) => {
-                    const parserProc = spawn('node', [parserScript], { shell: false });
-                    parserProc.stdout.on('data', d => socket.emit('log', d.toString().trim()));
-                    parserProc.stderr.on('data', d => socket.emit('log', d.toString().trim()));
-                    parserProc.on('close', code => code === 0 ? resolve() : reject(new Error(`Parser exited with code ${code}`)));
-                });
+                await runProc('node', [parserScript]);
+                if (cancelled) break;
                 socket.emit('log', '✅ Script parsed into segments');
 
                 // For captions-only: assign brand or random colours to each scene
@@ -1022,7 +1199,7 @@ io.on('connection', (socket) => {
                     const brandColors = (mediaLib.brandColors || []).map(c => c.color).filter(Boolean);
                     const palette = brandColors.length > 0 ? brandColors : RANDOM_PALETTE;
                     let paletteIndex = Math.floor(Math.random() * palette.length);
-                    segments.forEach((seg, idx) => {
+                    segments.forEach((seg) => {
                         const color = palette[paletteIndex % palette.length];
                         paletteIndex++;
                         seg.background_url = '';
@@ -1043,23 +1220,18 @@ io.on('connection', (socket) => {
                 const audioScriptName = contentUsesVoicevox(segmentsForVoice, voiceSettings)
                     ? 'generate-audio-voicevox.js'
                     : japanese ? 'generate-audio-ja.js' : 'generate-audio.js';
-                await new Promise((resolve, reject) => {
-                    const audioProc = spawn('node', [audioScriptName], { shell: false });
-                    audioProc.stdout.on('data', d => socket.emit('log', d.toString().trim()));
-                    audioProc.stderr.on('data', d => socket.emit('log', d.toString().trim()));
-                    audioProc.on('close', code => code === 0 ? resolve() : reject(new Error(`Audio gen exited with code ${code}`)));
-                });
+                await runProc('node', [audioScriptName]);
+                if (cancelled) break;
                 socket.emit('log', '✅ Voiceovers ready');
 
                 // Step 3: Render video
                 const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
                 const finalName = `${title}_${Date.now()}.mp4`;
 
+                validateContentForRender(msg => socket.emit('log', msg));
                 socket.emit('log', '🎬 Rendering video (this takes a few minutes)...');
-                const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
-                render.stdout.on('data', (d) => socket.emit('log', d.toString().trim()));
-                render.stderr.on('data', (d) => socket.emit('log', d.toString().trim()));
-                await new Promise((res) => render.on('close', res));
+                await runProc('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+                if (cancelled) break;
 
                 if (!fs.existsSync('renders')) fs.mkdirSync('renders');
                 fs.renameSync('out/1.mp4', `renders/${finalName}`);
@@ -1067,11 +1239,15 @@ io.on('connection', (socket) => {
                 socket.emit('log', `✅ Saved to renders/${finalName}`);
 
             } catch (err) {
+                if (err.message === 'cancelled') break;
                 socket.emit('log', '❌ Error: ' + err.message);
             }
         }
 
-        socket.emit('status', { msg: '🏁 Batch complete!', progress: 100 });
+        socket.off('cancel-batch', cancelHandler);
+        if (!cancelled) {
+            socket.emit('status', { msg: '🏁 Batch complete!', progress: 100 });
+        }
     });
 
     // Re-render only (after manually replacing videos)
@@ -1090,9 +1266,16 @@ io.on('connection', (socket) => {
                 : japanese ? 'node generate-audio-ja.js' : 'node generate-audio.js';
 
             socket.emit('log', '🎙️ Re-generating voiceovers...');
-            execSync(audioCmd2, { stdio: 'pipe' });
+            // Use spawn (not execSync) so the event loop stays free and logs stream live
+            const audioScript = audioCmd2.replace(/^node\s+/, '');
+            const audioProc = spawn('node', [audioScript], { shell: false });
+            audioProc.stdout.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
+            audioProc.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
+            const audioCode = await new Promise(res => audioProc.on('close', res));
+            if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
             socket.emit('log', '✅ Voiceovers ready');
 
+            validateContentForRender(msg => socket.emit('log', msg));
             socket.emit('log', '🎬 Rendering...');
             const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
             render.stdout.on('data', d => socket.emit('log', d.toString().trim()));
@@ -1273,8 +1456,10 @@ app.post('/apply-update', async (req, res) => {
         const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
         const filesToUpdate = remote.files || UPDATABLE_FILES;
-        // Download and replace each file
-        for (const file of filesToUpdate) {
+        // Download and replace each file (emit progress to all clients)
+        for (let idx = 0; idx < filesToUpdate.length; idx++) {
+            const file = filesToUpdate[idx];
+            io.emit('update-progress', { file, current: idx + 1, total: filesToUpdate.length });
             const buf = await downloadFile(`${UPDATE_REPO_RAW}/${file}?t=${Date.now()}`);
             fs.writeFileSync(path.join(__dirname, file), buf);
         }
@@ -1286,7 +1471,6 @@ app.post('/apply-update', async (req, res) => {
             console.log(`\n🔄 Restarting after update to v${remote.version}...`);
             server.close(() => {
                 console.log('Server closed, restarting...');
-                io.removeAllListeners();
                 server.listen(3000, () => {
                     console.log('🚀 Dashboard at http://localhost:3000');
                 });
@@ -1297,7 +1481,43 @@ app.post('/apply-update', async (req, res) => {
     }
 });
 
+// Simple liveness probe — client polls this to know when the server is back up after a restart
+app.get('/ping', (req, res) => res.json({ ok: true }));
+
 server.listen(3000, () => {
     console.log('🚀 Dashboard at http://localhost:3000');
     exec('open http://localhost:3000');
+    // Backfill video_duration for any existing segments that are missing it.
+    // Runs once at startup so scenes already in the project loop correctly.
+    (async () => {
+        try {
+            const contentPath = './src/Content.json';
+            const segs = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+            let changed = false;
+            for (const seg of segs) {
+                if (
+                    seg.background_url &&
+                    seg.background_type !== 'image' &&
+                    seg.background_type !== 'color' &&
+                    seg.background_type !== 'gradient' &&
+                    (seg.video_duration == null)
+                ) {
+                    const filepath = `./public/backgrounds/${seg.background_url}`;
+                    if (fs.existsSync(filepath)) {
+                        const dur = await getVideoDuration(filepath);
+                        if (dur != null) {
+                            seg.video_duration = dur;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            if (changed) {
+                fs.writeFileSync(contentPath, JSON.stringify(segs, null, 2));
+                console.log('✅ Backfilled video_duration for existing scenes');
+            }
+        } catch (e) {
+            console.warn('⚠️  video_duration backfill failed:', e.message);
+        }
+    })();
 });
