@@ -4899,7 +4899,7 @@
         </details>
         </div><!-- /scene-body-wrap -->
       </div>
-      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="Preview scene">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="Mute" disabled>🔊</button></div></div>`;
+      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="video-overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildVideoOverlayPreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="Preview scene">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="Mute" disabled>🔊</button></div></div>`;
     return card;
   }
 
@@ -7129,6 +7129,40 @@
     return `<div id="overlay-prev-${i}-${j}" data-drag-seg="${i}" data-drag-overlay="${j}" style="position:absolute;left:${overlay.x}%;top:${overlay.y}%;width:${widthPx};height:${heightPx};transform:translate(-50%,-50%) rotate(${overlay.rotation}deg);overflow:hidden;border-radius:${previewRadius}px;z-index:${overlay.zOrder};pointer-events:auto;cursor:grab;${initialOpacity}${animStyle}"><img src="${overlayResolvedSrc(overlay.src)}" draggable="false" style="width:100%;height:100%;object-fit:${overlay.cropEnabled ? 'cover' : 'contain'};object-position:${overlay.cropX}% ${overlay.cropY}%;transform:${overlay.cropEnabled ? `scale(${overlay.cropScale})` : 'scale(1)'};transform-origin:${overlay.cropX}% ${overlay.cropY}%;pointer-events:none;user-select:none;display:block" /></div>`;
   }
 
+  function buildVideoOverlayPreviewHTML(i, j, ov = {}) {
+    const src = ov.src || '';
+    if (!src) return '';
+    const filename = src.includes('/') ? src.split('/').pop() : src;
+    const previewSrc = `/public/overlay-videos/${filename}`;
+    const x           = Number.isFinite(Number(ov.x))           ? Number(ov.x)           : 50;
+    const y           = Number.isFinite(Number(ov.y))           ? Number(ov.y)           : 50;
+    const size        = Number.isFinite(Number(ov.size))        ? Number(ov.size)        : 80;
+    const aspectRatio = Number.isFinite(Number(ov.aspectRatio)) ? Number(ov.aspectRatio) : (16/9);
+    const rotation    = Number.isFinite(Number(ov.rotation))    ? Number(ov.rotation)    : 0;
+    const radius      = Number.isFinite(Number(ov.borderRadius))? Number(ov.borderRadius): 0;
+    const zOrder      = Number.isFinite(Number(ov.zOrder))      ? Number(ov.zOrder)      : 20;
+    const useAsBlurredBg = !!ov.useAsBlurredBg;
+
+    if (useAsBlurredBg) {
+      return `<div id="video-overlay-prev-${i}-${j}" style="position:absolute;inset:0;z-index:${zOrder};overflow:hidden;pointer-events:none;border-radius:8px"><video src="${previewSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;filter:blur(8px);transform:scale(1.1)"></video></div>`;
+    }
+    const widthRatio  = (size / 100).toFixed(6);
+    const heightRatio = (size / 100 / Math.max(0.1, aspectRatio)).toFixed(6);
+    const widthPx  = `calc(var(--thumb-w, 96px) * ${widthRatio})`;
+    const heightPx = `calc(var(--thumb-w, 96px) * ${heightRatio})`;
+    return `<div id="video-overlay-prev-${i}-${j}" style="position:absolute;left:${x}%;top:${y}%;width:${widthPx};height:${heightPx};transform:translate(-50%,-50%) rotate(${rotation}deg);overflow:hidden;border-radius:${radius}px;z-index:${zOrder};pointer-events:none"><video src="${previewSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video></div>`;
+  }
+
+  function buildVideoOverlayPreviewsHTML(i, seg) {
+    return (seg?.overlayVideos || []).filter(v => v && v.src).map((v, j) => buildVideoOverlayPreviewHTML(i, j, v)).join('');
+  }
+
+  function updateVideoOverlayPreviews(i, seg) {
+    const host = document.getElementById(`video-overlay-previews-${i}`);
+    if (!host) return;
+    host.innerHTML = buildVideoOverlayPreviewsHTML(i, seg);
+  }
+
   function buildOverlayPreviewsHTML(i, segOrOverlays, replay = false, realTime = false) {
     const overlays = Array.isArray(segOrOverlays)
       ? segOrOverlays
@@ -7449,6 +7483,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, overlayVideos }),
     });
+    updateVideoOverlayPreviews(i, { overlayVideos });
   }
 
   async function uploadOverlayVideo(i) {
@@ -7471,6 +7506,7 @@
     const seg = segs[i];
     const list = document.getElementById(`overlay-video-list-${i}`);
     if (list) list.innerHTML = (seg.overlayVideos||[]).filter(v=>v&&v.src).map((v,j) => buildVideoOverlayEditorHTML(i,j,v)).join('');
+    updateVideoOverlayPreviews(i, seg);
   }
 
   async function removeOverlayVideo(i, j) {
