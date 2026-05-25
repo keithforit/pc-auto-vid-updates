@@ -1,7 +1,7 @@
 {
-  "version": "1.2.58",
+  "version": "1.2.59",
   "date": "2026-05-25",
-  "notes": "Video overlay blurred background: correct z-index layering so dark/spotlight filters apply on top; info note shown in editor when blurred background is active",
+  "notes": "Rename 'Shapes and Images' section to 'Shapes, Images & Videos'",
   "files": [
     "index.html"
   ]
