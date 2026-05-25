@@ -1,7 +1,7 @@
 {
-  "version": "1.2.57",
+  "version": "1.2.58",
   "date": "2026-05-25",
-  "notes": "Fix: Video overlay blurred background now shows behind overlay instead of replacing it",
+  "notes": "Video overlay blurred background: correct z-index layering so dark/spotlight filters apply on top; info note shown in editor when blurred background is active",
   "files": [
     "index.html"
   ]

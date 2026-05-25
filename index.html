@@ -6632,7 +6632,7 @@
       bg = `rgba(0,0,0,${op})`;
     }
     const display = (ot && ot !== 'none') ? '' : 'display:none;';
-    return `<div id="bg-overlay-preview-${i}" style="position:absolute;inset:0;pointer-events:none;border-radius:8px;${display}background:${bg}"></div>`;
+    return `<div id="bg-overlay-preview-${i}" style="position:absolute;inset:0;pointer-events:none;border-radius:8px;z-index:10;${display}background:${bg}"></div>`;
   }
 
   function updateBgOverlayPreview(i) {
@@ -7148,7 +7148,7 @@
     const widthPx  = `calc(var(--thumb-w, 96px) * ${widthRatio})`;
     const heightPx = `calc(var(--thumb-w, 96px) * ${heightRatio})`;
     const blurLayer = useAsBlurredBg
-      ? `<div style="position:absolute;inset:0;z-index:${zOrder - 1};overflow:hidden;border-radius:8px;pointer-events:none"><video src="${previewSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;filter:blur(8px);transform:scale(1.1);display:block"></video></div>`
+      ? `<div style="position:absolute;inset:0;z-index:2;overflow:hidden;border-radius:8px;pointer-events:none"><video src="${previewSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;filter:blur(8px);transform:scale(1.1);display:block"></video></div>`
       : '';
     const overlayLayer = `<div style="position:absolute;left:${x}%;top:${y}%;width:${widthPx};height:${heightPx};transform:translate(-50%,-50%) rotate(${rotation}deg);overflow:hidden;border-radius:${radius}px;z-index:${zOrder};pointer-events:none"><video src="${previewSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video></div>`;
     return `<div id="video-overlay-prev-${i}-${j}" style="position:absolute;inset:0;pointer-events:none">${blurLayer}${overlayLayer}</div>`;
@@ -7400,6 +7400,7 @@
             <input type="checkbox" id="ovvid-blurbg-${i}-${j}" ${useAsBlurredBg?'checked':''} onchange="saveOverlayVideos(${i})" style="width:16px;height:16px;accent-color:#0ea5e9;flex-shrink:0" />
             <span style="font-size:12px;color:#bae6fd;font-weight:600">Use as blurred background</span>
           </label>
+          ${useAsBlurredBg ? `<div style="font-size:11px;color:#94a3b8;background:#0f172a;border:1px solid #1e3a5f;border-radius:6px;padding:6px 10px;line-height:1.5">💡 Blurred background is active. Use <strong style="color:#bae6fd">Background Overlay</strong> in the <strong style="color:#bae6fd">Background &amp; Video</strong> section above to add a dark or spotlight filter on top of it.</div>` : ''}
 
           <!-- Position X -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
