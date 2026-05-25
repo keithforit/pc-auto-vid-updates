@@ -1,16 +1,8 @@
 {
-  "version": "1.2.56",
+  "version": "1.2.57",
   "date": "2026-05-25",
-  "notes": "Pixabay video fetch integration, rebuilt Remotion composition with dynamic settings, major editor UI overhaul, video overlays now show in scene preview thumbnail",
+  "notes": "Fix: Video overlay blurred background now shows behind overlay instead of replacing it",
   "files": [
-    "index.html",
-    "server.js",
-    "factory-server.js",
-    "package.json",
-    "src/Composition.tsx",
-    "src/Root.tsx",
-    "src/index.css",
-    "src/index.ts",
-    "tsconfig.json"
+    "index.html"
   ]
 }
