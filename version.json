@@ -1,7 +1,7 @@
 {
-  "version": "1.2.65",
+  "version": "1.2.66",
   "date": "2026-05-29",
-  "notes": "Fix i18n: main text section labels now update on language switch; Add Text Layer now has wrap, box width, and full fade-in/out/both animation options; fix default scene text from Japanese to English",
+  "notes": "Localise all confirm() dialogs — brand colour removal, brand image deletion, scene delete, text delete, draft restore, update install",
   "files": [
     "index.html",
     "server.js",

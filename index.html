@@ -1433,7 +1433,14 @@
       copy_style: 'Copy Style',
       paste_style: 'Paste Style',
       try_again: 'Try again',
-      reload_now: '🔄 Reload Now'
+      reload_now: '🔄 Reload Now',
+      // Confirmation dialogs
+      confirm_remove_colour: (color) => `Remove brand colour ${color}?`,
+      confirm_delete_image:  (name)  => `Delete brand image "${name}"?`,
+      confirm_delete_scene:  (n)     => `Delete Scene ${n}? This cannot be undone.`,
+      confirm_delete_orig_text: (n)  => `Delete the original text from Scene ${n}?`,
+      confirm_apply_update: 'This will download and install the latest update, then restart the app. Continue?',
+      confirm_restore_draft: 'Restore the saved project draft? This will replace the current scenes and settings with the draft copy.',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1751,7 +1758,14 @@
       copy_style: 'スタイルをコピー',
       paste_style: 'スタイルを貼り付け',
       try_again: '再試行',
-      reload_now: '🔄 今すぐ再読み込み'
+      reload_now: '🔄 今すぐ再読み込み',
+      // Confirmation dialogs
+      confirm_remove_colour: (color) => `ブランドカラー ${color} を削除しますか？`,
+      confirm_delete_image:  (name)  => `ブランド画像「${name}」を削除しますか？`,
+      confirm_delete_scene:  (n)     => `シーン ${n} を削除しますか？この操作は元に戻せません。`,
+      confirm_delete_orig_text: (n)  => `シーン ${n} のオリジナルテキストを削除しますか？`,
+      confirm_apply_update: '最新のアップデートをダウンロードしてインストールし、アプリを再起動します。続行しますか？',
+      confirm_restore_draft: '保存したプロジェクトドラフトを復元しますか？現在のシーンと設定がドラフトのコピーに置き換えられます。',
     }
   };
 
@@ -1991,7 +2005,7 @@
   }
 
   async function removeBrandColor(color) {
-    if (!confirm(`Remove brand colour ${color}?`)) return;
+    if (!confirm((I18N[window._appLang||'en']||I18N.en).confirm_remove_colour(color))) return;
     const res = await fetch('/media-library/remove-color', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ color })
@@ -2029,7 +2043,7 @@
   }
 
   async function deleteBrandImage(filename) {
-    if (!confirm(`Delete brand image "${filename}"?`)) return;
+    if (!confirm((I18N[window._appLang||'en']||I18N.en).confirm_delete_image(filename))) return;
     const res = await fetch('/media-library/delete-image', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename })
@@ -5258,7 +5272,7 @@
   }
 
   async function restoreProjectDraft() {
-    if (!confirm('Restore the saved project draft? This will replace the current scenes and settings with the draft copy.')) return;
+    if (!confirm((I18N[window._appLang||'en']||I18N.en).confirm_restore_draft)) return;
     const res = await fetch('/load-project-draft', { method:'POST' });
     const data = await res.json();
     if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
@@ -5558,7 +5572,7 @@
 
   /* Delete */
   async function deleteScene(i) {
-    if(!confirm(`Delete Scene ${i+1}? This cannot be undone.`)) return;
+    if(!confirm((I18N[window._appLang||'en']||I18N.en).confirm_delete_scene(i+1))) return;
     await fetch('/delete-scene',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})});
     addEditorLog(`🗑 Scene ${i+1} deleted`);
     if (document.getElementById('tab-scenes')?.classList.contains('active')) loadSegments();
@@ -6662,7 +6676,7 @@
   }
 
   async function deleteMainText(i) {
-    if (!confirm(`Delete the original text from Scene ${i+1}?`)) return;
+    if (!confirm((I18N[window._appLang||'en']||I18N.en).confirm_delete_orig_text(i+1))) return;
     const input = document.getElementById(`maintext-${i}`);
     if (input) input.value = '';
     await saveMainTextContent(i);
@@ -9263,7 +9277,7 @@
     const statusEl = document.getElementById('update-status');
     const applyBtn = document.getElementById('apply-update-btn');
     const checkBtn = document.getElementById('check-update-btn');
-    if (!confirm('This will download and install the latest update, then restart the app. Continue?')) return;
+    if (!confirm((I18N[window._appLang||'en']||I18N.en).confirm_apply_update)) return;
 
     applyBtn.disabled = true;
     checkBtn.disabled = true;
