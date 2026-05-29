@@ -3,9 +3,10 @@
 // Background colours are assigned by the server after parsing.
 //
 // Handles all known ChatGPT/Claude output variations:
-//   Headers : "2. HOOK" / "HOOK" / "4. CTA" / "CTA" / "Scene 2" / "Scene #2" / "第N位"
-//   Narration: "Narration:" / "Spoken narration:" / "Spoken hook:" / "Spoken CTA:"
-//   Topic   : "1. VIDEO TOPIC" / "VIDEO TOPIC" / "1. VIDEO_TOPIC" / "VIDEO_TOPIC"
+//   Headers  : "2. HOOK" / "HOOK" / "フック" / "4. CTA" / "CTA" / "Scene 2" / "Scene #2" / "シーン2" / "場面2" / "第N位"
+//   On-screen: "On-screen text:" / "キャプション:" / "テロップ:" / "画面テキスト:"
+//   Narration: "Narration:" / "ナレーション:" / "Spoken narration:" / "Spoken hook:" / "Spoken CTA:"
+//   Topic    : "1. VIDEO TOPIC" / "VIDEO TOPIC" / "1. VIDEO_TOPIC" / "VIDEO_TOPIC"
 const fs = require('fs');
 
 async function parse() {
@@ -20,12 +21,12 @@ async function parse() {
 
     // ── Split into blocks on any recognised scene header ─────────────────────
     // Matches (with or without leading number+dot):
-    //   "2. HOOK" / "HOOK"
+    //   "2. HOOK" / "HOOK" / "フック"
     //   "3. SCENES" / "SCENES"  (header-only, skipped below)
     //   "4. CTA"  / "CTA"
-    //   "Scene #2" / "Scene 2"
+    //   "Scene #2" / "Scene 2" / "シーン2" / "場面2"
     //   "第N位"
-    const HEADER_RE = /(?=(?:\d+\.\s*)?(?:HOOK|SCENES?|CTA)\b|Scene\s*#?\d+|第\d+位)/i;
+    const HEADER_RE = /(?=(?:\d+\.\s*)?(?:HOOK|フック|SCENES?|CTA)\b|Scene\s*#?\d+|シーン\s*#?\d+|場面\s*#?\d+|第\d+位)/i;
     const blocks = rawText.split(HEADER_RE);
 
     const segments = [];
@@ -40,15 +41,16 @@ async function parse() {
         // ── On-screen text ───────────────────────────────────────────────────
         // Use [\s\S]*? so multi-line on-screen text is captured in full,
         // stopping when the next known label (Narration/Spoken/Visual) appears.
+        // Also accepts Japanese aliases: キャプション / テロップ / 画面テキスト
         const textMatch = trimmed.match(
-            /(?:On-screen text|キャプション)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|Spoken|Visual)[ \t]*[:：]|\s*$)/i
+            /(?:On-screen text|キャプション|テロップ|画面テキスト)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|ナレーション|Spoken|Visual|視覚案)[ \t]*[:：]|\s*$)/i
         );
         if (!textMatch) continue; // block has no displayable text — skip
 
         // ── Narration / voiceover ────────────────────────────────────────────
-        // Accepts: "Narration:", "Spoken narration:", "Spoken hook:", "Spoken CTA:", etc.
+        // Accepts: "Narration:", "ナレーション:", "Spoken narration:", "Spoken hook:", "Spoken CTA:", etc.
         const narrationMatch = trimmed.match(
-            /(?:Narration|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|On-screen|キャプション|Scene|HOOK|CTA|\d+\.|$)|$)/i
+            /(?:Narration|ナレーション|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|視覚案|On-screen|テロップ|キャプション|画面テキスト|ナレーション|Scene|シーン|場面|フック|HOOK|CTA|\d+\.|$)|$)/i
         );
 
         segments.push({

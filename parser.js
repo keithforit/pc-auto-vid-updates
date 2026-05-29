@@ -46,12 +46,12 @@ async function parse() {
 
     // ── Split into blocks on any recognised scene header ─────────────────────
     // Handles (with or without leading number+dot):
-    //   "2. HOOK" / "HOOK"
+    //   "2. HOOK" / "HOOK" / "フック"
     //   "3. SCENES" / "SCENES"  (header-only, skipped below)
     //   "4. CTA"  / "CTA"
-    //   "Scene #2" / "Scene 2"
+    //   "Scene #2" / "Scene 2" / "シーン2" / "場面2"
     //   "第N位"
-    const HEADER_RE = /(?=(?:\d+\.\s*)?(?:HOOK|SCENES?|CTA)\b|Scene\s*#?\d+|第\d+位)/i;
+    const HEADER_RE = /(?=(?:\d+\.\s*)?(?:HOOK|フック|SCENES?|CTA)\b|Scene\s*#?\d+|シーン\s*#?\d+|場面\s*#?\d+|第\d+位)/i;
     const blocks = rawText.split(HEADER_RE);
 
     const segments = [];
@@ -66,22 +66,28 @@ async function parse() {
         // ── On-screen text ───────────────────────────────────────────────────
         // Use [\s\S]*? so multi-line on-screen text is captured in full,
         // stopping when the next known label (Narration/Spoken/Visual) appears.
+        // Also accepts Japanese aliases: キャプション / テロップ / 画面テキスト
         const textMatch = trimmed.match(
-            /(?:On-screen text|キャプション)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|Spoken|Visual)[ \t]*[:：]|\s*$)/i
+            /(?:On-screen text|キャプション|テロップ|画面テキスト)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|ナレーション|Spoken|Visual|視覚案)[ \t]*[:：]|\s*$)/i
         );
         if (!textMatch) continue;
 
         // ── Narration / voiceover ────────────────────────────────────────────
-        // Accepts: "Narration:", "Spoken narration:", "Spoken hook:", "Spoken CTA:", etc.
+        // Accepts: "Narration:", "ナレーション:", "Spoken narration:", "Spoken hook:", "Spoken CTA:", etc.
         const narrationMatch = trimmed.match(
-            /(?:Narration|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|On-screen|キャプション|Scene|HOOK|CTA|\d+\.|$)|$)/i
+            /(?:Narration|ナレーション|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|視覚案|On-screen|テロップ|キャプション|画面テキスト|ナレーション|Scene|シーン|場面|フック|HOOK|CTA|\d+\.|$)|$)/i
         );
 
         // ── Visual / stock footage query ─────────────────────────────────────
-        const visualMatch = trimmed.match(/(?:Visual idea|Visual \/ stock footage idea|視覚案)[:：]\s*(.*)/i);
+        const visualMatch = trimmed.match(/(?:Visual idea|Visual \/ stock footage idea|視覚案|ビジュアルアイデア)[:：]\s*(.*)/i);
 
         let query = visualMatch ? visualMatch[1].trim() : textMatch[1].trim();
         query = query.replace(/(Person looking |Close-up of |Quick flash of )/gi, '');
+
+        // Warn if query is non-English — Pexels works best with English search terms
+        if (/[぀-ヿ一-鿿]/.test(query)) {
+            console.log(`⚠️ Visual idea "${query}" contains non-English text — Pexels searches work best in English. / 視覚案が日本語です。英語で入力すると動画が見つかりやすくなります。`);
+        }
 
         let videoFile = '';
         try {
