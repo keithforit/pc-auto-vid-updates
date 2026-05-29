@@ -1189,6 +1189,55 @@
       delivery_hint: 'Use line breaks, 、 and 。 to shape the timing.',
       no_mp3_notice: 'No uploaded MP3. This scene will use generated voice.',
       uploaded_mp3_active: (file, dur) => `Uploaded MP3 active: ${file}${dur ? ` — ${dur}s` : ''}. Scene length follows this file.`,
+      // Media Text
+      btn_copy_style: '📋 Copy Style',
+      btn_paste_style: '📌 Paste Style',
+      text_style_box: 'Box',
+      text_style_glow: 'Glow',
+      text_style_block: 'Block',
+      text_style_shadow: 'Shadow',
+      text_style_plain: 'Plain',
+      anim_static: 'Static',
+      anim_pop: 'Pop',
+      anim_fade_in: 'Fade in',
+      anim_fade_out: 'Fade out',
+      anim_fade_both: 'Fade both',
+      anim_wipe: 'Wipe',
+      label_wrap: 'Wrap:',
+      btn_no_wrap_on: 'No wrap (on)',
+      btn_wrap_on: 'Wrap (on)',
+      hint_no_wrap: 'Text stays on one line',
+      hint_wrap: 'Text wraps to next line',
+      label_box_width: 'Box width:',
+      label_padding: 'Padding:',
+      label_size: 'Size:',
+      label_rotate: 'Rotate:',
+      label_colors: 'Colors:',
+      label_block_bg: 'Block BG',
+      label_text: 'Text',
+      label_glow: 'Glow',
+      label_glow_txt: 'Glow txt',
+      label_extra_text_layers: 'EXTRA TEXT LAYERS',
+      btn_add_text_layer: '+ Add text layer',
+      label_text_layer: 'Text Layer',
+      btn_remove: 'Remove',
+      label_align_h: 'Align H',
+      label_align_v: 'Align V',
+      label_style_overrides: 'Colour & Style Overrides',
+      label_style_overrides_hint: '(blank = inherit from scene)',
+      label_box_radius: 'Box radius:',
+      label_block_radius: 'Block radius:',
+      label_border: 'Border:',
+      label_stroke: 'Stroke:',
+      label_stroke_size: 'Stroke size:',
+      label_glow_size: 'Glow size:',
+      btn_upload_image: '🖼 Upload image',
+      btn_upload_video_overlay: '🎬 Upload video overlay',
+      btn_add_shape: '+ Add shape',
+      label_static: 'Static',
+      label_fade_in: 'Fade in',
+      label_fade_out: 'Fade out',
+      label_both: 'Both',
       // Draft status
       ml_brand_colours_title: '🎨 Brand Colours',
       ml_brand_colours_desc: 'Add your brand colours here. They will appear as swatches in the background/gradient colour pickers for each scene.',
@@ -1452,6 +1501,55 @@
       delivery_hint: '改行や「、」「。」を使ってタイミングを調整してください。',
       no_mp3_notice: 'アップロードされたMP3はありません。このシーンでは生成音声を使用します。',
       uploaded_mp3_active: (file, dur) => `アップロードされたMP3が有効です: ${file}${dur ? ` — ${dur}秒` : ''}。シーンの長さはこのファイルに従います。`,
+      // Media Text
+      btn_copy_style: '📋 スタイルをコピー',
+      btn_paste_style: '📌 スタイルを貼り付け',
+      text_style_box: 'ボックス',
+      text_style_glow: 'グロー',
+      text_style_block: 'ブロック',
+      text_style_shadow: 'シャドウ',
+      text_style_plain: 'プレーン',
+      anim_static: '静的',
+      anim_pop: 'ポップ',
+      anim_fade_in: 'フェードイン',
+      anim_fade_out: 'フェードアウト',
+      anim_fade_both: '両方フェード',
+      anim_wipe: 'ワイプ',
+      label_wrap: '折り返し:',
+      btn_no_wrap_on: '折り返しなし（オン）',
+      btn_wrap_on: '折り返し（オン）',
+      hint_no_wrap: 'テキストは一行に収まります',
+      hint_wrap: 'テキストは次の行に折り返されます',
+      label_box_width: 'ボックス幅:',
+      label_padding: 'パディング:',
+      label_size: 'サイズ:',
+      label_rotate: '回転:',
+      label_colors: 'カラー:',
+      label_block_bg: 'ブロック背景',
+      label_text: 'テキスト',
+      label_glow: 'グロー',
+      label_glow_txt: 'グローテキスト',
+      label_extra_text_layers: '追加テキストレイヤー',
+      btn_add_text_layer: '+ テキストレイヤーを追加',
+      label_text_layer: 'テキストレイヤー',
+      btn_remove: '削除',
+      label_align_h: '横揃え',
+      label_align_v: '縦揃え',
+      label_style_overrides: 'カラー＆スタイルオーバーライド',
+      label_style_overrides_hint: '（空欄 = シーンから継承）',
+      label_box_radius: 'ボックス角丸:',
+      label_block_radius: 'ブロック角丸:',
+      label_border: '境界線:',
+      label_stroke: '境界線:',
+      label_stroke_size: '境界線の太さ:',
+      label_glow_size: 'グローサイズ:',
+      btn_upload_image: '🖼 画像をアップロード',
+      btn_upload_video_overlay: '🎬 動画オーバーレイをアップロード',
+      btn_add_shape: '+ シェイプを追加',
+      label_static: '静的',
+      label_fade_in: 'フェードイン',
+      label_fade_out: 'フェードアウト',
+      label_both: '両方',
       // Draft status
       tab_media: '🎨 メディアライブラリ',
       ml_brand_colours_title: '🎨 ブランドカラー',
@@ -4419,8 +4517,8 @@
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn sm ghost" type="button" onclick="saveMainTextContent(${i})">${(I18N[window._appLang||'en']||I18N.en).save_text}</button>
                 <button class="btn sm red" type="button" onclick="deleteMainText(${i})">${(I18N[window._appLang||'en']||I18N.en).del_orig_text}</button>
-                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="Copy all text styling from this scene">📋 Copy Style</button>
-                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="Paste style to this scene">📌 Paste Style</button>
+                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).copy_style}">${(I18N[window._appLang||'en']||I18N.en).btn_copy_style}</button>
+                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).paste_style}">${(I18N[window._appLang||'en']||I18N.en).btn_paste_style}</button>
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:6px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
@@ -4430,7 +4528,7 @@
               <span style="font-size:10px;color:#64748b">s</span>
               <span class="ctrl-row-label" style="min-width:auto;color:#f87171">${(I18N[window._appLang||'en']||I18N.en).hide_at}</span>
               <input type="number" class="num-input" id="main-endat-${i}" min="0" max="60" step="0.5"
-                     value="${seg.mainTextEndAt ?? ''}" placeholder="auto" onchange="saveMainTextTiming(${i})" style="width:52px" />
+                     value="${seg.mainTextEndAt ?? ''}" placeholder="${(I18N[window._appLang||'en']||I18N.en).auto}" onchange="saveMainTextTiming(${i})" style="width:52px" />
               <span style="font-size:10px;color:#64748b">s (${(I18N[window._appLang||'en']||I18N.en).timing_hint})</span>
             </div>
             <div class="ctrl-row">
@@ -4485,64 +4583,77 @@
             <div class="ctrl-row">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).text_style}</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap" id="mainstylerow-${i}">
-                ${[['box','Box'],['glow','Glow'],['block','Block'],['shadow','Shadow'],['plain','Plain']].map(([s,lbl]) => {
+                ${((_t) => [
+                  ['box',    _t.text_style_box || 'Box'],
+                  ['glow',   _t.text_style_glow || 'Glow'],
+                  ['block',  _t.text_style_block || 'Block'],
+                  ['shadow', _t.text_style_shadow || 'Shadow'],
+                  ['plain',  _t.text_style_plain || 'Plain']
+                ].map(([s,lbl]) => {
                   const active = (seg.mainTextStyleOverride || seg.textStyle || 'box') === s;
                   return `<div class="pos-btn style-text-btn ${active?'active':''}" onclick="setMainTextStyle(${i},'${s}')">${lbl}</div>`;
-                }).join('')}
+                }).join(''))((I18N[window._appLang||'en']||I18N.en))}
               </div>
             </div>
             <div class="ctrl-row">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).animate}</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap" id="mainanimrow-${i}">
-                ${[['static','Static'],['pop','Pop'],['fade-in','Fade in'],['fade-out','Fade out'],['fade-both','Fade both'],['wipe','Wipe']].map(([a,lbl]) => {
+                ${((_t) => [
+                  ['static',    _t.anim_static || 'Static'],
+                  ['pop',       _t.anim_pop || 'Pop'],
+                  ['fade-in',   _t.anim_fade_in || 'Fade in'],
+                  ['fade-out',  _t.anim_fade_out || 'Fade out'],
+                  ['fade-both', _t.anim_fade_both || 'Fade both'],
+                  ['wipe',      _t.anim_wipe || 'Wipe']
+                ].map(([a,lbl]) => {
                   const ta = seg.textAnimation || 'pop';
                   const active = ta === a || (a === 'fade-both' && ta === 'fade');
                   return `<div class="pos-btn style-text-btn ${active?'active':''}" data-anim="${a}" onclick="setTextAnimation(${i},'${a}')">${lbl}</div>`;
-                }).join('')}
+                }).join(''))((I18N[window._appLang||'en']||I18N.en))}
               </div>
             </div>
             <div id="textfadedurations-${i}" style="margin-top:4px;display:${['fade','fade-in','fade-out','fade-both'].includes(seg.textAnimation||'pop') ? 'grid' : 'none'};gap:8px;">
               <div id="textfadeinrow-${i}" class="ctrl-row" style="display:${['fade','fade-in','fade-both'].includes(seg.textAnimation||'pop') ? 'flex' : 'none'};align-items:center;">
-                <span class="ctrl-row-label">Fade in:</span>
+                <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).fade_in}:</span>
                 <select id="textfadein-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
                   ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeInDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
                 </select>
               </div>
               <div id="textfadeoutrow-${i}" class="ctrl-row" style="display:${['fade','fade-out','fade-both'].includes(seg.textAnimation||'pop') ? 'flex' : 'none'};align-items:center;">
-                <span class="ctrl-row-label">Fade out:</span>
+                <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).fade_out}:</span>
                 <select id="textfadeout-${i}" onchange="saveMainTextFadeDurations(${i})" style="flex:1;max-width:180px;">
                   ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.textFadeOutDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
                 </select>
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
-              <span class="ctrl-row-label">Wrap:</span>
-              <button id="nowrap-btn-${i}" class="btn sm ${seg.textNoWrap ? '' : 'ghost'}" onclick="toggleTextNoWrap(${i})" title="Toggle single-line / no word wrap">${seg.textNoWrap ? '\u2194 No wrap (on)' : '\u21a9 Wrap (on)'}</button>
-              <span style="font-size:10px;color:#64748b">${seg.textNoWrap ? 'Text stays on one line' : 'Text wraps to next line'}</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_wrap}</span>
+              <button id="nowrap-btn-${i}" class="btn sm ${seg.textNoWrap ? '' : 'ghost'}" onclick="toggleTextNoWrap(${i})" title="${(I18N[window._appLang||'en']||I18N.en).wrap}">${seg.textNoWrap ? (I18N[window._appLang||'en']||I18N.en).btn_no_wrap_on : (I18N[window._appLang||'en']||I18N.en).btn_wrap_on}</button>
+              <span style="font-size:10px;color:#64748b">${seg.textNoWrap ? (I18N[window._appLang||'en']||I18N.en).hint_no_wrap : (I18N[window._appLang||'en']||I18N.en).hint_wrap}</span>
               <span style="font-size:10px;color:#64748b;margin-left:8px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto;margin-left:4px">Box width:</span>
+              <span class="ctrl-row-label" style="min-width:auto;margin-left:4px">${(I18N[window._appLang||'en']||I18N.en).label_box_width}</span>
               <input type="number" class="num-input" id="textboxwidth-${i}" min="10" max="200" step="5"
                      value="${seg.textBoxWidth ?? 85}" onchange="saveTextBoxWidth(${i})" style="width:52px" />
               <span style="font-size:10px;color:#64748b">% <button class="btn sm ghost" style="padding:1px 6px;font-size:10px" onclick="resetTextBoxWidth(${i})" title="Reset to default 85%">↺</button></span>
             </div>
             <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
-              <span class="ctrl-row-label">Padding:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_padding}</span>
               <input type="number" class="num-input" id="textpadding-${i}" min="0" max="120" step="2"
-                     value="${seg.textPadding ?? ''}" placeholder="auto" onchange="saveTextPadding(${i})" style="width:52px" />
-              <span style="font-size:10px;color:#64748b">px (block/box only — blank = default)
+                     value="${seg.textPadding ?? ''}" placeholder="${(I18N[window._appLang||'en']||I18N.en).auto}" onchange="saveTextPadding(${i})" style="width:52px" />
+              <span style="font-size:10px;color:#64748b">px (${(I18N[window._appLang||'en']||I18N.en).padding_hint})
                 <button class="btn sm ghost" style="padding:1px 6px;font-size:10px" onclick="resetTextPadding(${i})" title="Reset padding to default">↺</button>
               </span>
             </div>
 
             <div class="ctrl-row" style="gap:12px;flex-wrap:wrap;margin-top:4px">
               <div style="display:flex;align-items:center;gap:4px">
-                <span class="ctrl-row-label" style="min-width:auto">Size:</span>
+                <span class="ctrl-row-label" style="min-width:auto">${(I18N[window._appLang||'en']||I18N.en).label_size}</span>
                 <input type="number" class="num-input" id="fontsize-${i}" min="20" max="200" step="5"
                        value="${seg.fontSize||70}" onchange="saveMainTextMeta(${i})" style="width:56px" />
                 <span style="font-size:10px;color:#64748b">px</span>
               </div>
               <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-                <span class="ctrl-row-label" style="min-width:auto">Rotate:</span>
+                <span class="ctrl-row-label" style="min-width:auto">${(I18N[window._appLang||'en']||I18N.en).label_rotate}</span>
                 <input type="number" class="num-input" id="rotation-${i}" min="-360" max="360" step="5"
                        value="${seg.rotation||0}" onchange="saveMainTextMeta(${i})" style="width:54px" />
                 <span style="font-size:10px;color:#64748b">°</span>
@@ -4551,40 +4662,40 @@
               </div>
             </div>
             <div class="ctrl-row" style="flex-wrap:wrap;gap:6px;margin-top:2px">
-              <span class="ctrl-row-label">Colors:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_colors}</span>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <label style="font-size:9px;color:#94a3b8">Block BG</label>
+                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_block_bg}</label>
                 <input type="color" class="mini-color" id="blockco-${i}"
                        value="${seg.blockColorOverride||seg.blockColor||'#ffdd00'}"
                        oninput="saveMainColors(${i})" title="Block/Box background color" />
-                <label style="font-size:9px;color:#94a3b8">Text</label>
+                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_text}</label>
                 <input type="color" class="mini-color" id="textco-${i}"
                        value="${seg.textColorOverride||seg.textColor||'#000000'}"
                        oninput="saveMainColors(${i})" title="Text color" />
-                <label style="font-size:9px;color:#94a3b8">Glow</label>
+                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_glow}</label>
                 <input type="color" class="mini-color" id="glowco-${i}"
                        value="${seg.glowColorOverride||seg.glowColor||'#00ffff'}"
                        oninput="saveMainColors(${i})" title="Glow effect color" />
-                <label style="font-size:9px;color:#94a3b8">Glow txt</label>
+                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_glow_txt}</label>
                 <input type="color" class="mini-color" id="glowtextco-${i}"
                        value="${seg.glowTextColorOverride||'#ffffff'}"
                        oninput="saveMainColors(${i})" title="Glow text color" />
               </div>
             </div>
             <div id="main-box-radius-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='box'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:6px 10px">
-              <span class="ctrl-row-label">Box radius:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_box_radius}</span>
               <input type="number" class="num-input" id="boxradius-${i}" min="0" max="60" step="1"
                      value="${seg.boxBorderRadius ?? 20}" oninput="saveMainColors(${i})" style="width:58px" />
               <span style="font-size:10px;color:#64748b">px</span>
             </div>
             <div id="main-block-radius-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='block'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:6px 10px">
-              <span class="ctrl-row-label">Block radius:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_block_radius}</span>
               <input type="number" class="num-input" id="blockradius-${i}" min="0" max="60" step="1"
                      value="${seg.blockBorderRadius ?? 10}" oninput="saveMainColors(${i})" style="width:58px" />
               <span style="font-size:10px;color:#64748b">px</span>
             </div>
             <div id="main-border-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='block'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:6px 10px">
-              <span class="ctrl-row-label">Border:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_border}</span>
               <input type="color" class="mini-color" id="strokeco-${i}"
                      value="${seg.textStrokeColorOverride||seg.textStrokeColor||'#000000'}"
                      oninput="saveMainColors(${i})" title="Border colour" />
@@ -4594,19 +4705,19 @@
             </div>
             <div class="ctrl-row" style="gap:12px;flex-wrap:wrap;margin-top:4px">
               <div style="display:flex;align-items:center;gap:4px">
-                <span class="ctrl-row-label" style="min-width:auto">Glow:</span>
+                <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_glow}:</span>
                 <input type="number" class="num-input" id="glowsize-${i}" min="0" max="36" step="1"
                        value="${seg.glowSizeOverride ?? seg.glowSize ?? 14}" oninput="saveMainColors(${i})" style="width:58px" />
                 <span style="font-size:10px;color:#64748b">px</span>
               </div>
             </div>
 
-            <div class="ctrl-label" style="margin-top:10px">Extra text layers</div>
+            <div class="ctrl-label" style="margin-top:10px">${(I18N[window._appLang||'en']||I18N.en).label_extra_text_layers}</div>
             <div id="extratexts-${i}">
               ${(seg.extraTexts||[]).map((et,j) => buildExtraTextHTML(i,j,et)).join('')}
             </div>
             <button class="btn sm" style="background:#1e40af;width:100%;margin-top:2px"
-                    onclick="addExtraText(${i})">+ Add text layer</button>
+                    onclick="addExtraText(${i})">${(I18N[window._appLang||'en']||I18N.en).btn_add_text_layer}</button>
           </div>
         </details>
 
@@ -4616,7 +4727,7 @@
             <div style="margin-top:4px;margin-bottom:10px">
               <input type="file" id="overlay-file-${i}" accept="image/*,.svg" onchange="uploadOverlay(${i})" style="display:none" />
               <button class="btn sm" style="background:#7e22ce;width:100%"
-                      onclick="document.getElementById('overlay-file-${i}').click()">🖼 Upload image</button>
+                      onclick="document.getElementById('overlay-file-${i}').click()">${(I18N[window._appLang||'en']||I18N.en).btn_upload_image}</button>
               <div id="overlay-list-${i}">
                 ${getSceneOverlayList(seg).map((ov, j) => buildOverlayEditorHTML(i, j, ov)).join('')}
               </div>
@@ -4624,7 +4735,7 @@
             <!-- ── Video overlays ── -->
             <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
               <input type="file" id="ovvid-file-${i}" accept="video/*" onchange="uploadOverlayVideo(${i})" style="display:none" />
-              <button class="btn sm" style="background:#0e7490;width:100%" onclick="document.getElementById('ovvid-file-${i}').click()">🎬 Upload video overlay</button>
+              <button class="btn sm" style="background:#0e7490;width:100%" onclick="document.getElementById('ovvid-file-${i}').click()">${(I18N[window._appLang||'en']||I18N.en).btn_upload_video_overlay}</button>
               <div id="overlay-video-list-${i}">
                 ${(seg.overlayVideos||[]).filter(v=>v&&v.src).map((v,j) => buildVideoOverlayEditorHTML(i,j,v)).join('')}
               </div>
@@ -4634,7 +4745,7 @@
               ${(seg.overlayShapes||[]).map((sh,k) => buildShapeHTML(i,k,sh)).join('')}
             </div>
             <button class="btn sm" style="background:#4f46e5;width:100%;margin-top:2px"
-                    onclick="addShape(${i})">+ Add shape</button>
+                    onclick="addShape(${i})">${(I18N[window._appLang||'en']||I18N.en).btn_add_shape}</button>
           </div>
         </details>
 
@@ -4642,11 +4753,16 @@
           <summary data-i18n="scene_animation">Scene Animation</summary>
           <div class="scene-accordion-body">
             <div class="ctrl-row">
-              <span class="ctrl-row-label">Animate:</span>
+              <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).animate}:</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap" id="sceneanimrow-${i}">
-                ${[['static','Static'],['fade-in','Fade in'],['fade-out','Fade out'],['fade-both','Both']].map(([a,lbl]) =>
+                ${((_t) => [
+                  ['static',    _t.label_static || 'Static'],
+                  ['fade-in',   _t.label_fade_in || 'Fade in'],
+                  ['fade-out',  _t.label_fade_out || 'Fade out'],
+                  ['fade-both', _t.label_both || 'Both']
+                ].map(([a,lbl]) =>
                   `<div class="pos-btn style-text-btn ${(((seg.sceneAnimation||'static')==='fade'?'fade-in':(seg.sceneAnimation||'static'))===a)?'active':''}" onclick="setSceneAnimation(${i},'${a}')">${lbl}</div>`
-                ).join('')}
+                ).join(''))((I18N[window._appLang||'en']||I18N.en))}
               </div>
             </div>
             <div id="scenefadedurations-${i}" style="margin-top:10px;display:${(((seg.sceneAnimation||'static')==='fade'?'fade-in':(seg.sceneAnimation||'static'))==='static') ? 'none' : 'grid'};gap:8px;">
@@ -6020,6 +6136,7 @@
 
   /* ── Text position & extra layers ── */
   function buildExtraTextHTML(i, j, et) {
+    const t = (I18N[window._appLang||'en']||I18N.en);
     const pos = et.position || 'bottom';
     const sty = et.textStyle || '';
     const anim = et.animation || 'pop';
@@ -6042,36 +6159,36 @@
         <input type="hidden" id="et-fpy-${i}-${j}" value="${et.textY ?? ''}" />
         <details class="layer-accordion" open>
           <summary>
-            <span class="layer-accordion-title">Text Layer ${j + 1}</span>
+            <span class="layer-accordion-title">${t.label_text_layer} ${j + 1}</span>
             <div style="display:flex;gap:4px;align-items:center">
-              <button class="btn sm blue" onclick="event.preventDefault();event.stopPropagation();copyExtraStyle(${i},${j},event)" title="Copy style from this layer">📋 Copy</button>
-              <button class="btn sm purple" onclick="event.preventDefault();event.stopPropagation();pasteExtraStyle(${i},${j},event)" title="Paste style to this layer">📌 Paste</button>
-              <button class="btn sm red" onclick="event.preventDefault();event.stopPropagation();removeExtraText(${i},${j})">✕ Remove</button>
+              <button class="btn sm blue" onclick="event.preventDefault();event.stopPropagation();copyExtraStyle(${i},${j},event)" title="Copy style from this layer">📋 ${t.copy_style || 'Copy'}</button>
+              <button class="btn sm purple" onclick="event.preventDefault();event.stopPropagation();pasteExtraStyle(${i},${j},event)" title="Paste style to this layer">📌 ${t.paste_style || 'Paste'}</button>
+              <button class="btn sm red" onclick="event.preventDefault();event.stopPropagation();removeExtraText(${i},${j})">✕ ${t.btn_remove}</button>
             </div>
           </summary>
           <div class="layer-accordion-body">
         <input class="extra-text-input" id="et-input-${i}-${j}" value="${(et.text||'').replace(/"/g,'&quot;')}"
                onblur="saveExtraText(${i})" placeholder="Text content..." />
         <div class="ctrl-row" style="margin-top:6px">
-          <span class="ctrl-row-label">Align H</span>
+          <span class="ctrl-row-label">${t.label_align_h}</span>
           <div style="display:flex;gap:3px" id="et-hposrow-${i}-${j}">
-            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left — preserves vertical position'],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally — preserves vertical position'],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right — preserves vertical position']].map(([hp,svg,ttl]) => {
+            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>',t.pos_align_left],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.pos_h_center],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>',t.pos_align_right]].map(([hp,svg,ttl]) => {
               const isActive = (et.textHPosition||'center') === hp;
               return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setExtraHPos(${i},${j},'${hp}')">${svg}</div>`;
             }).join('')}
           </div>
         </div>
         <div class="ctrl-row">
-          <span class="ctrl-row-label">Align V</span>
+          <span class="ctrl-row-label">${t.label_align_v}</span>
           <div style="display:flex;gap:3px" id="et-vposrow-${i}-${j}">
-            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top — preserves horizontal position'],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically — preserves horizontal position'],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom — preserves horizontal position']].map(([vp,svg,ttl]) => {
+            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>',t.pos_align_top],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.pos_v_center],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>',t.pos_align_bottom]].map(([vp,svg,ttl]) => {
               const isActive = (et.position||'center') === vp;
               return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setExtraVPos(${i},${j},'${vp}')">${svg}</div>`;
             }).join('')}
           </div>
         </div>
         <div class="ctrl-row">
-          <span class="ctrl-row-label">Align:</span>
+          <span class="ctrl-row-label">${t.align}:</span>
           <div style="display:flex;gap:4px" id="et-alignrow-${i}-${j}">
             ${[['left','fa-align-left'],['center','fa-align-center'],['right','fa-align-right']].map(([a,ic]) => `
               <div class="pos-btn icon-btn ${(et.textAlign||'center')===a?'active':''}" title="${a}"
@@ -6079,30 +6196,30 @@
           </div>
         </div>
         <div class="ctrl-row">
-          <span class="ctrl-row-label">Text Style:</span>
+          <span class="ctrl-row-label">${t.text_style}:</span>
           <div style="display:flex;gap:4px;flex-wrap:wrap" id="et-stylerow-${i}-${j}">
-            ${[['box','Box'],['glow','Glow'],['block','Block'],['shadow','Shadow'],['plain','Plain']].map(([s,lbl]) =>
+            ${[[ 'box', t.text_style_box || 'Box' ], [ 'glow', t.text_style_glow || 'Glow' ], [ 'block', t.text_style_block || 'Block' ], [ 'shadow', t.text_style_shadow || 'Shadow' ], [ 'plain', t.text_style_plain || 'Plain' ]].map(([s,lbl]) =>
               `<div class="pos-btn style-text-btn ${sty===s?'active':''}" onclick="setExtraStyle(${i},${j},'${s}')">${lbl}</div>`
             ).join('')}
           </div>
         </div>
         <div class="ctrl-row">
-          <span class="ctrl-row-label">Animate:</span>
+          <span class="ctrl-row-label">${t.animate}:</span>
           <div style="display:flex;gap:4px;flex-wrap:wrap" id="et-animrow-${i}-${j}">
-            ${[['static','Static'],['pop','Pop'],['fade','Fade'],['wipe','Wipe']].map(([a,lbl]) =>
+            ${[[ 'static', t.anim_static || 'Static' ], [ 'pop', t.anim_pop || 'Pop' ], [ 'fade', t.anim_fade_both || 'Fade' ], [ 'wipe', t.anim_wipe || 'Wipe' ]].map(([a,lbl]) =>
               `<div class="pos-btn style-text-btn ${anim===a?'active':''}" onclick="setExtraAnimation(${i},${j},'${a}')">${lbl}</div>`
             ).join('')}
           </div>
         </div>
         <div id="et-fadedurations-${i}-${j}" style="margin-top:6px;display:${anim==='fade' ? 'grid' : 'none'};gap:8px;">
           <div class="ctrl-row" style="align-items:center;">
-            <span class="ctrl-row-label">Fade in:</span>
+            <span class="ctrl-row-label">${t.fade_in}:</span>
             <select id="et-fadein-${i}-${j}" onchange="saveExtraText(${i})" style="flex:1;max-width:160px;">
               ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeInDuration)===v?'selected':''}>${v}s</option>`).join('')}
             </select>
           </div>
           <div class="ctrl-row" style="align-items:center;">
-            <span class="ctrl-row-label">Fade out:</span>
+            <span class="ctrl-row-label">${t.fade_out}:</span>
             <select id="et-fadeout-${i}-${j}" onchange="saveExtraText(${i})" style="flex:1;max-width:160px;">
               ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeOutDuration)===v?'selected':''}>${v}s</option>`).join('')}
             </select>
@@ -6110,13 +6227,13 @@
         </div>
         <div class="ctrl-row" style="gap:10px;flex-wrap:wrap;margin-top:2px">
           <div style="display:flex;align-items:center;gap:4px">
-            <span class="ctrl-row-label" style="min-width:auto">Size:</span>
+            <span class="ctrl-row-label" style="min-width:auto">${t.label_size}</span>
             <input type="number" class="num-input" id="et-fontsize-${i}-${j}" min="20" max="200" step="5"
                    value="${et.fontSize||70}" onchange="saveExtraText(${i})" style="width:52px" />
             <span style="font-size:10px;color:#64748b">px</span>
           </div>
           <div style="display:flex;align-items:center;gap:4px">
-            <span class="ctrl-row-label" style="min-width:auto">Rotate:</span>
+            <span class="ctrl-row-label" style="min-width:auto">${t.label_rotate}</span>
             <input type="number" class="num-input" id="et-rotation-${i}-${j}" min="-360" max="360" step="5"
                    value="${et.rotation||0}" onchange="saveExtraText(${i})" style="width:52px" />
             <span style="font-size:10px;color:#64748b">°</span>
@@ -6126,72 +6243,72 @@
         </div>
         <!-- Per-layer colour & style overrides -->
         <details class="scene-accordion" style="margin-top:6px">
-          <summary style="font-size:11px;padding:7px 10px">Colour &amp; Style Overrides <span style="font-size:10px;color:#64748b;font-weight:400">(blank = inherit from scene)</span></summary>
+          <summary style="font-size:11px;padding:7px 10px">${t.label_style_overrides} <span style="font-size:10px;color:#64748b;font-weight:400">${t.label_style_overrides_hint}</span></summary>
           <div class="scene-accordion-body">
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">Block bg:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_block_bg}:</span>
               <input type="color" id="et-blockco-${i}-${j}" value="${etBlockColor || '#ffdd00'}" oninput="saveExtraText(${i})" title="Block/Box background colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'blockco')" title="Clear override (inherit from scene)">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">Text:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_text}:</span>
               <input type="color" id="et-textco-${i}-${j}" value="${etTextColor || '#000000'}" oninput="saveExtraText(${i})" title="Text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'textco')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">Glow:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_glow}:</span>
               <input type="color" id="et-glowco-${i}-${j}" value="${etGlowColor || '#00ffff'}" oninput="saveExtraText(${i})" title="Glow colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowco')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">Glow text:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_glow_txt}:</span>
               <input type="color" id="et-glowtextco-${i}-${j}" value="${etGlowTextColor || '#ffffff'}" oninput="saveExtraText(${i})" title="Glow text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowtextco')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">Stroke:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke}:</span>
               <input type="color" id="et-strokeco-${i}-${j}" value="${etStrokeColor || '#000000'}" oninput="saveExtraText(${i})" title="Stroke colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'strokeco')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">Stroke size:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke_size}</span>
               <input type="number" class="num-input" id="et-strokesize-${i}-${j}" min="0" max="20" step="0.5"
                      value="${etStrokeSize}" placeholder="0" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'strokesize')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">Glow size:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_glow_size}</span>
               <input type="number" class="num-input" id="et-glowsize-${i}-${j}" min="0" max="100" step="1"
-                     value="${etGlowSize}" placeholder="auto" onchange="saveExtraText(${i})" style="width:46px" />
+                     value="${etGlowSize}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'glowsize')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">Box r:</span>
               <input type="number" class="num-input" id="et-boxradius-${i}-${j}" min="0" max="100" step="1"
-                     value="${etBoxRadius}" placeholder="auto" onchange="saveExtraText(${i})" style="width:46px" />
+                     value="${etBoxRadius}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'boxradius')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">Block r:</span>
               <input type="number" class="num-input" id="et-blockradius-${i}-${j}" min="0" max="100" step="1"
-                     value="${etBlockRadius}" placeholder="auto" onchange="saveExtraText(${i})" style="width:46px" />
+                     value="${etBlockRadius}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'blockradius')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">Padding:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_padding}</span>
               <input type="number" class="num-input" id="et-padding-${i}-${j}" min="0" max="120" step="2"
-                     value="${etPadding}" placeholder="auto" onchange="saveExtraText(${i})" style="width:46px" />
+                     value="${etPadding}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'padding')" title="Clear override">✕</button>
-              <span style="font-size:10px;color:#64748b">px (block/box only)</span>
+              <span style="font-size:10px;color:#64748b">px (${t.padding_hint})</span>
             </div>
           </div>
         </details>
         <div class="ctrl-row" style="margin-top:4px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-row-label" style="min-width:auto;color:#34d399">Show at:</span>
+          <span class="ctrl-row-label" style="min-width:auto;color:#34d399">${t.show_at}</span>
           <input type="number" class="num-input" id="et-startat-${i}-${j}" min="0" max="60" step="0.5"
                  value="${et.startAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
           <span style="font-size:10px;color:#64748b">s — main text fades out, this bounces in</span>
         </div>
         <div class="ctrl-row" style="margin-top:4px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-row-label" style="min-width:auto;color:#f87171">Hide at:</span>
+          <span class="ctrl-row-label" style="min-width:auto;color:#f87171">${t.hide_at}</span>
           <input type="number" class="num-input" id="et-endat-${i}-${j}" min="0" max="60" step="0.5"
                  value="${et.endAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
-          <span style="font-size:10px;color:#64748b">s (blank = end of scene)</span>
+          <span style="font-size:10px;color:#64748b">s (${t.timing_hint})</span>
         </div>
           </div>
         </details>
