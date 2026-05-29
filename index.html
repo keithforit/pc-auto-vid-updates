@@ -1061,10 +1061,10 @@
     <!-- Option A: blank scene -->
     <div id="add-scene-blank-section">
       <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;line-height:1.5;" data-i18n="modal_save_draft_desc">Create a new blank scene, or start from a saved draft below.</div>
-      <label data-i18n="main_text">On-screen caption</label>
-      <input type="text" id="modal-caption" placeholder="Optional on-screen text..." />
+      <label data-i18n="main_text_label">On-screen caption</label>
+      <input type="text" id="modal-caption" data-i18n-placeholder="modal_caption_placeholder" placeholder="Optional on-screen text..." />
       <label data-i18n="modal_voiceover_text">Voiceover text</label>
-      <textarea id="modal-vo" placeholder="Text that will be spoken aloud..."></textarea>
+      <textarea id="modal-vo" data-i18n-placeholder="modal_vo_placeholder" placeholder="Text that will be spoken aloud..."></textarea>
     </div>>
 
     <!-- Option B: from draft -->
@@ -1175,12 +1175,15 @@
       // Rerender
       btn_generate: '🎬 Generate',
       btn_render: '🎬 Render Video',
+      modal_caption_placeholder: 'Optional on-screen text...',
+      modal_vo_placeholder: 'Text that will be spoken aloud...',
       btn_add_new_scene: '＋ Add Scene',
       // Timeline
       timeline_title: 'Timeline',
       scene_label: 'Scene',
       voice_label: 'Voice',
       main_text_label: 'Main text',
+      main_text_placeholder: 'Type the original scene text here...',
       no_audio_yet: 'No audio yet',
       fit_to_audio: 'Fit to audio',
       fit_to_audio_warn: '⚠ Fit to audio',
@@ -1189,6 +1192,8 @@
       delivery_hint: 'Use line breaks, 、 and 。 to shape the timing.',
       no_mp3_notice: 'No uploaded MP3. This scene will use generated voice.',
       uploaded_mp3_active: (file, dur) => `Uploaded MP3 active: ${file}${dur ? ` — ${dur}s` : ''}. Scene length follows this file.`,
+      sfx_active_notice: (file) => `Sound effect active: ${file}`,
+      no_sfx_notice: 'No sound effect uploaded for this scene.',
       // Media Text
       btn_copy_style: '📋 Copy Style',
       btn_paste_style: '📌 Paste Style',
@@ -1487,12 +1492,15 @@
       // Rerender
       btn_generate: '🎬 生成',
       btn_render: '🎬 ビデオをレンダリング',
+      modal_caption_placeholder: 'オプションの画面テキスト...',
+      modal_vo_placeholder: '読み上げられるテキスト...',
       btn_add_new_scene: '＋ シーンを追加',
       // Timeline
       timeline_title: 'タイムライン',
       scene_label: 'シーン',
       voice_label: '音声',
       main_text_label: 'メインテキスト',
+      main_text_placeholder: 'ここに元のシーンテキストを入力してください...',
       no_audio_yet: '音声なし',
       fit_to_audio: '音声に合わせる',
       fit_to_audio_warn: '⚠ 音声に合わせる',
@@ -1501,6 +1509,8 @@
       delivery_hint: '改行や「、」「。」を使ってタイミングを調整してください。',
       no_mp3_notice: 'アップロードされたMP3はありません。このシーンでは生成音声を使用します。',
       uploaded_mp3_active: (file, dur) => `アップロードされたMP3が有効です: ${file}${dur ? ` — ${dur}秒` : ''}。シーンの長さはこのファイルに従います。`,
+      sfx_active_notice: (file) => `効果音が有効です: ${file}`,
+      no_sfx_notice: 'このシーンには効果音がアップロードされていません。',
       // Media Text
       btn_copy_style: '📋 スタイルをコピー',
       btn_paste_style: '📌 スタイルを貼り付け',
@@ -1786,15 +1796,49 @@
     });
     // Translate dynamically-rendered scene card buttons and labels
     if (t.btn_scene_draft) {
-      document.querySelectorAll('[data-i18n-btn="btn_scene_draft"]').forEach(el => { el.textContent = t.btn_scene_draft; });
-      document.querySelectorAll('[data-i18n-btn="btn_restore"]').forEach(el => { el.textContent = t.btn_restore; });
-      document.querySelectorAll('[data-i18n-btn="btn_up"]').forEach(el => { el.textContent = t.btn_up; });
-      document.querySelectorAll('[data-i18n-btn="btn_down"]').forEach(el => { el.textContent = t.btn_down; });
-      document.querySelectorAll('[data-i18n-btn="btn_duplicate"]').forEach(el => { el.textContent = t.btn_duplicate; });
-      document.querySelectorAll('[data-i18n-btn="btn_delete"]').forEach(el => { el.textContent = t.btn_delete; });
-      document.querySelectorAll('[data-i18n-btn="btn_generate"]').forEach(el => { el.textContent = t.btn_generate; });
-      document.querySelectorAll('[data-i18n-btn="btn_add_new_scene"]').forEach(el => { el.textContent = t.btn_add_new_scene; });
+      document.querySelectorAll('[data-i18n-btn]').forEach(el => {
+        const key = el.getAttribute('data-i18n-btn');
+        if (t[key]) el.textContent = t[key];
+      });
     }
+    document.querySelectorAll('[data-i18n-label]').forEach(el => {
+      const key = el.getAttribute('data-i18n-label');
+      if (t[key]) el.textContent = t[key];
+    });
+    // Re-apply style-text-btn labels (dynamic content check)
+    document.querySelectorAll('.style-text-btn').forEach(el => {
+      const txt = el.textContent.trim().toLowerCase();
+      // Match against known keys
+      if (['box','ボックス'].includes(txt)) el.textContent = t.text_style_box;
+      if (['glow','グロー'].includes(txt)) el.textContent = t.text_style_glow;
+      if (['block','ブロック'].includes(txt)) el.textContent = t.text_style_block;
+      if (['shadow','シャドウ'].includes(txt)) el.textContent = t.text_style_shadow;
+      if (['plain','プレーン'].includes(txt)) el.textContent = t.text_style_plain;
+      if (['static','静的'].includes(txt)) el.textContent = t.anim_static || t.label_static;
+      if (['pop','ポップ'].includes(txt)) el.textContent = t.anim_pop;
+      if (['fade in','フェードイン'].includes(txt)) el.textContent = t.anim_fade_in || t.label_fade_in;
+      if (['fade out','フェードアウト'].includes(txt)) el.textContent = t.anim_fade_out || t.label_fade_out;
+      if (['fade both','両方フェード','both','両方'].includes(txt)) el.textContent = t.anim_fade_both || t.label_both;
+      if (['wipe','ワイプ'].includes(txt)) el.textContent = t.anim_wipe;
+    });
+
+    // Update timeline and other labels if they exist
+    document.querySelectorAll('.stl-title').forEach(el => { el.textContent = t.timeline_title; });
+    document.querySelectorAll('.stl-lbl-scene').forEach(el => { el.textContent = t.scene_label; });
+    document.querySelectorAll('.stl-lbl-voice').forEach(el => { el.textContent = t.voice_label; });
+    document.querySelectorAll('.stl-lbl-maintext').forEach(el => { el.textContent = t.main_text_label; });
+    document.querySelectorAll('.delivery-title').forEach(el => { if(el.textContent.includes('Delivery') || el.textContent.includes('デリバリー')) el.textContent = t.delivery_title; });
+    document.querySelectorAll('.delivery-hint').forEach(el => { el.textContent = t.delivery_hint; });
+    document.querySelectorAll('.ctrl-row-label').forEach(el => {
+      if (el.textContent.includes('Animate') || el.textContent.includes('アニメーション')) el.textContent = t.animate + ':';
+      if (el.textContent.includes('Text Style') || el.textContent.includes('テキストスタイル')) el.textContent = t.text_style + ':';
+      if (el.textContent.includes('Wrap') || el.textContent.includes('折り返し')) el.textContent = t.label_wrap;
+      if (el.textContent.includes('Padding') || el.textContent.includes('パディング')) el.textContent = t.label_padding;
+      if (el.textContent.includes('Size') || el.textContent.includes('サイズ')) el.textContent = t.label_size;
+      if (el.textContent.includes('Rotate') || el.textContent.includes('回転')) el.textContent = t.label_rotate;
+      if (el.textContent.includes('Colors') || el.textContent.includes('カラー')) el.textContent = t.label_colors;
+    });
+
     // Update global BGM button label if visible
     const bgmBtn = document.getElementById('global-bgm-btn');
     if (bgmBtn) {
@@ -4177,9 +4221,9 @@
     </div>`;
   }
 
-  function stlRow(rowLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, barLabel, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx) {
+  function stlRow(rowLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, barLabel, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx, rowClass='') {
     return `<div class="stl-row">
-      <div class="stl-lbl">${rowLabel}</div>
+      <div class="stl-lbl ${rowClass}">${rowLabel}</div>
       <div class="stl-track">${stlBuildBar({ label: barLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx })}</div>
     </div>`;
   }
@@ -4231,13 +4275,13 @@
     const voiceIsClipped = hasAudioDur && audioDur > duration;
     const voiceLabel = hasAudioDur ? `${audioDur.toFixed(1)}s${voiceIsClipped ? ' ✂' : ''}` : t.no_audio_yet;
     const voiceColor = voiceIsClipped ? '#dc2626' : hasAudioDur ? '#2563eb' : '#475569';
-    rows.push(stlRow(t.voice_label, voiceColor, 0, voiceEnd, duration, pps, null, null, voiceLabel, null, 0, 0));
+    rows.push(stlRow(t.voice_label, voiceColor, 0, voiceEnd, duration, pps, null, null, voiceLabel, null, 0, 0, i, 'voice', 0, 'stl-lbl-voice'));
 
     // ── Main text
     rows.push(stlRow(t.main_text_label, '#10b981', mainStart, mainEnd, duration, pps,
       `stlDown(event,${i},'maintext',0,'start')`,
       `stlDown(event,${i},'maintext',0,'end')`,
-      seg.text || t.main_text_label, mainAnim, mainFadeIn, mainFadeOut));
+      seg.text || t.main_text_label, mainAnim, mainFadeIn, mainFadeOut, i, 'maintext', 0, 'stl-lbl-maintext'));
 
     // ── Extra text layers
     extraTexts.forEach((et, j) => {
@@ -4391,7 +4435,7 @@
                   <button class="btn sm ghost" type="button" onclick="emphasizeVoiceSelection(${i})">${(I18N[window._appLang||'en']||I18N.en).emphasize}</button>
                 </div>
               </div>
-              <div class="delivery-editor" id="vscript-${i}" contenteditable="true" spellcheck="false" role="textbox" aria-label="Delivery text for scene ${i+1}" oninput="onVoiceEditorInput(${i})" onblur="saveVoiceSettings(${i})">${renderVoiceScriptHTML(seg)}</div>
+              <div class="delivery-editor" id="vscript-${i}" contenteditable="true" spellcheck="false" role="textbox" aria-label="${(I18N[window._appLang||'en']||I18N.en).delivery_title} for scene ${i+1}" oninput="onVoiceEditorInput(${i})" onblur="saveVoiceSettings(${i})">${renderVoiceScriptHTML(seg)}</div>
               <div class="delivery-hint">${(I18N[window._appLang||'en']||I18N.en).delivery_hint}</div>
             </div>
             <div class="voice-upload-card">
@@ -4446,7 +4490,7 @@
               <input type="hidden" id="sfxsrc-${i}" value="${escapeHtml(seg.soundEffect?.file || '')}" />
               <input type="hidden" id="sfxend-${i}" value="${seg.soundEffect?.endAt ?? ''}" />
               <div id="sfx-panel-${i}" style="display:none;padding:10px 14px;border-top:1px solid rgba(255,255,255,0.07)">
-                <div class="voice-upload-status" id="sfx-status-${i}">${seg.soundEffect?.file ? `Sound effect active: ${escapeHtml(seg.soundEffect.file)}` : 'No sound effect uploaded for this scene.'}</div>
+                <div class="voice-upload-status" id="sfx-status-${i}">${seg.soundEffect?.file ? (I18N[window._appLang||'en']||I18N.en).sfx_active_notice(escapeHtml(seg.soundEffect.file)) : (I18N[window._appLang||'en']||I18N.en).no_sfx_notice}</div>
                 <div class="voice-upload-row" style="margin:8px 0">
                   <button class="btn sm ghost" type="button" onclick="document.getElementById('sfx-file-${i}').click()">⬆ ${(I18N[window._appLang||'en']||I18N.en).upload_file}</button>
                   <button class="btn sm ghost" type="button" onclick="playSceneSfx(${i})" ${seg.soundEffect?.file ? '' : 'disabled'}>▶ ${(I18N[window._appLang||'en']||I18N.en).play}</button>
@@ -4508,17 +4552,17 @@
         </details>
 
         <details class="scene-accordion">
-          <summary data-i18n="main_text">Main Text</summary>
+          <summary data-i18n="main_text_label">${(I18N[window._appLang||'en']||I18N.en).main_text_label}</summary>
           <div class="scene-accordion-body text-controls">
             <div class="ctrl-label" style="margin-bottom:6px">${(I18N[window._appLang||'en']||I18N.en).orig_scene_text}</div>
-            <textarea id="maintext-${i}" class="extra-text-input" style="min-height:120px;height:120px;max-height:200px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" placeholder="Type the original scene text here...">${escapeHtml(seg.text || '')}</textarea>
+            <textarea id="maintext-${i}" class="extra-text-input" style="min-height:120px;height:120px;max-height:200px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" placeholder="${(I18N[window._appLang||'en']||I18N.en).main_text_placeholder || 'Type the original scene text here...'}">${escapeHtml(seg.text || '')}</textarea>
             <div class="ctrl-row" style="margin-top:6px;justify-content:space-between;gap:8px;flex-wrap:wrap">
               <div style="font-size:11px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).main_text_hint}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn sm ghost" type="button" onclick="saveMainTextContent(${i})">${(I18N[window._appLang||'en']||I18N.en).save_text}</button>
                 <button class="btn sm red" type="button" onclick="deleteMainText(${i})">${(I18N[window._appLang||'en']||I18N.en).del_orig_text}</button>
-                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).copy_style}">${(I18N[window._appLang||'en']||I18N.en).btn_copy_style}</button>
-                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).paste_style}">${(I18N[window._appLang||'en']||I18N.en).btn_paste_style}</button>
+                <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).copy_style}" data-i18n-btn="btn_copy_style">${(I18N[window._appLang||'en']||I18N.en).btn_copy_style}</button>
+                <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).paste_style}" data-i18n-btn="btn_paste_style">${(I18N[window._appLang||'en']||I18N.en).btn_paste_style}</button>
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:6px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
@@ -4664,19 +4708,19 @@
             <div class="ctrl-row" style="flex-wrap:wrap;gap:6px;margin-top:2px">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_colors}</span>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_block_bg}</label>
+                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_block_bg">${(I18N[window._appLang||'en']||I18N.en).label_block_bg}</label>
                 <input type="color" class="mini-color" id="blockco-${i}"
                        value="${seg.blockColorOverride||seg.blockColor||'#ffdd00'}"
                        oninput="saveMainColors(${i})" title="Block/Box background color" />
-                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_text}</label>
+                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_text">${(I18N[window._appLang||'en']||I18N.en).label_text}</label>
                 <input type="color" class="mini-color" id="textco-${i}"
                        value="${seg.textColorOverride||seg.textColor||'#000000'}"
                        oninput="saveMainColors(${i})" title="Text color" />
-                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_glow}</label>
+                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_glow">${(I18N[window._appLang||'en']||I18N.en).label_glow}</label>
                 <input type="color" class="mini-color" id="glowco-${i}"
                        value="${seg.glowColorOverride||seg.glowColor||'#00ffff'}"
                        oninput="saveMainColors(${i})" title="Glow effect color" />
-                <label style="font-size:9px;color:#94a3b8">${(I18N[window._appLang||'en']||I18N.en).label_glow_txt}</label>
+                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_glow_txt">${(I18N[window._appLang||'en']||I18N.en).label_glow_txt}</label>
                 <input type="color" class="mini-color" id="glowtextco-${i}"
                        value="${seg.glowTextColorOverride||'#ffffff'}"
                        oninput="saveMainColors(${i})" title="Glow text color" />
@@ -4717,7 +4761,7 @@
               ${(seg.extraTexts||[]).map((et,j) => buildExtraTextHTML(i,j,et)).join('')}
             </div>
             <button class="btn sm" style="background:#1e40af;width:100%;margin-top:2px"
-                    onclick="addExtraText(${i})">${(I18N[window._appLang||'en']||I18N.en).btn_add_text_layer}</button>
+                    onclick="addExtraText(${i})" data-i18n-btn="btn_add_text_layer">${(I18N[window._appLang||'en']||I18N.en).btn_add_text_layer}</button>
           </div>
         </details>
 
@@ -4745,7 +4789,7 @@
               ${(seg.overlayShapes||[]).map((sh,k) => buildShapeHTML(i,k,sh)).join('')}
             </div>
             <button class="btn sm" style="background:#4f46e5;width:100%;margin-top:2px"
-                    onclick="addShape(${i})">${(I18N[window._appLang||'en']||I18N.en).btn_add_shape}</button>
+                    onclick="addShape(${i})" data-i18n-btn="btn_add_shape">${(I18N[window._appLang||'en']||I18N.en).btn_add_shape}</button>
           </div>
         </details>
 

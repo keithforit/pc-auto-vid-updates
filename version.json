@@ -1,7 +1,7 @@
 {
-  "version": "1.2.63",
+  "version": "1.2.64",
   "date": "2026-05-29",
-  "notes": "Localize Media Text section: styles, animations, wrap, colors, and extra layers",
+  "notes": "Fix translatability logic to respect active language selection",
   "files": [
     "index.html",
     "server.js",
