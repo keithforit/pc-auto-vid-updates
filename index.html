@@ -3501,8 +3501,12 @@
     const boxBorderRadius    = _etN(`et-boxradius-${i}-${j}`,   `boxradius-${i}`,   20);
     const blockBorderRadius  = _etN(`et-blockradius-${i}-${j}`, `blockradius-${i}`, 10);
     const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+    const noWrapBtn = document.getElementById(`et-nowrap-btn-${i}-${j}`);
+    const noWrap = noWrapBtn ? !noWrapBtn.classList.contains('ghost') : false;
+    const boxWidthVal = parseFloat(document.getElementById(`et-boxwidth-${i}-${j}`)?.value) || 85;
+    const noWrapStyle = noWrap ? 'white-space:pre;width:max-content;max-width:none;overflow:visible' : `max-width:${boxWidthVal}%`;
     el.setAttribute('style', `${wrap};display:flex`);
-    innerEl.setAttribute('style', inner);
+    innerEl.setAttribute('style', `${inner};${noWrapStyle}`);
 
     if (save) saveExtraText(i);
   }
@@ -6984,7 +6988,12 @@
     const startAt = et?.startAt ?? null;
     const endAt = et?.endAt ?? null;
     const animation = et?.animation || 'pop';
-    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" style="${inner}">${escapeHtml(txt)}</div></div>`;
+    const noWrap = et?.noWrap || false;
+    const boxWidth = et?.textBoxWidth ?? 85;
+    const noWrapStyle = noWrap
+      ? 'white-space:pre;width:max-content;max-width:none;overflow:visible'
+      : `max-width:${boxWidth}%`;
+    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" style="${inner};${noWrapStyle}">${escapeHtml(txt)}</div></div>`;
   }
 
   function buildExtraTextPreviewsHTML(i, seg) {
@@ -7995,9 +8004,15 @@
   async function addExtraText(i) {
     const container = document.getElementById(`extratexts-${i}`);
     const j = container.querySelectorAll('.extra-text-block').length;
+    // Inherit style from active main-text button; fall back to the preview element's data-style
     const mainStyleBtn = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
-    const inheritedStyle = mainStyleBtn?.dataset?.style || '';
-    container.insertAdjacentHTML('beforeend', buildExtraTextHTML(i, j, { text: 'New text layer', position: 'center', textStyle: inheritedStyle }));
+    const inheritedStyle = mainStyleBtn?.dataset?.style
+      || document.getElementById(`tpreview-${i}`)?.dataset?.style
+      || '';
+    // Inherit animation from the active main-text animation button
+    const mainAnimBtn = document.querySelector(`#mainanimrow-${i} .pos-btn.active`);
+    const inheritedAnim = mainAnimBtn?.dataset?.anim || 'pop';
+    container.insertAdjacentHTML('beforeend', buildExtraTextHTML(i, j, { text: '', position: 'center', textStyle: inheritedStyle, animation: inheritedAnim }));
     updateExtraTextPreviewAll(i);
     await saveExtraText(i);
   }

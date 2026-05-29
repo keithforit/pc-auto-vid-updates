@@ -1,7 +1,7 @@
 {
-  "version": "1.2.73",
+  "version": "1.2.74",
   "date": "2026-05-29",
-  "notes": "Extra text layer paste: accept style copied from main text (Copy Style) as well as from another extra layer; fix updateExtraTextPreviewAll using text content instead of data-style; fix drag colours using data-has-override on colour inputs so unset overrides correctly fall back to scene colours",
+  "notes": "Extra text layer: fix no-wrap toggle not affecting preview (apply noWrap/textBoxWidth in buildSingleExtraTextPreviewHTML and applyExtraFreePos); new layers start blank and inherit both style and animation from main text; use tpreview data-style as reliable fallback",
   "files": [
     "index.html"
   ]
