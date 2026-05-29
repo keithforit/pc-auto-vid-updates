@@ -1,17 +1,8 @@
 {
-  "version": "1.2.66",
+  "version": "1.2.67",
   "date": "2026-05-29",
-  "notes": "Localise all confirm() dialogs — brand colour removal, brand image deletion, scene delete, text delete, draft restore, update install",
+  "notes": "Localise Shape/Image overlay section to Japanese — animation, fade in/out, align H/V, layer, corner radius, crop controls",
   "files": [
-    "index.html",
-    "server.js",
-    "parser-captions.js",
-    "parser.js",
-    "generate-audio.js",
-    "generate-audio-ja.js",
-    "generate-audio-voicevox.js",
-    "src/Caption.tsx",
-    "src/Main.tsx",
-    "src/Background.tsx"
+    "index.html"
   ]
 }

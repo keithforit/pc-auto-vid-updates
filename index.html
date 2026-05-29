@@ -1441,6 +1441,53 @@
       confirm_delete_orig_text: (n)  => `Delete the original text from Scene ${n}?`,
       confirm_apply_update: 'This will download and install the latest update, then restart the app. Continue?',
       confirm_restore_draft: 'Restore the saved project draft? This will replace the current scenes and settings with the draft copy.',
+      // Overlay image / shape section
+      overlay_anim_label: 'Animation:',
+      overlay_no_fade: 'No fade',
+      overlay_fader: 'Fader',
+      overlay_fader_speed: 'Fader speed:',
+      overlay_fade_in_at: 'Fade in at:',
+      overlay_fade_out_at: 'Fade out at:',
+      overlay_seconds: 'seconds',
+      overlay_scene_end: 'scene end',
+      overlay_fade_in_duration: 'Fade in duration:',
+      overlay_fade_out_duration: 'Fade out duration:',
+      overlay_align_left: 'Align left — preserves vertical position',
+      overlay_align_h_center: 'Center horizontally — preserves vertical position',
+      overlay_align_right: 'Align right — preserves vertical position',
+      overlay_align_top: 'Align top — preserves horizontal position',
+      overlay_align_v_center: 'Center vertically — preserves horizontal position',
+      overlay_align_bottom: 'Align bottom — preserves horizontal position',
+      overlay_layer: 'Layer:',
+      overlay_send_to_back: 'Send to back',
+      overlay_send_to_back_tip: 'Send to back (z:1)',
+      overlay_send_back: 'Send back',
+      overlay_send_back_tip: 'Move one step behind',
+      overlay_bring_forward: 'Bring forward',
+      overlay_bring_forward_tip: 'Move one step forward',
+      overlay_layer_tip: 'Layer order — higher = in front of other overlays',
+      overlay_corner_radius: 'Corner radius:',
+      overlay_crop_label: 'Crop:',
+      overlay_crop_btn: 'Crop',
+      overlay_hide_crop_btn: 'Hide crop',
+      overlay_crop_zoom: 'Crop zoom:',
+      overlay_crop_x: 'Crop X:',
+      overlay_crop_y: 'Crop Y:',
+      shape_anim_header: 'Animation',
+      shape_speed: 'Speed:',
+      shape_fade_in: 'Fade in:',
+      shape_fade_out: 'Fade out:',
+      shape_align_h: 'Align H',
+      shape_align_v: 'Align V',
+      shape_align_left: 'Align left',
+      shape_align_h_center: 'Center horizontally',
+      shape_align_right: 'Align right',
+      shape_align_top: 'Align top',
+      shape_align_v_center: 'Center vertically',
+      shape_align_bottom: 'Align bottom',
+      shape_send_to_back_tip: 'Send to back',
+      shape_behind_text_tip: 'Behind text',
+      shape_front_text_tip: 'In front of text',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1766,6 +1813,53 @@
       confirm_delete_orig_text: (n)  => `シーン ${n} のオリジナルテキストを削除しますか？`,
       confirm_apply_update: '最新のアップデートをダウンロードしてインストールし、アプリを再起動します。続行しますか？',
       confirm_restore_draft: '保存したプロジェクトドラフトを復元しますか？現在のシーンと設定がドラフトのコピーに置き換えられます。',
+      // Overlay image / shape section
+      overlay_anim_label: 'アニメーション:',
+      overlay_no_fade: 'フェードなし',
+      overlay_fader: 'フェーダー',
+      overlay_fader_speed: 'フェーダースピード:',
+      overlay_fade_in_at: 'フェードイン開始:',
+      overlay_fade_out_at: 'フェードアウト開始:',
+      overlay_seconds: '秒',
+      overlay_scene_end: 'シーン終了',
+      overlay_fade_in_duration: 'フェードイン時間:',
+      overlay_fade_out_duration: 'フェードアウト時間:',
+      overlay_align_left: '左揃え — 縦位置は変わりません',
+      overlay_align_h_center: '左右中央揃え — 縦位置は変わりません',
+      overlay_align_right: '右揃え — 縦位置は変わりません',
+      overlay_align_top: '上揃え — 横位置は変わりません',
+      overlay_align_v_center: '上下中央揃え — 横位置は変わりません',
+      overlay_align_bottom: '下揃え — 横位置は変わりません',
+      overlay_layer: 'レイヤー:',
+      overlay_send_to_back: '最背面へ',
+      overlay_send_to_back_tip: '最背面へ (z:1)',
+      overlay_send_back: '一段後ろへ',
+      overlay_send_back_tip: '一段後ろに移動',
+      overlay_bring_forward: '一段前へ',
+      overlay_bring_forward_tip: '一段前に移動',
+      overlay_layer_tip: 'レイヤー順 — 大きい値 = 前面',
+      overlay_corner_radius: '角丸半径:',
+      overlay_crop_label: 'クロップ:',
+      overlay_crop_btn: 'クロップ',
+      overlay_hide_crop_btn: 'クロップを非表示',
+      overlay_crop_zoom: 'クロップズーム:',
+      overlay_crop_x: 'クロップ X:',
+      overlay_crop_y: 'クロップ Y:',
+      shape_anim_header: 'アニメーション',
+      shape_speed: 'スピード:',
+      shape_fade_in: 'フェードイン:',
+      shape_fade_out: 'フェードアウト:',
+      shape_align_h: '横揃え',
+      shape_align_v: '縦揃え',
+      shape_align_left: '左揃え',
+      shape_align_h_center: '左右中央揃え',
+      shape_align_right: '右揃え',
+      shape_align_top: '上揃え',
+      shape_align_v_center: '上下中央揃え',
+      shape_align_bottom: '下揃え',
+      shape_send_to_back_tip: '最背面へ',
+      shape_behind_text_tip: 'テキストの後ろ',
+      shape_front_text_tip: 'テキストの前',
     }
   };
 
@@ -7155,6 +7249,7 @@
 
   function buildOverlayEditorHTML(i, j, rawOverlay = {}) {
     const overlay = normalizeOverlayData(rawOverlay);
+    const t = I18N[window._appLang||'en']||I18N.en;
     return `<div class="overlay-image-block" data-overlay-item="${j}" style="margin-top:6px;background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden">
       <details class="layer-accordion" open>
         <summary>
@@ -7172,35 +7267,35 @@
       <input type="hidden" id="overlay-aspect-${i}-${j}" value="${overlay.aspectRatio}" />
       <input type="hidden" id="overlay-crop-enabled-${i}-${j}" value="${overlay.cropEnabled ? '1' : '0'}" />
       <div class="ctrl-row" style="align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="ctrl-row-label">Animation:</span>
-        ${[['static','No fade'],['fade-in','Fade in'],['fade-out','Fade out'],['fade-both','Fade both'],['fader','Fader']].map(([mode,label]) =>
-          `<button class="pos-btn style-text-btn ${overlay.animation===mode?'active':''}" type="button" onclick="setOverlayAnimation(${i},${j},'${mode}')">${label}</button>`
+        <span class="ctrl-row-label">${t.overlay_anim_label}</span>
+        ${[['static',t.overlay_no_fade],['fade-in',t.anim_fade_in],['fade-out',t.anim_fade_out],['fade-both',t.anim_fade_both],['fader',t.overlay_fader]].map(([mode,label]) =>
+          `<button class="pos-btn style-text-btn ${overlay.animation===mode?'active':''}" data-mode="${mode}" type="button" onclick="setOverlayAnimation(${i},${j},'${mode}')">${label}</button>`
         ).join('')}
       </div>
       <div class="ctrl-row" id="overlay-fader-row-${i}-${j}" style="align-items:center;gap:8px;display:${overlay.animation==='fader' ? 'flex' : 'none'}">
-        <span class="ctrl-row-label">Fader speed:</span>
+        <span class="ctrl-row-label">${t.overlay_fader_speed}</span>
         <select id="overlay-fader-${i}-${j}" onchange="saveOverlay(${i})" style="flex:1;max-width:180px;">
           ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${overlay.faderDuration===v?'selected':''}>${v}s per cycle</option>`).join('')}
         </select>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">Fade in at:</span>
+        <span class="ctrl-row-label">${t.overlay_fade_in_at}</span>
         <input class="num-input" id="overlay-startat-${i}-${j}" type="number" min="0" max="60" step="0.5" value="${overlay.startAt ?? 0}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="width:72px" />
-        <span style="font-size:11px;color:#94a3b8">seconds</span>
+        <span style="font-size:11px;color:#94a3b8">${t.overlay_seconds}</span>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">Fade out at:</span>
-        <input class="num-input" id="overlay-endat-${i}-${j}" type="number" min="0" max="60" step="0.5" value="${overlay.endAt ?? ''}" placeholder="scene end" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="width:72px" />
-        <span style="font-size:11px;color:#94a3b8">seconds</span>
+        <span class="ctrl-row-label">${t.overlay_fade_out_at}</span>
+        <input class="num-input" id="overlay-endat-${i}-${j}" type="number" min="0" max="60" step="0.5" value="${overlay.endAt ?? ''}" placeholder="${t.overlay_scene_end}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="width:72px" />
+        <span style="font-size:11px;color:#94a3b8">${t.overlay_seconds}</span>
       </div>
       <div class="ctrl-row" id="overlay-fadein-row-${i}-${j}" style="align-items:center;gap:8px;display:${['fade-in','fade-both'].includes(overlay.animation) ? 'flex' : 'none'}">
-        <span class="ctrl-row-label">Fade in duration:</span>
+        <span class="ctrl-row-label">${t.overlay_fade_in_duration}</span>
         <select id="overlay-fadein-${i}-${j}" onchange="saveOverlay(${i})" style="flex:1;max-width:180px;">
           ${[0.25,0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${overlay.fadeInDuration===v?'selected':''}>${v}s</option>`).join('')}
         </select>
       </div>
       <div class="ctrl-row" id="overlay-fadeout-row-${i}-${j}" style="align-items:center;gap:8px;display:${['fade-out','fade-both'].includes(overlay.animation) ? 'flex' : 'none'}">
-        <span class="ctrl-row-label">Fade out duration:</span>
+        <span class="ctrl-row-label">${t.overlay_fade_out_duration}</span>
         <select id="overlay-fadeout-${i}-${j}" onchange="saveOverlay(${i})" style="flex:1;max-width:180px;">
           ${[0.25,0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${overlay.fadeOutDuration===v?'selected':''}>${v}s</option>`).join('')}
         </select>
@@ -7211,18 +7306,18 @@
         <span id="overlay-size-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.size)}%</span>
       </div>
       <div class="ctrl-row">
-        <span class="ctrl-row-label">Align H</span>
+        <span class="ctrl-row-label">${t.label_align_h}</span>
         <div style="display:flex;gap:3px" id="overlay-halign-${i}-${j}">
-          ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left — preserves vertical position',15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally — preserves vertical position',50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right — preserves vertical position',85]].map(([hp,svg,ttl,snapX]) => {
+          ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>',t.overlay_align_left,15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.overlay_align_h_center,50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>',t.overlay_align_right,85]].map(([hp,svg,ttl,snapX]) => {
             const isActive = Math.abs(Math.round(overlay.x) - snapX) < 5;
             return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setOverlayHAlign(${i},${j},'${hp}')">${svg}</div>`;
           }).join('')}
         </div>
       </div>
       <div class="ctrl-row">
-        <span class="ctrl-row-label">Align V</span>
+        <span class="ctrl-row-label">${t.label_align_v}</span>
         <div style="display:flex;gap:3px" id="overlay-valign-${i}-${j}">
-          ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top — preserves horizontal position',12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically — preserves horizontal position',50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom — preserves horizontal position',85]].map(([vp,svg,ttl,snapY]) => {
+          ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>',t.overlay_align_top,12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.overlay_align_v_center,50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>',t.overlay_align_bottom,85]].map(([vp,svg,ttl,snapY]) => {
             const isActive = Math.abs(Math.round(overlay.y) - snapY) < 5;
             return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setOverlayVAlign(${i},${j},'${vp}')">${svg}</div>`;
           }).join('')}
@@ -7248,34 +7343,34 @@
         <span id="overlay-rot-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:46px;text-align:right">${Math.round(overlay.rotation)}°</span>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="ctrl-row-label">Layer:</span>
-        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="setOverlayLayer(${i},${j},'back')" title="Send to back (z:1)">Send to back</button>
-        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="nudgeOverlayLayer(${i},${j},-1)" title="Move one step behind">Send back</button>
-        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="nudgeOverlayLayer(${i},${j},1)" title="Move one step forward">Bring forward</button>
-        <input class="num-input" id="overlay-z-${i}-${j}" type="number" min="1" max="100" step="1" value="${overlay.zOrder}" title="Layer order — higher = in front of other overlays" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="width:52px" />
+        <span class="ctrl-row-label">${t.overlay_layer}</span>
+        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="setOverlayLayer(${i},${j},'back')" title="${t.overlay_send_to_back_tip}">${t.overlay_send_to_back}</button>
+        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="nudgeOverlayLayer(${i},${j},-1)" title="${t.overlay_send_back_tip}">${t.overlay_send_back}</button>
+        <button class="btn sm ghost" type="button" style="padding:2px 5px;font-size:10px;line-height:1" onclick="nudgeOverlayLayer(${i},${j},1)" title="${t.overlay_bring_forward_tip}">${t.overlay_bring_forward}</button>
+        <input class="num-input" id="overlay-z-${i}-${j}" type="number" min="1" max="100" step="1" value="${overlay.zOrder}" title="${t.overlay_layer_tip}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="width:52px" />
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">Corner radius:</span>
+        <span class="ctrl-row-label">${t.overlay_corner_radius}</span>
         <input type="range" id="overlay-radius-${i}-${j}" min="0" max="500" step="5" value="${overlay.borderRadius}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
         <span id="overlay-radius-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.borderRadius)}px</span>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap">
-        <span class="ctrl-row-label">Crop:</span>
-        <button class="btn sm ghost" type="button" id="overlay-crop-toggle-${i}-${j}" onclick="toggleOverlayCrop(${i},${j})">${overlay.cropEnabled ? 'Hide crop' : 'Crop'}</button>
+        <span class="ctrl-row-label">${t.overlay_crop_label}</span>
+        <button class="btn sm ghost" type="button" id="overlay-crop-toggle-${i}-${j}" onclick="toggleOverlayCrop(${i},${j})">${overlay.cropEnabled ? t.overlay_hide_crop_btn : t.overlay_crop_btn}</button>
       </div>
       <div id="overlay-crop-controls-${i}-${j}" style="display:${overlay.cropEnabled ? 'grid' : 'none'};gap:8px;">
         <div class="ctrl-row" style="align-items:center;gap:8px">
-          <span class="ctrl-row-label">Crop zoom:</span>
+          <span class="ctrl-row-label">${t.overlay_crop_zoom}</span>
           <input type="range" id="overlay-cropscale-${i}-${j}" min="1" max="3" step="0.05" value="${overlay.cropScale}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
           <span id="overlay-cropscale-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${overlay.cropScale.toFixed(2)}x</span>
         </div>
         <div class="ctrl-row" style="align-items:center;gap:8px">
-          <span class="ctrl-row-label">Crop X:</span>
+          <span class="ctrl-row-label">${t.overlay_crop_x}</span>
           <input type="range" id="overlay-cropx-${i}-${j}" min="0" max="100" step="1" value="${Math.round(overlay.cropX)}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
           <span id="overlay-cropx-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.cropX)}%</span>
         </div>
         <div class="ctrl-row" style="align-items:center;gap:8px">
-          <span class="ctrl-row-label">Crop Y:</span>
+          <span class="ctrl-row-label">${t.overlay_crop_y}</span>
           <input type="range" id="overlay-cropy-${i}-${j}" min="0" max="100" step="1" value="${Math.round(overlay.cropY)}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
           <span id="overlay-cropy-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.cropY)}%</span>
         </div>
@@ -7423,11 +7518,10 @@
   }
 
   function getOverlayData(i, j) {
-    const animation = Array.from(document.querySelectorAll(`#overlay-list-${i} .overlay-image-block[data-overlay-item="${j}"] .style-text-btn.active`))[0]?.textContent?.trim();
-    const modeMap = { 'No fade': 'static', 'Fade in': 'fade-in', 'Fade out': 'fade-out', 'Fade both': 'fade-both', 'Fader': 'fader' };
+    const animation = Array.from(document.querySelectorAll(`#overlay-list-${i} .overlay-image-block[data-overlay-item="${j}"] .style-text-btn.active`))[0]?.dataset.mode;
     return normalizeOverlayData({
       src: document.getElementById(`overlay-src-${i}-${j}`)?.value || '',
-      animation: modeMap[animation] || 'fade-both',
+      animation: animation || 'fade-both',
       startAt: parseFloat(document.getElementById(`overlay-startat-${i}-${j}`)?.value) || 0,
       endAt: document.getElementById(`overlay-endat-${i}-${j}`)?.value,
       size: parseFloat(document.getElementById(`overlay-size-${i}-${j}`)?.value) || 55,
@@ -7476,7 +7570,7 @@
 
   function setOverlayAnimation(i, j, animation) {
     document.querySelectorAll(`#overlay-list-${i} .overlay-image-block[data-overlay-item="${j}"] .style-text-btn`).forEach((btn) => {
-      btn.classList.toggle('active', btn.textContent?.trim() === ({'static':'No fade','fade-in':'Fade in','fade-out':'Fade out','fade-both':'Fade both','fader':'Fader'}[animation] || 'Fade both'));
+      btn.classList.toggle('active', btn.dataset.mode === animation);
     });
     updateOverlayAnimationUI(i, j, animation);
     refreshOverlayPreview(i, true);
@@ -7579,7 +7673,8 @@
     const enabled = enabledEl.value === '1';
     enabledEl.value = enabled ? '0' : '1';
     controls.style.display = enabled ? 'none' : 'grid';
-    button.textContent = enabled ? 'Crop' : 'Hide crop';
+    const _t = I18N[window._appLang||'en']||I18N.en;
+    button.textContent = enabled ? _t.overlay_crop_btn : _t.overlay_hide_crop_btn;
     onOverlayControlInput(i, j);
     saveOverlay(i);
   }
@@ -7928,6 +8023,7 @@
     const faderDuration   = sh.faderDuration   ?? 1;
     const isSquareOrCircle = (type === 'square' || type === 'circle');
     const wLabel = isSquareOrCircle ? 'Size:' : 'Width:';
+    const t = I18N[window._appLang||'en']||I18N.en;
     return `
     <div class="shape-block" id="shape-block-${i}-${k}">
       <details class="layer-accordion" open>
@@ -7935,11 +8031,11 @@
           <span class="layer-accordion-title">Shape ${k+1} <span id="shapez-lbl-${i}-${k}" style="color:#475569">(z:${zo})</span></span>
           <div style="display:flex;gap:3px;align-items:center" onclick="event.stopPropagation()">
             <button class="btn sm ghost" style="padding:2px 5px;font-size:10px;line-height:1"
-                    onclick="setShapeLayer(${i},${k},'back')" title="Send to back">⬇</button>
+                    onclick="setShapeLayer(${i},${k},'back')" title="${t.shape_send_to_back_tip}">⬇</button>
             <button class="btn sm ghost" style="padding:2px 5px;font-size:10px;line-height:1"
-                    onclick="setShapeLayer(${i},${k},'behind')" title="Behind text">T↓</button>
+                    onclick="setShapeLayer(${i},${k},'behind')" title="${t.shape_behind_text_tip}">T↓</button>
             <button class="btn sm ghost" style="padding:2px 5px;font-size:10px;line-height:1"
-                    onclick="setShapeLayer(${i},${k},'front')" title="In front of text">T↑</button>
+                    onclick="setShapeLayer(${i},${k},'front')" title="${t.shape_front_text_tip}">T↑</button>
             <button class="btn sm red" onclick="removeShape(${i},${k})">✕</button>
           </div>
         </summary>
@@ -7997,18 +8093,18 @@
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
         <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Position</div>
         <div class="ctrl-row" style="margin:0">
-          <span class="ctrl-row-label">Align H</span>
+          <span class="ctrl-row-label">${t.shape_align_h}</span>
           <div style="display:flex;gap:3px" id="shape-halign-${i}-${k}">
-            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>','Align left',15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center horizontally',50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>','Align right',85]].map(([hp,svg,ttl,snapX]) => {
+            ${[['left','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="1.5" height="14" rx="0.5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>',t.shape_align_left,15],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="6.25" y="0" width="1.5" height="14" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.shape_align_h_center,50],['right','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="12.5" y="0" width="1.5" height="14" rx="0.5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>',t.shape_align_right,85]].map(([hp,svg,ttl,snapX]) => {
               const isActive = Math.abs(Math.round(x) - snapX) < 5;
               return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-hpos="${hp}" title="${ttl}" aria-label="${ttl}" onclick="setShapeHAlign(${i},${k},'${hp}')">${svg}</div>`;
             }).join('')}
           </div>
         </div>
         <div class="ctrl-row" style="margin:0">
-          <span class="ctrl-row-label">Align V</span>
+          <span class="ctrl-row-label">${t.shape_align_v}</span>
           <div style="display:flex;gap:3px" id="shape-valign-${i}-${k}">
-            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>','Align top',12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>','Center vertically',50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>','Align bottom',85]].map(([vp,svg,ttl,snapY]) => {
+            ${[['top','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="14" height="1.5" rx="0.5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>',t.shape_align_top,12],['center','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="6.25" width="14" height="1.5" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>',t.shape_align_v_center,50],['bottom','<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="0" y="12.5" width="14" height="1.5" rx="0.5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>',t.shape_align_bottom,85]].map(([vp,svg,ttl,snapY]) => {
               const isActive = Math.abs(Math.round(y) - snapY) < 5;
               return `<div class="pos-btn icon-btn ${isActive?'active':''}" data-vpos="${vp}" title="${ttl}" aria-label="${ttl}" onclick="setShapeVAlign(${i},${k},'${vp}')">${svg}</div>`;
             }).join('')}
@@ -8032,29 +8128,29 @@
 
       <!-- Animation -->
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
-        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Animation</div>
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${t.shape_anim_header}</div>
         <div class="ctrl-row" style="margin:0">
           <div style="display:flex;gap:4px;flex-wrap:wrap" id="shapeanim-${i}-${k}">
-            ${[['static','Static'],['fade','Fade'],['wipe','Wipe'],['fader','Fader']].map(([a,lbl]) =>
+            ${[['static',t.static],['fade',t.fade],['wipe',t.wipe],['fader',t.overlay_fader]].map(([a,lbl]) =>
               `<div class="pos-btn style-text-btn ${anim===a?'active':''}" onclick="setShapeAnimation(${i},${k},'${a}')">${lbl}</div>`
             ).join('')}
           </div>
         </div>
         <div id="shapefaderdurations-${i}-${k}" style="display:${anim==='fader'?'flex':'none'};align-items:center;gap:6px;margin:0">
-          <span class="ctrl-row-label">Speed:</span>
+          <span class="ctrl-row-label">${t.shape_speed}</span>
           <select id="shapefader-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
             ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${Number(faderDuration)===v?'selected':''}>${v}s per cycle</option>`).join('')}
           </select>
         </div>
         <div id="shapefadedurations-${i}-${k}" style="display:${anim==='fade'?'flex':'none'};flex-direction:column;gap:4px;margin:0">
           <div class="ctrl-row" style="margin:0">
-            <span class="ctrl-row-label">Fade in:</span>
+            <span class="ctrl-row-label">${t.shape_fade_in}</span>
             <select id="shapefadein-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
               ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeInDuration)===v?'selected':''}>${v}s</option>`).join('')}
             </select>
           </div>
           <div class="ctrl-row" style="margin:0">
-            <span class="ctrl-row-label">Fade out:</span>
+            <span class="ctrl-row-label">${t.shape_fade_out}</span>
             <select id="shapefadeout-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
               ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(fadeOutDuration)===v?'selected':''}>${v}s</option>`).join('')}
             </select>
