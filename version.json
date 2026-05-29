@@ -1,7 +1,7 @@
 {
-  "version": "1.2.60",
+  "version": "1.2.61",
   "date": "2026-05-29",
-  "notes": "Localize UI to Japanese (Scenes, placeholders, and buttons)",
+  "notes": "Localize 'Ready' status to Japanese",
   "files": [
     "index.html",
     "server.js",
