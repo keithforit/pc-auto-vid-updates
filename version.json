@@ -1,7 +1,7 @@
 {
-  "version": "1.2.64",
+  "version": "1.2.65",
   "date": "2026-05-29",
-  "notes": "Fix translatability logic to respect active language selection",
+  "notes": "Fix i18n: main text section labels now update on language switch; Add Text Layer now has wrap, box width, and full fade-in/out/both animation options; fix default scene text from Japanese to English",
   "files": [
     "index.html",
     "server.js",

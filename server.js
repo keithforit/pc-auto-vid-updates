@@ -935,7 +935,7 @@ app.post('/add-scene', (req, res) => {
         const settings = readSettings();
         const segments = resetAll ? [] : JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         const newScene = {
-            text: text !== undefined ? text : '新しいシーン',
+            text: text !== undefined ? text : 'New Scene',
             voiceover_text: voiceover_text !== undefined ? voiceover_text : '',
             background_url: '',
             background_type: 'video',
