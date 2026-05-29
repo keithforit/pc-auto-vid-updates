@@ -1176,13 +1176,20 @@
       btn_generate: '🎬 Generate',
       btn_render: '🎬 Render Video',
       btn_add_new_scene: '＋ Add Scene',
-      // Draft status
+      // Timeline
+      timeline_title: 'Timeline',
       scene_label: 'Scene',
-      no_scene_draft: 'No scene draft',
-      no_orig_text: '— No original text',
-      no_voice_text: '— No voice text',
-      drafts_in_library: (n) => n > 0 ? `📚 ${n} drafts in library` : 'No drafts',
-      // Media Library
+      voice_label: 'Voice',
+      main_text_label: 'Main text',
+      no_audio_yet: 'No audio yet',
+      fit_to_audio: 'Fit to audio',
+      fit_to_audio_warn: '⚠ Fit to audio',
+      // Voice
+      delivery_title: 'Delivery (Text & Emphasis)',
+      delivery_hint: 'Use line breaks, 、 and 。 to shape the timing.',
+      no_mp3_notice: 'No uploaded MP3. This scene will use generated voice.',
+      uploaded_mp3_active: (file, dur) => `Uploaded MP3 active: ${file}${dur ? ` — ${dur}s` : ''}. Scene length follows this file.`,
+      // Draft status
       ml_brand_colours_title: '🎨 Brand Colours',
       ml_brand_colours_desc: 'Add your brand colours here. They will appear as swatches in the background/gradient colour pickers for each scene.',
       ml_add_colour: '+ Add Colour',
@@ -1432,13 +1439,20 @@
       btn_generate: '🎬 生成',
       btn_render: '🎬 ビデオをレンダリング',
       btn_add_new_scene: '＋ シーンを追加',
-      // Draft status
+      // Timeline
+      timeline_title: 'タイムライン',
       scene_label: 'シーン',
-      no_scene_draft: 'シーンのドラフトなし',
-      no_orig_text: '— 元のテキストなし',
-      no_voice_text: '— 音声テキストなし',
-      drafts_in_library: (n) => n > 0 ? `📚 ライブラリに ${n} 個のドラフトがあります` : 'ドラフトなし',
-      // Media Library
+      voice_label: '音声',
+      main_text_label: 'メインテキスト',
+      no_audio_yet: '音声なし',
+      fit_to_audio: '音声に合わせる',
+      fit_to_audio_warn: '⚠ 音声に合わせる',
+      // Voice
+      delivery_title: 'デリバリー (テキスト & 強調)',
+      delivery_hint: '改行や「、」「。」を使ってタイミングを調整してください。',
+      no_mp3_notice: 'アップロードされたMP3はありません。このシーンでは生成音声を使用します。',
+      uploaded_mp3_active: (file, dur) => `アップロードされたMP3が有効です: ${file}${dur ? ` — ${dur}秒` : ''}。シーンの長さはこのファイルに従います。`,
+      // Draft status
       tab_media: '🎨 メディアライブラリ',
       ml_brand_colours_title: '🎨 ブランドカラー',
       ml_brand_colours_desc: 'ブランドカラーをここに追加してください。各シーンの背景・グラデーションカラーピッカーにスウォッチとして表示されます。',
@@ -4099,8 +4113,9 @@
 
     // ── Scene duration row (drag right edge to resize)
     const sceneWidthPx = duration * pps;
+    const t = (I18N[window._appLang||'en']||I18N.en);
     rows.push(`<div class="stl-row stl-row-scene">
-      <div class="stl-lbl stl-lbl-scene">Scene</div>
+      <div class="stl-lbl stl-lbl-scene">${t.scene_label}</div>
       <div class="stl-track">
         <div class="stl-bar stl-bar-scene" id="stl-scene-bar-${i}" style="left:0;width:${sceneWidthPx}px">
           <span class="stl-bar-lbl" id="stl-scene-lbl-${i}">${duration.toFixed(1)}s</span>
@@ -4116,44 +4131,44 @@
     const hasAudioDur = audioDur != null && audioDur > 0;
     const voiceEnd = hasAudioDur ? Math.min(audioDur, duration) : duration * 0.5;
     const voiceIsClipped = hasAudioDur && audioDur > duration;
-    const voiceLabel = hasAudioDur ? `${audioDur.toFixed(1)}s${voiceIsClipped ? ' ✂' : ''}` : 'No audio yet';
+    const voiceLabel = hasAudioDur ? `${audioDur.toFixed(1)}s${voiceIsClipped ? ' ✂' : ''}` : t.no_audio_yet;
     const voiceColor = voiceIsClipped ? '#dc2626' : hasAudioDur ? '#2563eb' : '#475569';
-    rows.push(stlRow('Voice', voiceColor, 0, voiceEnd, duration, pps, null, null, voiceLabel, null, 0, 0));
+    rows.push(stlRow(t.voice_label, voiceColor, 0, voiceEnd, duration, pps, null, null, voiceLabel, null, 0, 0));
 
     // ── Main text
-    rows.push(stlRow('Main text', '#10b981', mainStart, mainEnd, duration, pps,
+    rows.push(stlRow(t.main_text_label, '#10b981', mainStart, mainEnd, duration, pps,
       `stlDown(event,${i},'maintext',0,'start')`,
       `stlDown(event,${i},'maintext',0,'end')`,
-      seg.text || 'Main text', mainAnim, mainFadeIn, mainFadeOut));
+      seg.text || t.main_text_label, mainAnim, mainFadeIn, mainFadeOut));
 
     // ── Extra text layers
     extraTexts.forEach((et, j) => {
       const s = clampTimelineStart(et?.startAt ?? 0, duration);
       const e = et?.endAt != null ? clampTimelineStart(et.endAt, duration) : duration;
-      rows.push(stlRow(`Text ${j+1}`, '#14b8a6', s, e, duration, pps,
+      rows.push(stlRow(`${t.text_layers} ${j+1}`, '#14b8a6', s, e, duration, pps,
         `stlDown(event,${i},'extratext',${j},'start')`,
         `stlDown(event,${i},'extratext',${j},'end')`,
-        et?.text || `Text ${j+1}`, et?.animation, et?.fadeInDuration ?? 1.5, et?.fadeOutDuration ?? 1.5));
+        et?.text || `${t.text_layers} ${j+1}`, et?.animation, et?.fadeInDuration ?? 1.5, et?.fadeOutDuration ?? 1.5));
     });
 
     // ── Overlay images
     overlays.forEach((ov, j) => {
       const s = clampTimelineStart(ov?.startAt ?? 0, duration);
       const e = ov?.endAt != null ? clampTimelineStart(ov.endAt, duration) : duration;
-      rows.push(stlRow(`Image ${j+1}`, '#a855f7', s, e, duration, pps,
+      rows.push(stlRow(`${t.image} ${j+1}`, '#a855f7', s, e, duration, pps,
         `stlDown(event,${i},'overlay',${j},'start')`,
         `stlDown(event,${i},'overlay',${j},'end')`,
-        'Image', ov?.animation, ov?.fadeInDuration ?? 1.5, ov?.fadeOutDuration ?? 1.5, i, 'overlay', j));
+        t.image, ov?.animation, ov?.fadeInDuration ?? 1.5, ov?.fadeOutDuration ?? 1.5, i, 'overlay', j));
     });
 
     // ── Shapes
     shapes.forEach((sh, k) => {
       const s = clampTimelineStart(sh?.startAt ?? 0, duration);
       const e = sh?.endAt != null ? clampTimelineStart(sh.endAt, duration) : duration;
-      rows.push(stlRow(`Shape ${k+1}`, '#f59e0b', s, e, duration, pps,
+      rows.push(stlRow(`${t.add_shape} ${k+1}`, '#f59e0b', s, e, duration, pps,
         `stlDown(event,${i},'shape',${k},'start')`,
         `stlDown(event,${i},'shape',${k},'end')`,
-        ({circle:'Circle',square:'Square',ribbon:'Ribbon'}[sh?.type] || 'Rect'), sh?.animation, sh?.fadeInDuration ?? 1.5, sh?.fadeOutDuration ?? 1.5));
+        ({circle:t.circle || 'Circle',square:t.square || 'Square',ribbon:t.ribbon || 'Ribbon'}[sh?.type] || 'Rect'), sh?.animation, sh?.fadeInDuration ?? 1.5, sh?.fadeOutDuration ?? 1.5));
     });
 
     // ── SFX
@@ -4167,12 +4182,12 @@
     }
 
     const fitToAudioBtn = audioDur > 0
-      ? `<button class="mini-dur-btn" style="margin-left:6px;padding:2px 8px;font-size:10px;white-space:nowrap;background:${voiceIsClipped ? '#dc2626' : '#2563eb'};color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? '⚠ Fit to audio' : 'Fit to audio'}</button>`
+      ? `<button class="mini-dur-btn" style="margin-left:6px;padding:2px 8px;font-size:10px;white-space:nowrap;background:${voiceIsClipped ? '#dc2626' : '#2563eb'};color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? t.fit_to_audio_warn : t.fit_to_audio}</button>`
       : '';
 
     return `<div class="stl-wrap" id="mini-timeline-${i}">
       <div class="stl-header">
-        <span class="stl-title">Timeline</span>
+        <span class="stl-title">${t.timeline_title}</span>
         <div class="stl-zoom-row">
           <button class="stl-zoom-btn" onclick="stlZoom(${i},-15)">－</button>
           <span class="stl-zoom-lbl" id="stl-pps-${i}">${pps}px/s</span>
@@ -4272,14 +4287,14 @@
             </div>
             <div class="delivery-card">
               <div class="delivery-head">
-                <div class="delivery-title">Delivery (Text &amp; Emphasis)</div>
+                <div class="delivery-title">${(I18N[window._appLang||'en']||I18N.en).delivery_title}</div>
                 <div class="delivery-actions">
                   <button class="btn sm ghost" type="button" onclick="insertPause(${i})">+ ${(I18N[window._appLang||'en']||I18N.en).pause}</button>
                   <button class="btn sm ghost" type="button" onclick="emphasizeVoiceSelection(${i})">${(I18N[window._appLang||'en']||I18N.en).emphasize}</button>
                 </div>
               </div>
               <div class="delivery-editor" id="vscript-${i}" contenteditable="true" spellcheck="false" role="textbox" aria-label="Delivery text for scene ${i+1}" oninput="onVoiceEditorInput(${i})" onblur="saveVoiceSettings(${i})">${renderVoiceScriptHTML(seg)}</div>
-              <div class="delivery-hint">Use line breaks, 、 and 。 to shape the timing.</div>
+              <div class="delivery-hint">${(I18N[window._appLang||'en']||I18N.en).delivery_hint}</div>
             </div>
             <div class="voice-upload-card">
               <div class="voice-upload-row">
@@ -4288,7 +4303,7 @@
                 <button class="btn sm ghost" type="button" onclick="clearSceneAudio(${i})">${(I18N[window._appLang||'en']||I18N.en).use_gen_voice}</button>
               </div>
               <input type="hidden" id="vcustom-${i}" value="${escapeHtml(seg.customAudioFile || '')}" />
-              <div class="voice-upload-status" id="vaudio-status-${i}">${seg.customAudioFile ? `Uploaded MP3 active: ${escapeHtml(seg.customAudioFile)}${seg.duration ? ` — ${Number(seg.duration).toFixed(2)}s` : ''}. Scene length follows this file.` : 'No uploaded MP3. This scene will use generated voice.'}</div>
+              <div class="voice-upload-status" id="vaudio-status-${i}">${seg.customAudioFile ? (I18N[window._appLang||'en']||I18N.en).uploaded_mp3_active(escapeHtml(seg.customAudioFile), seg.duration ? Number(seg.duration).toFixed(2) : '') : (I18N[window._appLang||'en']||I18N.en).no_mp3_notice}</div>
             </div>
             <div class="voice-actor-row">
               <span class="voice-lbl">${(I18N[window._appLang||'en']||I18N.en).character}</span>

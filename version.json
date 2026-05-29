@@ -1,7 +1,7 @@
 {
-  "version": "1.2.61",
+  "version": "1.2.62",
   "date": "2026-05-29",
-  "notes": "Localize 'Ready' status to Japanese",
+  "notes": "Localize Timeline and Voice section elements",
   "files": [
     "index.html",
     "server.js",
