@@ -1,7 +1,7 @@
 {
   "version": "1.2.62",
   "date": "2026-05-29",
-  "notes": "Localize Timeline and Voice section elements",
+  "notes": "Localize Timeline labels, Voice delivery title, and placeholder notices to Japanese",
   "files": [
     "index.html",
     "server.js",
