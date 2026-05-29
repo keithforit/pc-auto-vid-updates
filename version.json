@@ -1,7 +1,7 @@
 {
-  "version": "1.2.72",
+  "version": "1.2.73",
   "date": "2026-05-29",
-  "notes": "Extra text layers: inherit main text style on creation; fix drag not changing style/colours (was reading main text colour inputs instead of the layer's own overrides); move Show at / Hide at to top of layer panel",
+  "notes": "Extra text layer paste: accept style copied from main text (Copy Style) as well as from another extra layer; fix updateExtraTextPreviewAll using text content instead of data-style; fix drag colours using data-has-override on colour inputs so unset overrides correctly fall back to scene colours",
   "files": [
     "index.html"
   ]

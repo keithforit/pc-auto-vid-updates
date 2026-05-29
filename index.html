@@ -3487,8 +3487,9 @@
     const hAlign = alignActive ? ['left','center','right'][Array.from(alignActive.parentElement.children).indexOf(alignActive)] : 'center';
     const rotation = parseInt(document.getElementById(`et-rotation-${i}-${j}`)?.value) || 0;
     const fontSize = parseInt(document.getElementById(`et-fontsize-${i}-${j}`)?.value) || 70;
-    // Read extra layer colour overrides first, fall back to main text values
-    const _etC = (etId, mainId, def) => { const e = document.getElementById(etId); if (e && e.dataset.cleared !== '1' && e.value) return e.value; return document.getElementById(mainId)?.value || def; };
+    // Read extra layer colour overrides first, fall back to main text values.
+    // Colour inputs always have a value so we track explicit overrides via data-has-override.
+    const _etC = (etId, mainId, def) => { const e = document.getElementById(etId); if (e && e.dataset.cleared !== '1' && e.dataset.hasOverride === '1') return e.value; return document.getElementById(mainId)?.value || def; };
     const _etN = (etId, mainId, def) => { const e = document.getElementById(etId); const v = e?.value?.trim(); if (v !== '' && v != null && !isNaN(Number(v))) return Number(v); const fv = document.getElementById(mainId)?.value?.trim(); return (fv !== '' && fv != null && !isNaN(Number(fv))) ? Number(fv) : def; };
     const glowColor       = _etC(`et-glowco-${i}-${j}`,     `glowco-${i}`,     '#00ffff');
     const blockColor      = _etC(`et-blockco-${i}-${j}`,    `blockco-${i}`,    '#ffdd00');
@@ -6470,25 +6471,25 @@
           <div class="scene-accordion-body">
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
               <span class="ctrl-row-label" style="min-width:auto">${t.label_block_bg}:</span>
-              <input type="color" id="et-blockco-${i}-${j}" value="${etBlockColor || '#ffdd00'}" oninput="saveExtraText(${i})" title="Block/Box background colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              <input type="color" id="et-blockco-${i}-${j}" value="${etBlockColor || '#ffdd00'}" data-has-override="${etBlockColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Block/Box background colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'blockco')" title="Clear override (inherit from scene)">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">${t.label_text}:</span>
-              <input type="color" id="et-textco-${i}-${j}" value="${etTextColor || '#000000'}" oninput="saveExtraText(${i})" title="Text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              <input type="color" id="et-textco-${i}-${j}" value="${etTextColor || '#000000'}" data-has-override="${etTextColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'textco')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
               <span class="ctrl-row-label" style="min-width:auto">${t.label_glow}:</span>
-              <input type="color" id="et-glowco-${i}-${j}" value="${etGlowColor || '#00ffff'}" oninput="saveExtraText(${i})" title="Glow colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              <input type="color" id="et-glowco-${i}-${j}" value="${etGlowColor || '#00ffff'}" data-has-override="${etGlowColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Glow colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowco')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">${t.label_glow_txt}:</span>
-              <input type="color" id="et-glowtextco-${i}-${j}" value="${etGlowTextColor || '#ffffff'}" oninput="saveExtraText(${i})" title="Glow text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              <input type="color" id="et-glowtextco-${i}-${j}" value="${etGlowTextColor || '#ffffff'}" data-has-override="${etGlowTextColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Glow text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowtextco')" title="Clear override">✕</button>
             </div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
               <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke}:</span>
-              <input type="color" id="et-strokeco-${i}-${j}" value="${etStrokeColor || '#000000'}" oninput="saveExtraText(${i})" title="Stroke colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              <input type="color" id="et-strokeco-${i}-${j}" value="${etStrokeColor || '#000000'}" data-has-override="${etStrokeColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Stroke colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'strokeco')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke_size}</span>
@@ -6856,12 +6857,32 @@
   }
 
   async function pasteExtraStyle(i, j, evt) {
-    if (!_copiedExtraStyle) return alert('No layer style copied yet. Copy a style from a text layer first.');
+    // Accept style copied from either an extra text layer OR the main text (Copy Style button)
+    let source = _copiedExtraStyle;
+    if (!source && _copiedStyle) {
+      // Map main-text field names to extra-layer field names
+      source = {
+        textStyle:               _copiedStyle.mainTextStyleOverride,
+        animation:               _copiedStyle.textAnimation,
+        fontSize:                _copiedStyle.fontSize,
+        rotation:                _copiedStyle.rotation,
+        blockColorOverride:      _copiedStyle.blockColorOverride,
+        textColorOverride:       _copiedStyle.textColorOverride,
+        glowColorOverride:       _copiedStyle.glowColorOverride,
+        glowTextColorOverride:   _copiedStyle.glowTextColorOverride,
+        textStrokeColorOverride: _copiedStyle.textStrokeColorOverride,
+        textStrokeSizeOverride:  _copiedStyle.textStrokeSizeOverride,
+        glowSizeOverride:        _copiedStyle.glowSizeOverride,
+        boxBorderRadius:         _copiedStyle.boxBorderRadius,
+        blockBorderRadius:       _copiedStyle.blockBorderRadius,
+      };
+    }
+    if (!source) return alert('No style copied yet. Copy a style from a text layer or scene first.');
     const btn = evt?.target || event?.target;
     const ets = getExtraTexts(i);
     if (!ets[j]) return;
     // Merge visual style — keep text, position, textAlign, textX, textY, startAt, endAt from target
-    const defined = Object.fromEntries(Object.entries(_copiedExtraStyle).filter(([, v]) => v !== undefined));
+    const defined = Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined));
     ets[j] = { ...ets[j], ...defined };
     const container = document.getElementById(`extratexts-${i}`);
     container.innerHTML = ets.map((et, newJ) => buildExtraTextHTML(i, newJ, et)).join('');
@@ -7007,7 +7028,7 @@
     const container = document.getElementById(`extra-text-previews-${i}`);
     if (!container) return;
     const previewState = {
-      textStyle: document.querySelector(`#mainstylerow-${i} .pos-btn.active`)?.textContent?.trim()?.toLowerCase() || 'box',
+      textStyle: document.querySelector(`#mainstylerow-${i} .pos-btn.active`)?.dataset?.style || 'box',
       glowColorOverride: document.getElementById(`glowco-${i}`)?.value || '#00ffff',
       blockColorOverride: document.getElementById(`blockco-${i}`)?.value || '#ffdd00',
       textColorOverride: document.getElementById(`textco-${i}`)?.value || '#000000',
@@ -7124,6 +7145,7 @@
       // Color inputs can't be empty, so we store a sentinel and skip it in getExtraTexts
       // Instead we mark the field as cleared via a data attribute
       el.dataset.cleared = '1';
+      el.dataset.hasOverride = '0';
       el.title = '(cleared — inheriting from scene)';
     }
     saveExtraText(i);
