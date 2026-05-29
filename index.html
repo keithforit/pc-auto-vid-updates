@@ -1488,6 +1488,11 @@
       shape_send_to_back_tip: 'Send to back',
       shape_behind_text_tip: 'Behind text',
       shape_front_text_tip: 'In front of text',
+      // Background section
+      bg_blur_title: '🌀 Background Blur',
+      bg_blur: 'Blur:',
+      blur_off: 'Off',
+      apply_solid_bg: 'Apply solid background',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1860,6 +1865,11 @@
       shape_send_to_back_tip: '最背面へ',
       shape_behind_text_tip: 'テキストの後ろ',
       shape_front_text_tip: 'テキストの前',
+      // Background section
+      bg_blur_title: '🌀 背景ブラー',
+      bg_blur: 'ぼかし:',
+      blur_off: 'オフ',
+      apply_solid_bg: '単色背景を適用',
     }
   };
 
@@ -4498,6 +4508,7 @@
       thumbHTML = `<div class="no-video" id="thumb-${i}">🎬</div>`;
     }
 
+    const _t = (I18N[window._appLang||'en']||I18N.en);
     card.innerHTML = `
       <div>
         <div class="seg-header">
@@ -4931,7 +4942,7 @@
                 </select>
               </div>
             </div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:6px">Controls how the whole scene loads in and out.</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:6px">${_t.scene_anim_hint}</div>
           </div>
         </details>
 
@@ -5035,22 +5046,22 @@
 
               <!-- ── Background Blur ── -->
               <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
-                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">🌀 Background Blur</div>
+                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">${_t.bg_blur_title}</div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label">Blur:</span>
+                  <span class="ctrl-row-label">${_t.bg_blur}</span>
                   <input type="range" id="bgblur-${i}" min="0" max="100" step="1"
                          value="${bgBlur}"
                          oninput="onBgBlurInput(${i},this.value)"
                          onchange="saveBgBlur(${i})" style="flex:1" />
-                  <span id="bgblur-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgBlur > 0 ? bgBlur + '%' : 'Off'}</span>
+                  <span id="bgblur-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgBlur > 0 ? bgBlur + '%' : _t.blur_off}</span>
                 </div>
               </div>
 
               <!-- ── Background Overlay ── -->
               <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
-                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">Background Overlay</div>
+                <div style="font-size:11px;color:#cbd5e1;font-weight:700;margin-bottom:8px">${_t.bg_overlay}</div>
                 <div class="ctrl-row" id="overlay-type-row-${i}" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">
-                  ${[['none','None'],['dark','Dark'],['spotlight','Spotlight']].map(([t,lbl]) =>
+                  ${[['none',_t.overlay_none],['dark',_t.overlay_dark],['spotlight',_t.overlay_spotlight]].map(([t,lbl]) =>
                     `<div class="pos-btn style-text-btn${(seg.overlayType||'none')===t?' active':''}" style="font-size:11px" data-otype="${t}" onclick="setOverlayType(${i},'${t}')">${lbl}</div>`
                   ).join('')}
                 </div>
@@ -5088,9 +5099,9 @@
 
               <div class="bg-colour-panel" id="bgpanel-${i}">
                 <div class="bg-type-tabs">
-                  <div class="bg-type-tab ${bgType==='color'?'active':''}"    onclick="setBgTab(${i},'color')">⬛ Solid</div>
-                  <div class="bg-type-tab ${bgType==='gradient'?'active':''}" onclick="setBgTab(${i},'gradient')">🌈 Gradient</div>
-                  <div class="bg-type-tab ${bgType==='image'?'active':''}"    onclick="setBgTab(${i},'image')">🖼 Image</div>
+                  <div class="bg-type-tab ${bgType==='color'?'active':''}"    onclick="setBgTab(${i},'color')">⬛ ${_t.solid}</div>
+                  <div class="bg-type-tab ${bgType==='gradient'?'active':''}" onclick="setBgTab(${i},'gradient')">🌈 ${_t.gradient}</div>
+                  <div class="bg-type-tab ${bgType==='image'?'active':''}"    onclick="setBgTab(${i},'image')">🖼 ${_t.image}</div>
                 </div>
 
                 <div id="imgpanel-${i}" style="display:${bgType==='image'?'block':'none'}; margin-top:8px">
@@ -5123,34 +5134,34 @@
             <!-- solid panel -->
             <div id="solidpanel-${i}" style="display:${bgType==='color'?'block':'none'}; margin-top:8px">
               <div id="brand-swatches-solid-${i}" class="brand-swatches-row" style="display:none">
-                <span class="brand-swatches-label">🎨 Brand Colours</span>
+                <span class="brand-swatches-label">🎨 ${_t.brand_colors}</span>
               </div>
               <div class="colour-presets">
                 ${['#ffffff','#000000','#1a1a2e','#0f3460','#16213e','#1b1b2f','#2c003e','#1a0533','#0d0d0d']
                   .map(c=>`<div class="colour-preset" style="background:${c};${c==='#ffffff'?'border-color:#64748b':''}" onclick="setSolidPreset(${i},'${c}')"></div>`).join('')}
               </div>
               <div class="colour-row">
-                <label>Colour</label>
+                <label>${_t.color}</label>
                 <input type="color" id="solidColor-${i}" value="${solidColor}"
                        oninput="onSolidColorChange(${i},this.value)" />
                 <input type="text" id="solidHex-${i}" value="${solidColor}" maxlength="7"
                        oninput="onSolidHexInput(${i},this.value)" />
               </div>
               <div class="bg-preview-strip" id="solidPreview-${i}" style="background:${solidColor}"></div>
-              <button class="btn sm full" style="margin-top:0" onclick="applyBgStyle(${i},'color')">Apply solid background</button>
+              <button class="btn sm full" style="margin-top:0" onclick="applyBgStyle(${i},'color')">${_t.apply_solid_bg}</button>
             </div>
 
             <!-- gradient panel -->
             <div id="gradpanel-${i}" style="display:${bgType==='gradient'?'block':'none'}; margin-top:8px">
               <div id="brand-swatches-grad-${i}" class="brand-swatches-row" style="display:none">
-                <span class="brand-swatches-label">🎨 Brand Colours — click to set as gradient start or end</span>
+                <span class="brand-swatches-label">${_t.brand_grad_hint}</span>
                 <div style="width:100%;display:flex;gap:6px;align-items:center;margin-top:4px;font-size:10px;color:var(--text-muted)">
-                  <span>Apply to:</span>
+                  <span>${_t.apply_to}</span>
                   <label style="display:flex;align-items:center;gap:3px;cursor:pointer">
-                    <input type="radio" name="grad-brand-target-${i}" value="start" checked style="accent-color:#10b981" /> Top
+                    <input type="radio" name="grad-brand-target-${i}" value="start" checked style="accent-color:#10b981" /> ${_t.top}
                   </label>
                   <label style="display:flex;align-items:center;gap:3px;cursor:pointer">
-                    <input type="radio" name="grad-brand-target-${i}" value="end" style="accent-color:#10b981" /> Bottom
+                    <input type="radio" name="grad-brand-target-${i}" value="end" style="accent-color:#10b981" /> ${_t.bottom}
                   </label>
                 </div>
               </div>
@@ -5182,7 +5193,7 @@
                     onclick="setDir(${i},'${val}')">${lbl}</div>`).join('')}
               </div>
               <div class="bg-preview-strip" id="gradPreview-${i}" style="background:linear-gradient(${gDir},${gStart},${gEnd})"></div>
-              <button class="btn sm full" style="margin-top:0" onclick="applyBgStyle(${i},'gradient')">Apply gradient background</button>
+              <button class="btn sm full" style="margin-top:0" onclick="applyBgStyle(${i},'gradient')">${_t.apply_grad_bg}</button>
             </div>
           </div>
         </details>
@@ -5758,7 +5769,7 @@
   function onBgBlurInput(i, val) {
     const pct = Math.max(0, parseFloat(val) || 0);
     const label = document.getElementById(`bgblur-v-${i}`);
-    if (label) label.textContent = pct > 0 ? pct + '%' : 'Off';
+    if (label) label.textContent = pct > 0 ? pct + '%' : (I18N[window._appLang||'en']||I18N.en).blur_off;
     const thumb = document.getElementById(`thumb-${i}`);
     if (thumb) thumb.style.filter = pct > 0 ? `blur(${pct * 0.2}px)` : '';
   }
