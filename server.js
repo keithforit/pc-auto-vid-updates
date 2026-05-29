@@ -381,38 +381,69 @@ app.post('/replace-video', async (req, res) => {
     }
 });
 
-// Replace the video for one segment by fetching a specific Pexels video page URL
+// Replace the background for one segment by fetching a specific Pexels video OR photo page URL
 app.post('/replace-video-by-url', async (req, res) => {
     const { index, url } = req.body;
     const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
     try {
         const axios = require('axios');
-        // Extract the numeric video ID from a Pexels page URL like:
-        // https://www.pexels.com/video/dartboard-close-up-with-darts-hitting-target-34071374/
-        const pageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
-        if (!pageMatch) {
-            return res.status(400).json({ error: 'Could not extract a video ID from the URL. Make sure it is a Pexels video page URL.' });
+        const videoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
+        const photoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/photo\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
+
+        if (videoMatch) {
+            // ── Video URL ──────────────────────────────────────────────────────
+            const videoId = videoMatch[1];
+            const result = await axios.get(
+                `https://api.pexels.com/videos/videos/${videoId}`,
+                { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
+            );
+            const video = result.data;
+            if (!video || !video.video_files || !video.video_files.length) {
+                return res.status(404).json({ error: 'No video files found for this Pexels video.' });
+            }
+            const remoteUrl = video.video_files.sort((a, b) => b.width - a.width)[0].link;
+            const filename = await downloadVideo(remoteUrl);
+            const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
+            const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+            segments[index].background_url  = filename;
+            segments[index].video_duration  = videoDuration;
+            segments[index].background_type = 'video';
+            fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+            return res.json({ url: `/public/backgrounds/${filename}`, local: true, backgroundType: 'video' });
+
+        } else if (photoMatch) {
+            // ── Photo URL ─────────────────────────────────────────────────────
+            const photoId = photoMatch[1];
+            const result = await axios.get(
+                `https://api.pexels.com/v1/photos/${photoId}`,
+                { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
+            );
+            const photo = result.data;
+            // Prefer portrait crop for 9:16, fall back to large/original
+            const photoUrl = photo.src?.portrait || photo.src?.large2x || photo.src?.large || photo.src?.original;
+            if (!photoUrl) return res.status(404).json({ error: 'No image found for this Pexels photo.' });
+
+            const bgDir = './public/backgrounds';
+            if (!fs.existsSync(bgDir)) fs.mkdirSync(bgDir, { recursive: true });
+            const filename = `pexels-photo-${Date.now()}.jpg`;
+            const dest = `${bgDir}/${filename}`;
+            const imgResponse = await axios.get(photoUrl, { responseType: 'stream', timeout: 30000 });
+            await new Promise((resolve, reject) => {
+                const writer = fs.createWriteStream(dest);
+                imgResponse.data.pipe(writer);
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+            const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
+            segments[index].background_url  = filename;
+            segments[index].background_type = 'image';
+            delete segments[index].video_duration;
+            fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
+            return res.json({ url: `/public/backgrounds/${filename}`, local: true, backgroundType: 'image' });
+
+        } else {
+            return res.status(400).json({ error: 'Could not extract an ID from the URL. Paste a Pexels video URL (pexels.com/video/…) or photo URL (pexels.com/photo/…).' });
         }
-        const videoId = pageMatch[1];
-        // Fetch video details from the Pexels API
-        const result = await axios.get(
-            `https://api.pexels.com/videos/videos/${videoId}`,
-            { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
-        );
-        const video = result.data;
-        if (!video || !video.video_files || !video.video_files.length) {
-            return res.status(404).json({ error: 'No video files found for this Pexels video.' });
-        }
-        // Pick the highest quality file
-        const remoteUrl = video.video_files.sort((a, b) => b.width - a.width)[0].link;
-        const filename = await downloadVideo(remoteUrl);
-        const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
-        const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
-        segments[index].background_url  = filename;
-        segments[index].video_duration  = videoDuration;
-        segments[index].background_type = 'video';
-        fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
-        res.json({ url: `/public/backgrounds/${filename}`, local: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

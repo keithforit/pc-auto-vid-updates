@@ -1,8 +1,17 @@
 {
-  "version": "1.2.59",
-  "date": "2026-05-25",
-  "notes": "Rename 'Shapes and Images' section to 'Shapes, Images & Videos'",
+  "version": "1.2.60",
+  "date": "2026-05-29",
+  "notes": "Localize UI to Japanese (Scenes, placeholders, and buttons)",
   "files": [
-    "index.html"
+    "index.html",
+    "server.js",
+    "parser-captions.js",
+    "parser.js",
+    "generate-audio.js",
+    "generate-audio-ja.js",
+    "generate-audio-voicevox.js",
+    "src/Caption.tsx",
+    "src/Main.tsx",
+    "src/Background.tsx"
   ]
 }

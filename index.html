@@ -692,7 +692,7 @@
     <div id="rerender-section" style="display:none; margin-top:24px;">
       <div style="height:1px;background:var(--border);margin-bottom:24px;"></div>
       <button class="btn ghost full" style="margin-bottom:12px" onclick="openModal(-1)" data-i18n="btn_add_new_scene">&#xFF0B; Add New Scene</button>
-      <button class="btn full" id="rerenderBtn" onclick="rerender()">🎬 RENDER VIDEO</button>
+      <button class="btn full" id="rerenderBtn" onclick="rerender()" data-i18n="btn_render">🎬 RENDER VIDEO</button>
       <div id="rerender-status" style="margin-top:10px;font-size:14px;color:var(--text-muted);min-height:20px;">Ready</div>
       <div id="rerender-progress-container" style="margin-top:8px;background:var(--bg-card);border-radius:10px;height:8px;overflow:hidden;">
         <div id="rerender-progress-bar" style="background:linear-gradient(90deg,#10b981,#06b6d4);width:0%;height:100%;transition:width 0.4s;"></div>
@@ -1174,10 +1174,13 @@
       main_text: 'Main Text',
       // Rerender
       btn_generate: '🎬 Generate',
+      btn_render: '🎬 Render Video',
       btn_add_new_scene: '＋ Add Scene',
       // Draft status
       scene_label: 'Scene',
       no_scene_draft: 'No scene draft',
+      no_orig_text: '— No original text',
+      no_voice_text: '— No voice text',
       drafts_in_library: (n) => n > 0 ? `📚 ${n} drafts in library` : 'No drafts',
       // Media Library
       ml_brand_colours_title: '🎨 Brand Colours',
@@ -1427,11 +1430,14 @@
       main_text: 'メインテキスト',
       // Rerender
       btn_generate: '🎬 生成',
+      btn_render: '🎬 ビデオをレンダリング',
       btn_add_new_scene: '＋ シーンを追加',
       // Draft status
       scene_label: 'シーン',
-      no_scene_draft: 'シーンドラフトなし',
-      drafts_in_library: (n) => n > 0 ? `📚 ライブラリに${n}件のドラフト` : 'ドラフトなし',
+      no_scene_draft: 'シーンのドラフトなし',
+      no_orig_text: '— 元のテキストなし',
+      no_voice_text: '— 音声テキストなし',
+      drafts_in_library: (n) => n > 0 ? `📚 ライブラリに ${n} 個のドラフトがあります` : 'ドラフトなし',
       // Media Library
       tab_media: '🎨 メディアライブラリ',
       ml_brand_colours_title: '🎨 ブランドカラー',
@@ -4245,8 +4251,8 @@
           </div>
         </div>
         <div class="scene-body-wrap" id="scene-body-${i}">
-        <div class="seg-caption" id="seg-caption-${i}">${seg.text || '— No original text'}</div>
-        <div class="seg-vo" id="voice-summary-${i}">${escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>')}</div>
+        <div class="seg-caption" id="seg-caption-${i}">${seg.text || (I18N[window._appLang||'en']||I18N.en).no_orig_text}</div>
+        <div class="seg-vo" id="voice-summary-${i}">${escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || (I18N[window._appLang||'en']||I18N.en).no_voice_text}</div>
         <input type="hidden" id="timeline-duration-${i}" value="${Number(seg.duration)||5}" />
         <input type="hidden" id="timeline-audioduration-${i}" value="${seg.audioDuration != null ? Number(seg.audioDuration) : ''}" />
 
@@ -4976,19 +4982,20 @@
   }
 
   function buildCreateSceneCard(seg, i) {
+    const t = (I18N[window._appLang||'en']||I18N.en);
     const card = document.createElement('div');
     card.className = 'segment-card';
     card.style.gridTemplateColumns = '1fr';
     const durationLabel = seg.duration ? seg.duration.toFixed(1) + 's' : '—';
-    const caption = escapeHtml(seg.text || '— No original text');
-    const voiceover = escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || '— No voice text';
+    const caption = escapeHtml(seg.text || t.no_orig_text);
+    const voiceover = escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || t.no_voice_text;
     card.innerHTML = `
       <div>
         <div class="seg-header">
-          <span class="seg-num">Scene ${i+1}<span class="seg-duration" style="margin-left:8px;">${durationLabel}</span></span>
+          <span class="seg-num">${t.scene_label} ${i+1}<span class="seg-duration" style="margin-left:8px;">${durationLabel}</span></span>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <button class="btn sm ghost" type="button" onclick="duplicateScene(${i})">📋 Duplicate</button>
-            <button class="btn sm red" type="button" onclick="deleteScene(${i})">🗑 Delete</button>
+            <button class="btn sm ghost" type="button" onclick="duplicateScene(${i})" data-i18n-btn="btn_duplicate">${t.btn_duplicate}</button>
+            <button class="btn sm red" type="button" onclick="deleteScene(${i})" data-i18n-btn="btn_delete">${t.btn_delete}</button>
           </div>
         </div>
         <div class="seg-caption">${caption}</div>
