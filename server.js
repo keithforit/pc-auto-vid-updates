@@ -132,9 +132,53 @@ function normalizeSceneMedia(scene = {}) {
     return nextScene;
 }
 
+// Log message translations used throughout the production pipeline.
+const LOG = {
+    en: {
+        cancelled:        '⏹ Production cancelled.',
+        script_info:      (n, jp, ct) => `📋 Script ${n}: ${jp ? '🇯🇵 Japanese mode' : '🇺🇸 English mode'} • Mode: ${ct === 'captions' ? '🎨 Captions Only' : '🎬 Stock Backgrounds'}`,
+        parsing:          (captions) => `🔍 Parsing script${captions ? ' (captions only — skipping stock video fetch)' : ''}...`,
+        parsed:           '✅ Script parsed into segments',
+        applying_colors:  '🎨 Applying background colours...',
+        assigned_colors:  (brand, n) => `✅ Assigned ${brand ? 'brand' : 'random'} colours to ${n} scene(s)`,
+        gen_voice:        '🎙️ Generating voiceovers...',
+        voice_ready:      '✅ Voiceovers ready',
+        rendering:        '🎬 Rendering video (this takes a few minutes)...',
+        done_status:      (f) => `✅ Done: renders/${f}`,
+        saved:            (f) => `✅ Saved to renders/${f}`,
+        error:            (msg) => `❌ Error: ${msg}`,
+        batch_complete:   '🏁 Batch complete!',
+        regen_voice:      '🎙️ Re-generating voiceovers...',
+        rendering_only:   '🎬 Rendering...',
+        saved_only:       (f) => `✅ Saved: renders/${f}`,
+        warn_sfx:         (n, f) => `Scene ${n}: SFX file "${f}" not found — removed from render`,
+        warn_voice:       (n, f) => `Scene ${n}: Voiceover file "${f}" not found — removed from render`,
+    },
+    ja: {
+        cancelled:        '⏹ 制作がキャンセルされました。',
+        script_info:      (n, jp, ct) => `📋 スクリプト ${n}: ${jp ? '🇯🇵 日本語モード' : '🇺🇸 英語モード'} • モード: ${ct === 'captions' ? '🎨 キャプションのみ' : '🎬 ストック背景'}`,
+        parsing:          (captions) => `🔍 スクリプトを解析中${captions ? '（キャプションのみ — ストック動画取得をスキップ）' : ''}...`,
+        parsed:           '✅ スクリプトをセグメントに分割しました',
+        applying_colors:  '🎨 背景色を適用中...',
+        assigned_colors:  (brand, n) => `✅ ${brand ? 'ブランドカラー' : 'ランダムカラー'}を${n}シーンに割り当てました`,
+        gen_voice:        '🎙️ 音声を生成中...',
+        voice_ready:      '✅ 音声の準備が完了しました',
+        rendering:        '🎬 動画をレンダリング中（数分かかります）...',
+        done_status:      (f) => `✅ 完了: renders/${f}`,
+        saved:            (f) => `✅ renders/${f} に保存しました`,
+        error:            (msg) => `❌ エラー: ${msg}`,
+        batch_complete:   '🏁 バッチ処理が完了しました！',
+        regen_voice:      '🎙️ 音声を再生成中...',
+        rendering_only:   '🎬 レンダリング中...',
+        saved_only:       (f) => `✅ 保存しました: renders/${f}`,
+        warn_sfx:         (n, f) => `シーン${n}: 効果音ファイル「${f}」が見つかりません — レンダリングから除外します`,
+        warn_voice:       (n, f) => `シーン${n}: 音声ファイル「${f}」が見つかりません — レンダリングから除外します`,
+    },
+};
+
 // Pre-render validation: strip any asset references whose files are missing from disk.
 // Returns a list of warning strings (empty = all good).
-function validateContentForRender(logFn) {
+function validateContentForRender(logFn, lang = 'en') {
     try {
         const segs = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         let changed = false;
@@ -144,7 +188,7 @@ function validateContentForRender(logFn) {
             if (seg.soundEffect?.file) {
                 const p = path.join(__dirname, 'public', 'sfx', seg.soundEffect.file);
                 if (!fs.existsSync(p)) {
-                    warnings.push(`Scene ${idx + 1}: SFX file "${seg.soundEffect.file}" not found — removed from render`);
+                    warnings.push((LOG[lang]||LOG.en).warn_sfx(idx + 1, seg.soundEffect.file));
                     delete seg.soundEffect;
                     changed = true;
                 }
@@ -153,7 +197,7 @@ function validateContentForRender(logFn) {
             if (seg.voiceover_audio) {
                 const p = path.join(__dirname, 'public', 'voiceovers', seg.voiceover_audio);
                 if (!fs.existsSync(p)) {
-                    warnings.push(`Scene ${idx + 1}: Voiceover file "${seg.voiceover_audio}" not found — removed from render`);
+                    warnings.push((LOG[lang]||LOG.en).warn_voice(idx + 1, seg.voiceover_audio));
                     delete seg.voiceover_audio;
                     changed = true;
                 }
@@ -1166,6 +1210,8 @@ io.on('connection', (socket) => {
     socket.on('start-batch', async (data) => {
         const scripts = data.scripts.filter(s => s.trim() !== "").slice(0, 2);
         const contentType = data.contentType || 'stock'; // 'stock' | 'captions'
+        const lang = data.lang || 'en';
+        const L = LOG[lang] || LOG.en;
 
         // ── Cancellation support ──────────────────────────────────────────
         let cancelled = false;
@@ -1177,7 +1223,7 @@ io.on('connection', (socket) => {
                 try { activeProc.kill('SIGTERM'); } catch (_) {}
                 activeProc = null;
             }
-            socket.emit('log', '⏹ Production cancelled.');
+            socket.emit('log', L.cancelled);
             socket.emit('batch-cancelled');
         };
         socket.once('cancel-batch', cancelHandler);
@@ -1211,20 +1257,20 @@ io.on('connection', (socket) => {
                 const script = scripts[i];
                 const japanese = isJapanese(script);
 
-                socket.emit('log', `📋 Script ${i + 1}: ${japanese ? '🇯🇵 Japanese mode' : '🇺🇸 English mode'} • Mode: ${contentType === 'captions' ? '🎨 Captions Only' : '🎬 Stock Backgrounds'}`);
+                socket.emit('log', L.script_info(i + 1, japanese, contentType));
 
                 fs.writeFileSync('temp_input.txt', script);
 
                 // Step 1: Parse script → Content.json
                 const parserScript = contentType === 'captions' ? 'parser-captions.js' : 'parser.js';
-                socket.emit('log', `🔍 Parsing script${contentType === 'captions' ? ' (captions only — skipping stock video fetch)' : ''}...`);
+                socket.emit('log', L.parsing(contentType === 'captions'));
                 await runProc('node', [parserScript]);
                 if (cancelled) break;
-                socket.emit('log', '✅ Script parsed into segments');
+                socket.emit('log', L.parsed);
 
                 // For captions-only: assign brand or random colours to each scene
                 if (contentType === 'captions') {
-                    socket.emit('log', '🎨 Applying background colours...');
+                    socket.emit('log', L.applying_colors);
                     const segments = readJsonFile(CONTENT_PATH, []);
                     const mediaLib = readMediaLibrary();
                     const brandColors = (mediaLib.brandColors || []).map(c => c.color).filter(Boolean);
@@ -1238,14 +1284,14 @@ io.on('connection', (socket) => {
                         seg.background_color = color;
                     });
                     writeJsonFile(CONTENT_PATH, segments);
-                    socket.emit('log', `✅ Assigned ${brandColors.length > 0 ? 'brand' : 'random'} colours to ${segments.length} scene(s)`);
+                    socket.emit('log', L.assigned_colors(brandColors.length > 0, segments.length));
                 }
 
                 // Step 1b: Apply current style settings to all parsed segments
                 applyStylesToContent(readSettings());
 
                 // Step 2: Generate voiceovers
-                socket.emit('log', '🎙️ Generating voiceovers...');
+                socket.emit('log', L.gen_voice);
                 const voiceSettings = readSettings();
                 const segmentsForVoice = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
                 const audioScriptName = contentUsesVoicevox(segmentsForVoice, voiceSettings)
@@ -1253,36 +1299,38 @@ io.on('connection', (socket) => {
                     : japanese ? 'generate-audio-ja.js' : 'generate-audio.js';
                 await runProc('node', [audioScriptName]);
                 if (cancelled) break;
-                socket.emit('log', '✅ Voiceovers ready');
+                socket.emit('log', L.voice_ready);
 
                 // Step 3: Render video
                 const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
                 const finalName = `${title}_${Date.now()}.mp4`;
 
-                validateContentForRender(msg => socket.emit('log', msg));
-                socket.emit('log', '🎬 Rendering video (this takes a few minutes)...');
+                validateContentForRender(msg => socket.emit('log', msg), lang);
+                socket.emit('log', L.rendering);
                 await runProc('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
                 if (cancelled) break;
 
                 if (!fs.existsSync('renders')) fs.mkdirSync('renders');
                 fs.renameSync('out/1.mp4', `renders/${finalName}`);
-                socket.emit('status', { msg: `✅ Done: renders/${finalName}`, progress: ((i + 1) / scripts.length) * 100 });
-                socket.emit('log', `✅ Saved to renders/${finalName}`);
+                socket.emit('status', { msg: L.done_status(finalName), progress: ((i + 1) / scripts.length) * 100 });
+                socket.emit('log', L.saved(finalName));
 
             } catch (err) {
                 if (err.message === 'cancelled') break;
-                socket.emit('log', '❌ Error: ' + err.message);
+                socket.emit('log', L.error(err.message));
             }
         }
 
         socket.off('cancel-batch', cancelHandler);
         if (!cancelled) {
-            socket.emit('status', { msg: '🏁 Batch complete!', progress: 100 });
+            socket.emit('status', { msg: L.batch_complete, progress: 100 });
         }
     });
 
     // Re-render only (after manually replacing videos)
-    socket.on('render-only', async () => {
+    socket.on('render-only', async (data) => {
+        const lang = (data && data.lang) || 'en';
+        const L = LOG[lang] || LOG.en;
         try {
             const japanese = (() => {
                 try {
@@ -1296,7 +1344,7 @@ io.on('connection', (socket) => {
                 ? 'node generate-audio-voicevox.js'
                 : japanese ? 'node generate-audio-ja.js' : 'node generate-audio.js';
 
-            socket.emit('log', '🎙️ Re-generating voiceovers...');
+            socket.emit('log', L.regen_voice);
             // Use spawn (not execSync) so the event loop stays free and logs stream live
             const audioScript = audioCmd2.replace(/^node\s+/, '');
             const audioProc = spawn('node', [audioScript], { shell: false });
@@ -1304,10 +1352,10 @@ io.on('connection', (socket) => {
             audioProc.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
             const audioCode = await new Promise(res => audioProc.on('close', res));
             if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
-            socket.emit('log', '✅ Voiceovers ready');
+            socket.emit('log', L.voice_ready);
 
-            validateContentForRender(msg => socket.emit('log', msg));
-            socket.emit('log', '🎬 Rendering...');
+            validateContentForRender(msg => socket.emit('log', msg), lang);
+            socket.emit('log', L.rendering_only);
             const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
             render.stdout.on('data', d => socket.emit('log', d.toString().trim()));
             render.stderr.on('data', d => socket.emit('log', d.toString().trim()));
@@ -1317,9 +1365,9 @@ io.on('connection', (socket) => {
             if (!fs.existsSync('renders')) fs.mkdirSync('renders');
             fs.renameSync('out/1.mp4', `renders/${finalName}`);
             socket.emit('render-done', { file: `renders/${finalName}` });
-            socket.emit('log', `✅ Saved: renders/${finalName}`);
+            socket.emit('log', L.saved_only(finalName));
         } catch (err) {
-            socket.emit('log', '❌ Error: ' + err.message);
+            socket.emit('log', L.error(err.message));
         }
     });
 });

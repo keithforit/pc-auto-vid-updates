@@ -1493,6 +1493,15 @@
       bg_blur: 'Blur:',
       blur_off: 'Off',
       apply_solid_bg: 'Apply solid background',
+      // Create tab — no scenes yet
+      scenes_none_yet: 'No scenes found yet. Click "Create Scene" to add your first scene.',
+      // Log / status messages
+      log_running: 'Running...',
+      log_starting_batch: 'Starting batch...',
+      log_starting_regenerate: '🎬 Starting regenerate...',
+      log_starting_rerender: '🎬 Starting re-render...',
+      log_done_saved: (f) => `✅ Done! Saved to ${f}`,
+      log_cancelled: '⏹ Cancelled',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1870,6 +1879,15 @@
       bg_blur: 'ぼかし:',
       blur_off: 'オフ',
       apply_solid_bg: '単色背景を適用',
+      // Create tab — no scenes yet
+      scenes_none_yet: 'シーンがまだありません。「シーンを作成」をクリックして最初のシーンを追加してください。',
+      // Log / status messages
+      log_running: '処理中...',
+      log_starting_batch: 'バッチ処理を開始中...',
+      log_starting_regenerate: '🎬 再生成を開始中...',
+      log_starting_rerender: '🎬 再レンダリングを開始中...',
+      log_done_saved: (f) => `✅ 完了！${f} に保存されました`,
+      log_cancelled: '⏹ キャンセルされました',
     }
   };
 
@@ -2317,16 +2335,17 @@
     const logWindow = document.getElementById('log-window');
     const scripts = [document.getElementById('s1').value];
     const contentType = document.querySelector('input[name="content-type"]:checked')?.value || 'stock';
-    logWindow.innerHTML = ''; addLog('Starting batch...');
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
+    logWindow.innerHTML = ''; addLog(_lt.log_starting_batch);
     _setBatchBtn(true);
-    document.getElementById('status-text').textContent = 'Running...';
+    document.getElementById('status-text').textContent = _lt.log_running;
     document.getElementById('progress-bar').style.width = '0%';
-    socket.emit('start-batch', { scripts, contentType });
+    socket.emit('start-batch', { scripts, contentType, lang: window._appLang||'en' });
   }
 
   socket.on('batch-cancelled', () => {
     _setBatchBtn(false);
-    document.getElementById('status-text').textContent = '⏹ Cancelled';
+    document.getElementById('status-text').textContent = (I18N[window._appLang||'en']||I18N.en).log_cancelled;
   });
   socket.on('status', d => {
     if (scenesRerenderActive) {
@@ -5306,7 +5325,7 @@
     if (!list) return;
     if (!segs.length) {
       createDraftStarted = false;
-      list.innerHTML = '<p style="color:#475569">No scenes found yet. Click "Create Scene" to add your first scene.</p>';
+      list.innerHTML = `<p style="color:#475569">${(I18N[window._appLang||'en']||I18N.en).scenes_none_yet}</p>`;
       if (rerenderSection) rerenderSection.style.display = 'none';
       await refreshDraftStatus();
       return;
@@ -8829,23 +8848,25 @@
   }
 
   function scenesRerender() {
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
     scenesRerenderActive = true;
     document.getElementById('scenesRerenderBtn').disabled = true;
-    document.getElementById('scenes-rerender-status').textContent = 'Running...';
+    document.getElementById('scenes-rerender-status').textContent = _lt.log_running;
     document.getElementById('scenes-rerender-progress-bar').style.width = '0%';
     document.getElementById('scenes-rerender-log').innerHTML = '';
-    addScenesRerenderLog('🎬 Starting regenerate...');
-    socket.emit('render-only');
+    addScenesRerenderLog(_lt.log_starting_regenerate);
+    socket.emit('render-only', { lang: window._appLang||'en' });
   }
 
   function rerender() {
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
     rerenderActive = true;
     document.getElementById('rerenderBtn').disabled = true;
-    document.getElementById('rerender-status').textContent = 'Running...';
+    document.getElementById('rerender-status').textContent = _lt.log_running;
     document.getElementById('rerender-progress-bar').style.width = '0%';
     document.getElementById('rerender-log').innerHTML = '';
-    addRerenderLog('🎬 Starting re-render...');
-    socket.emit('render-only');
+    addRerenderLog(_lt.log_starting_rerender);
+    socket.emit('render-only', { lang: window._appLang||'en' });
   }
 
   socket.on('log', msg => {
@@ -8859,18 +8880,20 @@
   });
 
   socket.on('render-done', data => {
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
+    const doneMsg = _lt.log_done_saved(data.file);
     if (scenesRerenderActive) {
       scenesRerenderActive = false;
       document.getElementById('scenes-rerender-progress-bar').style.width = '100%';
-      document.getElementById('scenes-rerender-status').textContent = `✅ Done! Saved to ${data.file}`;
+      document.getElementById('scenes-rerender-status').textContent = doneMsg;
       document.getElementById('scenesRerenderBtn').disabled = false;
-      addScenesRerenderLog(`✅ Saved to ${data.file}`);
+      addScenesRerenderLog(doneMsg);
     } else {
       rerenderActive = false;
       document.getElementById('rerender-progress-bar').style.width = '100%';
-      document.getElementById('rerender-status').textContent = `✅ Done! Saved to ${data.file}`;
+      document.getElementById('rerender-status').textContent = doneMsg;
       document.getElementById('rerenderBtn').disabled = false;
-      addRerenderLog(`✅ Saved to ${data.file}`);
+      addRerenderLog(doneMsg);
     }
   });
 
