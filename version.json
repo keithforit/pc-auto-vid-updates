@@ -1,7 +1,7 @@
 {
-  "version": "1.2.71",
+  "version": "1.2.72",
   "date": "2026-05-29",
-  "notes": "Fix EN localisation in scenes: add missing i18n keys (no_orig_text, no_voice_text, no_scene_draft), translate Settings style card previews, fix scene thumbnail preview using data-style attribute so glow renders correctly in all languages",
+  "notes": "Extra text layers: inherit main text style on creation; fix drag not changing style/colours (was reading main text colour inputs instead of the layer's own overrides); move Show at / Hide at to top of layer panel",
   "files": [
     "index.html"
   ]

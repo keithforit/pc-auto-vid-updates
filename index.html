@@ -3482,19 +3482,23 @@
 
     const styActive = document.querySelector(`#et-stylerow-${i}-${j} .pos-btn.active`);
     const alignActive = document.querySelector(`#et-alignrow-${i}-${j} .pos-btn.active`);
-    const style = styActive ? ['box','glow','block','shadow','plain'][Array.from(styActive.parentElement.children).indexOf(styActive)] : 'box';
+    const mainStyleActive = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
+    const style = styActive?.dataset?.style || mainStyleActive?.dataset?.style || 'box';
     const hAlign = alignActive ? ['left','center','right'][Array.from(alignActive.parentElement.children).indexOf(alignActive)] : 'center';
     const rotation = parseInt(document.getElementById(`et-rotation-${i}-${j}`)?.value) || 0;
     const fontSize = parseInt(document.getElementById(`et-fontsize-${i}-${j}`)?.value) || 70;
-    const glowColor = document.getElementById(`glowco-${i}`)?.value || '#00ffff';
-    const blockColor = document.getElementById(`blockco-${i}`)?.value || '#ffdd00';
-    const textColor = document.getElementById(`textco-${i}`)?.value || '#000000';
-    const glowTextColor = document.getElementById(`glowtextco-${i}`)?.value || '#ffffff';
-    const textStrokeColor = document.getElementById(`strokeco-${i}`)?.value || '#000000';
-    const textStrokeSize = parseFloat(document.getElementById(`strokesize-${i}`)?.value) || 0;
-    const glowSize = parseInt(document.getElementById(`glowsize-${i}`)?.value) || 14;
-    const boxBorderRadius = parseInt(document.getElementById(`boxradius-${i}`)?.value) || 20;
-    const blockBorderRadius = parseInt(document.getElementById(`blockradius-${i}`)?.value) || 10;
+    // Read extra layer colour overrides first, fall back to main text values
+    const _etC = (etId, mainId, def) => { const e = document.getElementById(etId); if (e && e.dataset.cleared !== '1' && e.value) return e.value; return document.getElementById(mainId)?.value || def; };
+    const _etN = (etId, mainId, def) => { const e = document.getElementById(etId); const v = e?.value?.trim(); if (v !== '' && v != null && !isNaN(Number(v))) return Number(v); const fv = document.getElementById(mainId)?.value?.trim(); return (fv !== '' && fv != null && !isNaN(Number(fv))) ? Number(fv) : def; };
+    const glowColor       = _etC(`et-glowco-${i}-${j}`,     `glowco-${i}`,     '#00ffff');
+    const blockColor      = _etC(`et-blockco-${i}-${j}`,    `blockco-${i}`,    '#ffdd00');
+    const textColor       = _etC(`et-textco-${i}-${j}`,     `textco-${i}`,     '#000000');
+    const glowTextColor   = _etC(`et-glowtextco-${i}-${j}`, `glowtextco-${i}`, '#ffffff');
+    const textStrokeColor = _etC(`et-strokeco-${i}-${j}`,   `strokeco-${i}`,   '#000000');
+    const textStrokeSize  = _etN(`et-strokesize-${i}-${j}`, `strokesize-${i}`, 0);
+    const glowSize        = _etN(`et-glowsize-${i}-${j}`,   `glowsize-${i}`,   14);
+    const boxBorderRadius    = _etN(`et-boxradius-${i}-${j}`,   `boxradius-${i}`,   20);
+    const blockBorderRadius  = _etN(`et-blockradius-${i}-${j}`, `blockradius-${i}`, 10);
     const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     el.setAttribute('style', `${wrap};display:flex`);
     innerEl.setAttribute('style', inner);
@@ -6365,6 +6369,18 @@
           <div class="layer-accordion-body">
         <input class="extra-text-input" id="et-input-${i}-${j}" value="${(et.text||'').replace(/"/g,'&quot;')}"
                onblur="saveExtraText(${i})" placeholder="Text content..." />
+        <div class="ctrl-row" style="margin-top:6px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
+          <span class="ctrl-row-label" style="min-width:auto;color:#34d399">${t.show_at}</span>
+          <input type="number" class="num-input" id="et-startat-${i}-${j}" min="0" max="60" step="0.5"
+                 value="${et.startAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
+          <span style="font-size:10px;color:#64748b">s</span>
+        </div>
+        <div class="ctrl-row" style="margin-top:4px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
+          <span class="ctrl-row-label" style="min-width:auto;color:#f87171">${t.hide_at}</span>
+          <input type="number" class="num-input" id="et-endat-${i}-${j}" min="0" max="60" step="0.5"
+                 value="${et.endAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
+          <span style="font-size:10px;color:#64748b">s (${t.timing_hint})</span>
+        </div>
         <div class="ctrl-row" style="margin-top:6px">
           <span class="ctrl-row-label">${t.label_align_h}</span>
           <div style="display:flex;gap:3px" id="et-hposrow-${i}-${j}">
@@ -6505,18 +6521,6 @@
             </div>
           </div>
         </details>
-        <div class="ctrl-row" style="margin-top:4px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-row-label" style="min-width:auto;color:#34d399">${t.show_at}</span>
-          <input type="number" class="num-input" id="et-startat-${i}-${j}" min="0" max="60" step="0.5"
-                 value="${et.startAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
-          <span style="font-size:10px;color:#64748b">s — main text fades out, this bounces in</span>
-        </div>
-        <div class="ctrl-row" style="margin-top:4px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:8px 10px;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-row-label" style="min-width:auto;color:#f87171">${t.hide_at}</span>
-          <input type="number" class="num-input" id="et-endat-${i}-${j}" min="0" max="60" step="0.5"
-                 value="${et.endAt ?? ''}" placeholder="—" onchange="saveExtraText(${i})" style="width:52px" />
-          <span style="font-size:10px;color:#64748b">s (${t.timing_hint})</span>
-        </div>
           </div>
         </details>
       </div>`;
@@ -7969,7 +7973,9 @@
   async function addExtraText(i) {
     const container = document.getElementById(`extratexts-${i}`);
     const j = container.querySelectorAll('.extra-text-block').length;
-    container.insertAdjacentHTML('beforeend', buildExtraTextHTML(i, j, { text: 'New text layer', position: 'center' }));
+    const mainStyleBtn = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
+    const inheritedStyle = mainStyleBtn?.dataset?.style || '';
+    container.insertAdjacentHTML('beforeend', buildExtraTextHTML(i, j, { text: 'New text layer', position: 'center', textStyle: inheritedStyle }));
     updateExtraTextPreviewAll(i);
     await saveExtraText(i);
   }
