@@ -1,8 +1,9 @@
 {
-  "version": "1.2.74",
-  "date": "2026-05-29",
-  "notes": "Extra text layer: fix no-wrap toggle not affecting preview (apply noWrap/textBoxWidth in buildSingleExtraTextPreviewHTML and applyExtraFreePos); new layers start blank and inherit both style and animation from main text; use tpreview data-style as reliable fallback",
+  "version": "1.2.75",
+  "date": "2026-06-01",
+  "notes": "parser.js: fix Japanese prompt parsing — add 画面テロップ to on-screen text labels, add 映像素材のアイデア to visual match regex, fix narration/caption lookaheads to stop before 映像素材 and グラフ sections",
   "files": [
-    "index.html"
+    "parser.js",
+    "version.json"
   ]
 }

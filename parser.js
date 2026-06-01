@@ -68,18 +68,18 @@ async function parse() {
         // stopping when the next known label (Narration/Spoken/Visual) appears.
         // Also accepts Japanese aliases: キャプション / テロップ / 画面テキスト
         const textMatch = trimmed.match(
-            /(?:On-screen text|キャプション|テロップ|画面テキスト)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|ナレーション|Spoken|Visual|視覚案)[ \t]*[:：]|\s*$)/i
+            /(?:On-screen text|キャプション|テロップ|画面テキスト|画面テロップ)[:：]\s*([\s\S]*?)(?=\n[ \t]*(?:Narration|ナレーション|Spoken|Visual|視覚案|映像素材)[ \t]*[:：]|\s*$)/i
         );
         if (!textMatch) continue;
 
         // ── Narration / voiceover ────────────────────────────────────────────
         // Accepts: "Narration:", "ナレーション:", "Spoken narration:", "Spoken hook:", "Spoken CTA:", etc.
         const narrationMatch = trimmed.match(
-            /(?:Narration|ナレーション|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|視覚案|On-screen|テロップ|キャプション|画面テキスト|ナレーション|Scene|シーン|場面|フック|HOOK|CTA|\d+\.|$)|$)/i
+            /(?:Narration|ナレーション|Spoken\s+\S+?)[:：]\s*[「""]?([\s\S]*?)[」""]?\s*(?=\r?\n\s*(?:Visual|視覚案|映像素材|グラフ|On-screen|テロップ|キャプション|画面テキスト|画面テロップ|ナレーション|Scene|シーン|場面|フック|HOOK|CTA|\d+\.|$)|$)/i
         );
 
         // ── Visual / stock footage query ─────────────────────────────────────
-        const visualMatch = trimmed.match(/(?:Visual idea|Visual \/ stock footage idea|視覚案|ビジュアルアイデア)[:：]\s*(.*)/i);
+        const visualMatch = trimmed.match(/(?:Visual idea|Visual \/ stock footage idea|視覚案|ビジュアルアイデア|映像素材のアイデア|映像素材)[:：]\s*(.*)/i);
 
         let query = visualMatch ? visualMatch[1].trim() : textMatch[1].trim();
         query = query.replace(/(Person looking |Close-up of |Quick flash of )/gi, '');
