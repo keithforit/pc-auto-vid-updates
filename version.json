@@ -1,7 +1,7 @@
 {
-  "version": "1.2.76",
+  "version": "1.2.77",
   "date": "2026-06-02",
-  "notes": "Auto-detect platform URL cross-paste: pasting a Pixabay URL into the Pexels field (or vice versa) now auto-routes to the correct handler",
+  "notes": "Slow-connection warnings for all video fetch/search ops: 15s warning in log + button text update; guard against silent no-url responses; onerror on video thumbnail element",
   "files": [
     "index.html",
     "version.json"

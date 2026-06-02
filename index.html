@@ -6052,6 +6052,8 @@
     const style = backgroundTransformStyle(scale, x, y);
     if(el.tagName==='VIDEO'){el.src=src;el.style.objectFit='cover';el.style.objectPosition='center center';el.style.transform=`translate(${x}%, ${y}%) scale(${scale})`;el.style.transformOrigin='center center';}
     else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
+    const vid = document.getElementById(`thumb-${i}`);
+    if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
     setBackgroundTransformPanelState(i, true);
   }
 
@@ -6064,6 +6066,10 @@
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
     document.getElementById(`card-${i}`).classList.add('replacing');
     addEditorLog(`🔍 Searching Pexels for "${query}"...`);
+    const slowWarn = setTimeout(() => {
+      addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
+      if (btn) btn.textContent = '⏳ Still working...';
+    }, 15000);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
@@ -6076,16 +6082,18 @@
       clearTimeout(timeout);
       const data = await res.json();
       if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
+      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
       setThumb(i, data.url);
       markVideoSource(i, 'pexels');
       addEditorLog(`✅ Scene ${i+1} updated from Pexels (saved locally)`);
     } catch (err) {
       if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pexels search timed out. The video download may be slow — try a different query.`);
+        addEditorLog(`❌ Pexels search timed out after 60s. The video download may be too slow — try a different query.`);
       } else {
         addEditorLog(`❌ Pexels error: ${err.message}`);
       }
     } finally {
+      clearTimeout(slowWarn);
       document.getElementById(`card-${i}`)?.classList.remove('replacing');
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
@@ -6111,6 +6119,10 @@
     if (btn) { btn.textContent = '⏳ Fetching...'; btn.disabled = true; }
     document.getElementById(`card-${i}`).classList.add('replacing');
     addEditorLog(`🔗 Fetching Pexels video from URL...`);
+    const slowWarn = setTimeout(() => {
+      addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
+      if (btn) btn.textContent = '⏳ Still working...';
+    }, 15000);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
@@ -6123,6 +6135,7 @@
       clearTimeout(timeout);
       const data = await res.json();
       if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
+      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
       setThumb(i, data.url);
       markVideoSource(i, 'pexels');
       addEditorLog(`✅ Scene ${i+1} updated from Pexels URL (saved locally)`);
@@ -6130,11 +6143,12 @@
       if (urlInput) urlInput.value = '';
     } catch (err) {
       if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pexels URL fetch timed out. The video download may be slow — try again.`);
+        addEditorLog(`❌ Pexels URL fetch timed out after 60s. The video may be too large — try again.`);
       } else {
         addEditorLog(`❌ Pexels URL error: ${err.message}`);
       }
     } finally {
+      clearTimeout(slowWarn);
       document.getElementById(`card-${i}`)?.classList.remove('replacing');
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
@@ -6149,6 +6163,10 @@
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
     document.getElementById(`card-${i}`).classList.add('replacing');
     addEditorLog(`🔍 Searching Pixabay for "${query}"...`);
+    const slowWarn = setTimeout(() => {
+      addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
+      if (btn) btn.textContent = '⏳ Still working...';
+    }, 15000);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
@@ -6161,16 +6179,18 @@
       clearTimeout(timeout);
       const data = await res.json();
       if (data.error) { addEditorLog(`❌ Pixabay: ${data.error}`); return; }
+      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
       setThumb(i, data.url);
       markVideoSource(i, 'pixabay');
       addEditorLog(`✅ Scene ${i+1} updated from Pixabay (saved locally)`);
     } catch (err) {
       if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pixabay search timed out. The video download may be slow — try a different query.`);
+        addEditorLog(`❌ Pixabay search timed out after 60s. The video download may be too slow — try a different query.`);
       } else {
         addEditorLog(`❌ Pixabay error: ${err.message}`);
       }
     } finally {
+      clearTimeout(slowWarn);
       document.getElementById(`card-${i}`)?.classList.remove('replacing');
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
@@ -6195,6 +6215,10 @@
     if (btn) { btn.textContent = '⏳ Fetching...'; btn.disabled = true; }
     document.getElementById(`card-${i}`).classList.add('replacing');
     addEditorLog(`🔗 Fetching Pixabay video from URL...`);
+    const slowWarn = setTimeout(() => {
+      addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
+      if (btn) btn.textContent = '⏳ Still working...';
+    }, 15000);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
@@ -6207,6 +6231,7 @@
       clearTimeout(timeout);
       const data = await res.json();
       if (data.error) { addEditorLog(`❌ Pixabay: ${data.error}`); return; }
+      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
       setThumb(i, data.url);
       markVideoSource(i, 'pixabay');
       addEditorLog(`✅ Scene ${i+1} updated from Pixabay URL (saved locally)`);
@@ -6214,11 +6239,12 @@
       if (urlInput) urlInput.value = '';
     } catch (err) {
       if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pixabay URL fetch timed out. The video download may be slow — try again.`);
+        addEditorLog(`❌ Pixabay URL fetch timed out after 60s. The video may be too large — try again.`);
       } else {
         addEditorLog(`❌ Pixabay URL error: ${err.message}`);
       }
     } finally {
+      clearTimeout(slowWarn);
       document.getElementById(`card-${i}`)?.classList.remove('replacing');
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
