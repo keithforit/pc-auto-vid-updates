@@ -1,9 +1,9 @@
 {
-  "version": "1.2.75",
-  "date": "2026-06-01",
-  "notes": "parser.js: fix Japanese prompt parsing — add 画面テロップ to on-screen text labels, add 映像素材のアイデア to visual match regex, fix narration/caption lookaheads to stop before 映像素材 and グラフ sections",
+  "version": "1.2.76",
+  "date": "2026-06-02",
+  "notes": "Auto-detect platform URL cross-paste: pasting a Pixabay URL into the Pexels field (or vice versa) now auto-routes to the correct handler",
   "files": [
-    "parser.js",
+    "index.html",
     "version.json"
   ]
 }

@@ -6094,6 +6094,13 @@
   async function replacePexelsByUrl(i) {
     const url = document.getElementById(`pexels-url-${i}`)?.value?.trim();
     if (!url) return alert('Paste a Pexels video URL first.');
+    // Auto-detect: if a Pixabay URL was pasted here, route it correctly
+    if (/pixabay\.com/i.test(url)) {
+      const pixabayInput = document.getElementById(`pixabay-url-${i}`);
+      if (pixabayInput) pixabayInput.value = url;
+      document.getElementById(`pexels-url-${i}`).value = '';
+      return replacePixabayByUrl(i);
+    }
     // Accept both full page URLs and direct video file URLs
     const pexelsPageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
     if (!pexelsPageMatch && !url.match(/\.mp4/i)) {
@@ -6172,6 +6179,13 @@
   async function replacePixabayByUrl(i) {
     const url = document.getElementById(`pixabay-url-${i}`)?.value?.trim();
     if (!url) return alert('Paste a Pixabay video URL first.');
+    // Auto-detect: if a Pexels URL was pasted here, route it correctly
+    if (/pexels\.com/i.test(url)) {
+      const pexelsInput = document.getElementById(`pexels-url-${i}`);
+      if (pexelsInput) pexelsInput.value = url;
+      document.getElementById(`pixabay-url-${i}`).value = '';
+      return replacePexelsByUrl(i);
+    }
     const pixabayPageMatch = url.match(/pixabay\.com\/videos\/[^/]*?-(\d+)\/?$/);
     if (!pixabayPageMatch) {
       return alert('Please paste a valid Pixabay video page URL (e.g. https://pixabay.com/videos/radio-tower-night-view-211067/)');
