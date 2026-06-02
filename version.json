@@ -1,9 +1,11 @@
 {
-  "version": "1.2.77",
+  "version": "1.2.78",
   "date": "2026-06-02",
-  "notes": "Slow-connection warnings for all video fetch/search ops: 15s warning in log + button text update; guard against silent no-url responses; onerror on video thumbnail element",
+  "notes": "Remove hardcoded API keys — Pexels key now reads from .env only (process.env.PEXELS_API_KEY) in both parser.js and server.js; remove example Pixabay key from download-pixabay.js error message",
   "files": [
-    "index.html",
+    "parser.js",
+    "server.js",
+    "download-pixabay.js",
     "version.json"
   ]
 }

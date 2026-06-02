@@ -400,7 +400,7 @@ async function downloadVideo(url) {
 // Replace the video for one segment by searching Pexels with a new query
 app.post('/replace-video', async (req, res) => {
     const { index, query } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
     try {
         const axios = require('axios');
         const result = await axios.get(
@@ -428,7 +428,7 @@ app.post('/replace-video', async (req, res) => {
 // Replace the background for one segment by fetching a specific Pexels video OR photo page URL
 app.post('/replace-video-by-url', async (req, res) => {
     const { index, url } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
+    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
     try {
         const axios = require('axios');
         const videoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);

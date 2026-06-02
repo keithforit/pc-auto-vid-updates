@@ -1,7 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const PEXELS_API_KEY = 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
+
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+    fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+        const match = line.match(/^([^#=]+)=(.*)$/);
+        if (match) process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
+    });
+}
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 // Download a remote video to public/backgrounds/ and return the local filename
 async function downloadVideo(url) {
