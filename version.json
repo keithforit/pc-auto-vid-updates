@@ -1,11 +1,10 @@
 {
-  "version": "1.2.78",
+  "version": "1.2.79",
   "date": "2026-06-02",
-  "notes": "Remove hardcoded API keys — Pexels key now reads from .env only (process.env.PEXELS_API_KEY) in both parser.js and server.js; remove example Pixabay key from download-pixabay.js error message",
+  "notes": "Fix landscape video panning: switch from transform:translate to object-position for X/Y pan controls — translate moved the element box (useless for landscape), object-position correctly pans through video content in both orientations",
   "files": [
-    "parser.js",
-    "server.js",
-    "download-pixabay.js",
+    "index.html",
+    "src/Background.tsx",
     "version.json"
   ]
 }

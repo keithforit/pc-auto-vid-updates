@@ -153,12 +153,17 @@ export const Background: React.FC<BackgroundProps> = ({
     // cover = fill frame (default), contain = letterbox
     const fitMode: 'cover' | 'contain' = (videoFit === 'contain-black' || videoFit === 'contain-blur') ? 'contain' : 'cover';
 
+    // object-position pans the video content within the element — this correctly reveals
+    // left/right of landscape videos. translate() only moves the element box and doesn't
+    // expose new content when object-fit:cover has already cropped a landscape source.
+    const objX = 50 + videoX / 2;
+    const objY = 50 + videoY / 2;
     const videoStyle = {
         width: "100%",
         height: "100%",
         objectFit: fitMode,
-        objectPosition: "center center" as const,
-        transform: `translate(${videoX}%, ${videoY}%) scale(${videoScale})`,
+        objectPosition: `${objX}% ${objY}%` as const,
+        transform: `scale(${videoScale})`,
         transformOrigin: "center center" as const,
     };
 
