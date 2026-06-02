@@ -1,10 +1,9 @@
 {
-  "version": "1.2.79",
+  "version": "1.2.80",
   "date": "2026-06-02",
-  "notes": "Fix landscape video panning: switch from transform:translate to object-position for X/Y pan controls — translate moved the element box (useless for landscape), object-position correctly pans through video content in both orientations",
+  "notes": "npm audit fix: resolved 8 vulnerabilities including high-severity axios and fast-uri issues; 16 remaining have no fix available (gtts/request chain) or require breaking-change upgrades",
   "files": [
-    "index.html",
-    "src/Background.tsx",
+    "package-lock.json",
     "version.json"
   ]
 }
