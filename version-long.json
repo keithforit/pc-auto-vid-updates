@@ -1,11 +1,14 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "date": "2026-06-03",
-  "notes": "Initial release of AI Long Video Factory",
+  "notes": "Expanded font library — 7 fonts now available: Noto Sans JP, Dela Gothic One, Noto Serif JP, Bebas Neue, Oswald, Bangers, M PLUS Rounded 1c. Local font support via public/fonts/.",
   "files": [
-    "index.html",
-    "server.js",
-    "parser-captions.js",
-    "parser.js"
-  ]
+    "src/index.css",
+    "src/Caption.tsx",
+    "long-index.html",
+    "server.js"
+  ],
+  "fileMap": {
+    "long-index.html": "index.html"
+  }
 }
