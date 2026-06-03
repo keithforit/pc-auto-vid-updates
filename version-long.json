@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "date": "2026-06-03",
+  "notes": "Initial release of AI Long Video Factory",
+  "files": [
+    "index.html",
+    "server.js",
+    "parser-captions.js",
+    "parser.js"
+  ]
+}
