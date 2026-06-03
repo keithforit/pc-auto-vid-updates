@@ -2,6 +2,19 @@ node_modules
 dist
 .DS_Store
 .env
-
-# Ignore the output video from Git but not videos you import into src/.
 out
+
+# Runtime-generated folders
+public/backgrounds
+public/voiceovers
+public/voice-previews
+renders
+
+# User data — never back these up
+src/Content.json
+src/ProjectDraft.json
+src/SceneDraftLibrary.json
+src/SceneDrafts.json
+src/MediaLibrary.json
+src/VideoSettings.json
+content.json
