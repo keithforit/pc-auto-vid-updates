@@ -1,2 +1,14 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&family=Dela+Gothic+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+
+/* Local font support — drop .ttf or .woff2 files into public/fonts/ and add @font-face rules here:
+@font-face {
+  font-family: 'MyCustomFont';
+  src: url('/fonts/MyCustomFont.woff2') format('woff2'),
+       url('/fonts/MyCustomFont.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+Then add the key → family entry in src/Caption.tsx fontMap,
+and a font card in index.html.
+*/

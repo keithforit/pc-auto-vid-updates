@@ -1,9 +1,11 @@
 {
-  "version": "1.2.81",
+  "version": "1.2.82",
   "date": "2026-06-03",
-  "notes": "Auto-cleanup unused background videos after each render — deletes any mp4 in public/backgrounds/ not referenced by Content.json, SceneDraftLibrary.json, SceneDrafts.json, or ProjectDraft.json",
+  "notes": "Expanded font library — 7 fonts now available: Noto Sans JP, Dela Gothic One, Noto Serif JP, Bebas Neue, Oswald, Bangers, M PLUS Rounded 1c. Local font support via public/fonts/.",
   "files": [
-    "server.js",
+    "src/index.css",
+    "src/Caption.tsx",
+    "index.html",
     "version.json"
   ]
 }

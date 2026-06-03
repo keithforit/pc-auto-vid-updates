@@ -166,9 +166,16 @@ export const Caption: React.FC<CaptionProps> = ({
         }
     }
 
-    const fontFamily = font === 'dela'
-        ? '"Dela Gothic One", sans-serif'
-        : '"Noto Sans JP", sans-serif';
+    const fontMap: Record<string, string> = {
+        noto:        '"Noto Sans JP", sans-serif',
+        dela:        '"Dela Gothic One", sans-serif',
+        notoserifJP: '"Noto Serif JP", serif',
+        bebas:       '"Bebas Neue", sans-serif',
+        oswald:      '"Oswald", sans-serif',
+        bangers:     '"Bangers", sans-serif',
+        mplus:       '"M PLUS Rounded 1c", sans-serif',
+    };
+    const fontFamily = fontMap[font] ?? '"Noto Sans JP", sans-serif';
 
     const positionStyle = (() => {
         const vertical = (() => {

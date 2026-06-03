@@ -4,7 +4,7 @@
   <title>AI Video Factory</title>
   <script src="/socket.io/socket.io.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;900&family=Noto+Serif+JP:wght@700&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
   <style>
     * { box-sizing: border-box; }
@@ -440,7 +440,7 @@
     .style-card .card-label { font-size: 12px; color: var(--text-muted); }
 
     /* Font cards */
-    .font-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    .font-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 8px; }
     .font-card {
       border: 2px solid var(--border); border-radius: 12px; padding: 16px 12px;
       cursor: pointer; transition: all 0.15s; text-align: center; background: var(--bg-input);
@@ -948,13 +948,33 @@
     <div class="settings-section">
       <h3 data-i18n="settings_font">🔡 Font</h3>
       <div class="font-cards">
-        <div class="font-card active" id="fontCardNoto" onclick="selectFont('noto')">
-          <div class="font-preview" style="font-family:'Noto Sans JP'">あいう ABC</div>
+        <div class="font-card active" id="fontCard_noto" onclick="selectFont('noto')">
+          <div class="font-preview" style="font-family:'Noto Sans JP';font-weight:900">あいう ABC</div>
           <div class="font-label">Noto Sans JP</div>
         </div>
-        <div class="font-card" id="fontCardDela" onclick="selectFont('dela')">
+        <div class="font-card" id="fontCard_dela" onclick="selectFont('dela')">
           <div class="font-preview" style="font-family:'Dela Gothic One'">あいう ABC</div>
           <div class="font-label">Dela Gothic One</div>
+        </div>
+        <div class="font-card" id="fontCard_notoserifJP" onclick="selectFont('notoserifJP')">
+          <div class="font-preview" style="font-family:'Noto Serif JP';font-weight:700">あいう ABC</div>
+          <div class="font-label">Noto Serif JP</div>
+        </div>
+        <div class="font-card" id="fontCard_bebas" onclick="selectFont('bebas')">
+          <div class="font-preview" style="font-family:'Bebas Neue'">BEBAS 123</div>
+          <div class="font-label">Bebas Neue</div>
+        </div>
+        <div class="font-card" id="fontCard_oswald" onclick="selectFont('oswald')">
+          <div class="font-preview" style="font-family:'Oswald';font-weight:700">OSWALD ABC</div>
+          <div class="font-label">Oswald</div>
+        </div>
+        <div class="font-card" id="fontCard_bangers" onclick="selectFont('bangers')">
+          <div class="font-preview" style="font-family:'Bangers'">BANGERS!</div>
+          <div class="font-label">Bangers</div>
+        </div>
+        <div class="font-card" id="fontCard_mplus" onclick="selectFont('mplus')">
+          <div class="font-preview" style="font-family:'M PLUS Rounded 1c';font-weight:700">あいう ABC</div>
+          <div class="font-label">M PLUS Rounded</div>
         </div>
       </div>
     </div>
@@ -2865,8 +2885,9 @@
 
   /* Font */
   function selectFont(val, save=false) {
-    document.getElementById('fontCardNoto').classList.toggle('active', val==='noto');
-    document.getElementById('fontCardDela').classList.toggle('active', val==='dela');
+    document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
+    const card = document.getElementById('fontCard_' + val);
+    if (card) card.classList.add('active');
     currentSettings.font = val;
   }
 
