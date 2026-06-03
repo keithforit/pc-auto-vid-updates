@@ -176,6 +176,40 @@ const LOG = {
     },
 };
 
+// Delete background videos no longer referenced in any draft or content file.
+function cleanupUnusedBackgrounds(logFn) {
+    const bgDir = path.join(__dirname, 'public', 'backgrounds');
+    if (!fs.existsSync(bgDir)) return;
+
+    const draftFiles = [
+        './src/Content.json',
+        './src/SceneDraftLibrary.json',
+        './src/SceneDrafts.json',
+        './src/ProjectDraft.json',
+    ];
+
+    const referenced = new Set();
+    for (const f of draftFiles) {
+        try {
+            const text = fs.readFileSync(f, 'utf8');
+            const matches = text.match(/"[^"]*\.mp4"/g) || [];
+            matches.forEach(m => referenced.add(m.replace(/"/g, '').replace(/^.*\//, '')));
+        } catch { /* file missing — skip */ }
+    }
+
+    const files = fs.readdirSync(bgDir).filter(f => f.endsWith('.mp4'));
+    let deleted = 0;
+    for (const file of files) {
+        if (!referenced.has(file)) {
+            try {
+                fs.unlinkSync(path.join(bgDir, file));
+                deleted++;
+            } catch { /* skip if locked */ }
+        }
+    }
+    if (deleted > 0) logFn(`🧹 Cleaned up ${deleted} unused background video${deleted === 1 ? '' : 's'}`);
+}
+
 // Pre-render validation: strip any asset references whose files are missing from disk.
 // Returns a list of warning strings (empty = all good).
 function validateContentForRender(logFn, lang = 'en') {
@@ -1312,6 +1346,7 @@ io.on('connection', (socket) => {
 
                 if (!fs.existsSync('renders')) fs.mkdirSync('renders');
                 fs.renameSync('out/1.mp4', `renders/${finalName}`);
+                cleanupUnusedBackgrounds(msg => socket.emit('log', msg));
                 socket.emit('status', { msg: L.done_status(finalName), progress: ((i + 1) / scripts.length) * 100 });
                 socket.emit('log', L.saved(finalName));
 
@@ -1364,6 +1399,7 @@ io.on('connection', (socket) => {
             const finalName = `render_${Date.now()}.mp4`;
             if (!fs.existsSync('renders')) fs.mkdirSync('renders');
             fs.renameSync('out/1.mp4', `renders/${finalName}`);
+            cleanupUnusedBackgrounds(msg => socket.emit('log', msg));
             socket.emit('render-done', { file: `renders/${finalName}` });
             socket.emit('log', L.saved_only(finalName));
         } catch (err) {

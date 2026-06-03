@@ -1,9 +1,9 @@
 {
-  "version": "1.2.80",
-  "date": "2026-06-02",
-  "notes": "npm audit fix: resolved 8 vulnerabilities including high-severity axios and fast-uri issues; 16 remaining have no fix available (gtts/request chain) or require breaking-change upgrades",
+  "version": "1.2.81",
+  "date": "2026-06-03",
+  "notes": "Auto-cleanup unused background videos after each render — deletes any mp4 in public/backgrounds/ not referenced by Content.json, SceneDraftLibrary.json, SceneDrafts.json, or ProjectDraft.json",
   "files": [
-    "package-lock.json",
+    "server.js",
     "version.json"
   ]
 }
