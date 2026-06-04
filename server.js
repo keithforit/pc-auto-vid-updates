@@ -1362,10 +1362,24 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ── Render-only cancellation support ─────────────────────────
+    let _renderOnlyAudioProc = null;
+    let _renderOnlyVideoProc = null;
+    let _renderOnlyCancelled = false;
+
+    socket.on('cancel-render', () => {
+        _renderOnlyCancelled = true;
+        if (_renderOnlyAudioProc) { try { _renderOnlyAudioProc.kill('SIGTERM'); } catch (_) {} _renderOnlyAudioProc = null; }
+        if (_renderOnlyVideoProc) { try { _renderOnlyVideoProc.kill('SIGTERM'); } catch (_) {} _renderOnlyVideoProc = null; }
+        socket.emit('render-cancelled');
+        socket.emit('log', '⏹ Render cancelled.');
+    });
+
     // Re-render only (after manually replacing videos)
     socket.on('render-only', async (data) => {
         const lang = (data && data.lang) || 'en';
         const L = LOG[lang] || LOG.en;
+        _renderOnlyCancelled = false;
         try {
             const japanese = (() => {
                 try {
@@ -1383,18 +1397,20 @@ io.on('connection', (socket) => {
             // Use spawn (not execSync) so the event loop stays free and logs stream live
             const audioScript = audioCmd2.replace(/^node\s+/, '');
             const audioProc = spawn('node', [audioScript], { shell: false });
+            _renderOnlyAudioProc = audioProc;
             audioProc.stdout.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
             audioProc.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
-            const audioCode = await new Promise(res => audioProc.on('close', res));
+            const audioCode = await new Promise(res => audioProc.on('close', c => { _renderOnlyAudioProc = null; res(c); }));
             if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
             socket.emit('log', L.voice_ready);
 
             validateContentForRender(msg => socket.emit('log', msg), lang);
             socket.emit('log', L.rendering_only);
             const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+            _renderOnlyVideoProc = render;
             render.stdout.on('data', d => socket.emit('log', d.toString().trim()));
             render.stderr.on('data', d => socket.emit('log', d.toString().trim()));
-            await new Promise(res => render.on('close', res));
+            await new Promise(res => render.on('close', c => { _renderOnlyVideoProc = null; res(c); }));
 
             const finalName = `render_${Date.now()}.mp4`;
             if (!fs.existsSync('renders')) fs.mkdirSync('renders');
@@ -1403,6 +1419,7 @@ io.on('connection', (socket) => {
             socket.emit('render-done', { file: `renders/${finalName}` });
             socket.emit('log', L.saved_only(finalName));
         } catch (err) {
+            if (_renderOnlyCancelled) { _renderOnlyCancelled = false; return; }
             socket.emit('log', L.error(err.message));
         }
     });

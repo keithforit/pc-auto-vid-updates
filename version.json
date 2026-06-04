@@ -1,9 +1,10 @@
 {
-  "version": "1.2.84",
+  "version": "1.2.85",
   "date": "2026-06-03",
-  "notes": "UX: No Wrap button now shows as a simple toggle — ghost when inactive (wrap is default), highlighted when active.",
+  "notes": "Generate button turns red ⏹ Stop while rendering — click to cancel. Works on both Scenes and Deliver tabs.",
   "files": [
     "index.html",
+    "server.js",
     "version.json"
   ]
 }

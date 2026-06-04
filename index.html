@@ -8950,6 +8950,8 @@
 
   /* Re-render */
   let rerenderActive = false;
+  let scenesRerenderActive = false;
+  let _renderRunning = false;
 
   function addRerenderLog(msg) {
     const w = document.getElementById('rerender-log');
@@ -8957,8 +8959,6 @@
     w.innerHTML += `<div class="log-line${cls?' '+cls:''}">> ${msg}</div>`;
     w.scrollTop = w.scrollHeight;
   }
-
-  let scenesRerenderActive = false;
 
   function addScenesRerenderLog(msg) {
     const log = document.getElementById('scenes-rerender-log');
@@ -8971,9 +8971,13 @@
   }
 
   function scenesRerender() {
+    if (_renderRunning) { cancelRender(); return; }
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     scenesRerenderActive = true;
-    document.getElementById('scenesRerenderBtn').disabled = true;
+    _renderRunning = true;
+    const btn = document.getElementById('scenesRerenderBtn');
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('red');
     document.getElementById('scenes-rerender-status').textContent = _lt.log_running;
     document.getElementById('scenes-rerender-progress-bar').style.width = '0%';
     document.getElementById('scenes-rerender-log').innerHTML = '';
@@ -8982,14 +8986,32 @@
   }
 
   function rerender() {
+    if (_renderRunning) { cancelRender(); return; }
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     rerenderActive = true;
-    document.getElementById('rerenderBtn').disabled = true;
+    _renderRunning = true;
+    const btn = document.getElementById('rerenderBtn');
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('red');
     document.getElementById('rerender-status').textContent = _lt.log_running;
     document.getElementById('rerender-progress-bar').style.width = '0%';
     document.getElementById('rerender-log').innerHTML = '';
     addRerenderLog(_lt.log_starting_rerender);
     socket.emit('render-only', { lang: window._appLang||'en' });
+  }
+
+  function cancelRender() {
+    socket.emit('cancel-render');
+    if (scenesRerenderActive) {
+      const btn = document.getElementById('scenesRerenderBtn');
+      if (btn) { btn.textContent = 'Stopping…'; btn.disabled = true; btn.classList.remove('red'); }
+      document.getElementById('scenes-rerender-status').textContent = 'Stopping…';
+    }
+    if (rerenderActive) {
+      const btn = document.getElementById('rerenderBtn');
+      if (btn) { btn.textContent = 'Stopping…'; btn.disabled = true; btn.classList.remove('red'); }
+      document.getElementById('rerender-status').textContent = 'Stopping…';
+    }
   }
 
   socket.on('log', msg => {
@@ -9002,20 +9024,40 @@
     }
   });
 
+  socket.on('render-cancelled', () => {
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
+    _renderRunning = false;
+    if (scenesRerenderActive) {
+      scenesRerenderActive = false;
+      const btn = document.getElementById('scenesRerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = _lt.btn_generate || '🎬 Generate'; btn.classList.remove('red'); }
+      document.getElementById('scenes-rerender-status').textContent = '⏹ Cancelled';
+    }
+    if (rerenderActive) {
+      rerenderActive = false;
+      const btn = document.getElementById('rerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
+      document.getElementById('rerender-status').textContent = '⏹ Cancelled';
+    }
+  });
+
   socket.on('render-done', data => {
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     const doneMsg = _lt.log_done_saved(data.file);
+    _renderRunning = false;
     if (scenesRerenderActive) {
       scenesRerenderActive = false;
       document.getElementById('scenes-rerender-progress-bar').style.width = '100%';
       document.getElementById('scenes-rerender-status').textContent = doneMsg;
-      document.getElementById('scenesRerenderBtn').disabled = false;
+      const btn = document.getElementById('scenesRerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = _lt.btn_generate || '🎬 Generate'; btn.classList.remove('red'); }
       addScenesRerenderLog(doneMsg);
     } else {
       rerenderActive = false;
       document.getElementById('rerender-progress-bar').style.width = '100%';
       document.getElementById('rerender-status').textContent = doneMsg;
-      document.getElementById('rerenderBtn').disabled = false;
+      const btn = document.getElementById('rerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
       addRerenderLog(doneMsg);
     }
   });
