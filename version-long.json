@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "date": "2026-06-03",
-  "notes": "Fix: Copy Style now correctly copies and pastes the No Wrap setting.",
+  "notes": "UX: No Wrap button now shows as a simple toggle — ghost when inactive (wrap is default), highlighted when active.",
   "files": [
     "long-index.html"
   ],
