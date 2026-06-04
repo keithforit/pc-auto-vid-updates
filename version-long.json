@@ -1,12 +1,9 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "date": "2026-06-03",
-  "notes": "Expanded font library — 7 fonts now available: Noto Sans JP, Dela Gothic One, Noto Serif JP, Bebas Neue, Oswald, Bangers, M PLUS Rounded 1c. Local font support via public/fonts/.",
+  "notes": "Fix: Copy Style now correctly copies and pastes the No Wrap setting.",
   "files": [
-    "src/index.css",
-    "src/Caption.tsx",
-    "long-index.html",
-    "server.js"
+    "long-index.html"
   ],
   "fileMap": {
     "long-index.html": "index.html"
