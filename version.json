@@ -1,9 +1,8 @@
 {
-  "version": "1.2.85",
-  "date": "2026-06-03",
-  "notes": "Generate button turns red ⏹ Stop while rendering — click to cancel. Works on both Scenes and Deliver tabs.",
+  "version": "1.2.86",
+  "date": "2026-06-05",
+  "notes": "Auto-detect free port at startup — if 3000 is taken, automatically uses 3001, 3002, etc.",
   "files": [
-    "index.html",
     "server.js",
     "version.json"
   ]

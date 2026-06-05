@@ -1603,8 +1603,8 @@ app.post('/apply-update', async (req, res) => {
             console.log(`\n🔄 Restarting after update to v${remote.version}...`);
             server.close(() => {
                 console.log('Server closed, restarting...');
-                server.listen(3000, () => {
-                    console.log('🚀 Dashboard at http://localhost:3000');
+                server.listen(activePort, () => {
+                    console.log(`🚀 Dashboard at http://localhost:${activePort}`);
                 });
             });
         }, 1500);
@@ -1616,9 +1616,19 @@ app.post('/apply-update', async (req, res) => {
 // Simple liveness probe — client polls this to know when the server is back up after a restart
 app.get('/ping', (req, res) => res.json({ ok: true }));
 
-server.listen(3000, () => {
-    console.log('🚀 Dashboard at http://localhost:3000');
-    exec('open http://localhost:3000');
+let activePort = 3000;
+(function tryListen(port) {
+    server.once('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`⚠️  Port ${port} in use, trying ${port + 1}...`);
+            tryListen(port + 1);
+        } else throw err;
+    });
+    server.listen(port, () => {
+        activePort = port;
+        if (port !== 3000) console.log(`⚠️  Port 3000 in use — running on http://localhost:${port}`);
+        console.log(`🚀 Dashboard at http://localhost:${port}`);
+        exec(`open http://localhost:${port}`);
     // Backfill video_duration for any existing segments that are missing it.
     // Runs once at startup so scenes already in the project loop correctly.
     (async () => {
@@ -1652,4 +1662,5 @@ server.listen(3000, () => {
             console.warn('⚠️  video_duration backfill failed:', e.message);
         }
     })();
-});
+    });
+})(3000);
