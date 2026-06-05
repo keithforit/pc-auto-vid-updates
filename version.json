@@ -1,7 +1,7 @@
 {
-  "version": "1.2.88",
+  "version": "1.2.89",
   "date": "2026-06-05",
-  "notes": "Screen recorder: MP4 output, system audio tip, Japanese localisation",
+  "notes": "Restore long video upload + split + batch render routes",
   "files": [
     "index.html",
     "server.js",

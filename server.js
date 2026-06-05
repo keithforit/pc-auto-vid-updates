@@ -1426,6 +1426,223 @@ io.on('connection', (socket) => {
 });
 
 // ─────────────────────────────────────────
+// LONG VIDEO ROUTES
+// ─────────────────────────────────────────
+
+const uploadLongVideo = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const dir = './public/long-video-input';
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname) || '.mp4';
+            cb(null, `lv-source-${Date.now()}${ext}`);
+        },
+    }),
+    limits: { fileSize: 8 * 1024 * 1024 * 1024 }, // 8 GB
+});
+
+app.post('/upload-long-video', (req, res) => {
+    uploadLongVideo.single('video')(req, res, (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+        res.json({ filename: req.file.filename, size: req.file.size });
+    });
+});
+
+// Socket handlers for the Long Video pipeline
+io.on('connection', (socket) => {
+
+    // ── Split a large source video into scene-sized chunks ──
+    socket.on('split-long-video', async ({ filename, chunkDuration = 5, transcriptText = '' }) => {
+        const { execFile } = require('child_process');
+        const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
+        if (!fs.existsSync(srcPath)) {
+            return socket.emit('lv-split-error', { message: 'Source file not found.' });
+        }
+
+        const ts = Date.now();
+        const bgDir = path.join(__dirname, 'public', 'backgrounds');
+        if (!fs.existsSync(bgDir)) fs.mkdirSync(bgDir, { recursive: true });
+        const outPattern = path.join(bgDir, `lv-${ts}-%04d.mp4`);
+
+        socket.emit('lv-split-log', `📐 Splitting into ${chunkDuration}s chunks…`);
+
+        // Get total duration for progress
+        let totalDuration = null;
+        try {
+            const probe = JSON.parse(await new Promise((res, rej) => {
+                execFile('ffprobe', ['-v','quiet','-print_format','json','-show_format', srcPath],
+                    (e, out) => e ? rej(e) : res(out));
+            }));
+            totalDuration = parseFloat(probe.format?.duration) || null;
+        } catch (_) {}
+
+        // Run ffmpeg split
+        await new Promise((resolve) => {
+            const args = [
+                '-i', srcPath,
+                '-c', 'copy',
+                '-f', 'segment',
+                '-segment_time', String(chunkDuration),
+                '-reset_timestamps', '1',
+                '-avoid_negative_ts', 'make_zero',
+                outPattern,
+            ];
+            const proc = execFile('ffmpeg', args);
+            let lastPct = 0;
+            proc.stderr?.on('data', (d) => {
+                const txt = d.toString();
+                const m = txt.match(/time=(\d+):(\d+):([\d.]+)/);
+                if (m && totalDuration) {
+                    const secs = parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
+                    const pct = Math.min(99, Math.round(secs / totalDuration * 100));
+                    if (pct !== lastPct) { lastPct = pct; socket.emit('lv-split-progress', { pct }); }
+                }
+            });
+            proc.on('close', resolve);
+        });
+
+        // Collect created chunks
+        const chunks = fs.readdirSync(bgDir)
+            .filter(f => f.startsWith(`lv-${ts}-`) && f.endsWith('.mp4'))
+            .sort();
+
+        if (!chunks.length) {
+            return socket.emit('lv-split-error', { message: 'ffmpeg produced no output chunks.' });
+        }
+
+        socket.emit('lv-split-log', `✅ ${chunks.length} chunks created`);
+
+        // Distribute transcript lines evenly across scenes
+        const transcriptLines = transcriptText
+            ? transcriptText.split('\n').map(l => l.trim()).filter(Boolean)
+            : [];
+
+        // Build Content.json scenes
+        const settings = readSettings();
+        const scenes = await Promise.all(chunks.map(async (file, i) => {
+            const fp = path.join(bgDir, file);
+            let dur = null;
+            try {
+                const probe = JSON.parse(await new Promise((res, rej) => {
+                    execFile('ffprobe', ['-v','quiet','-print_format','json','-show_format', fp],
+                        (e, out) => e ? rej(e) : res(out));
+                }));
+                dur = parseFloat(probe.format?.duration) || chunkDuration;
+            } catch (_) { dur = chunkDuration; }
+
+            const text = transcriptLines.length
+                ? (transcriptLines[Math.floor(i / chunks.length * transcriptLines.length)] || '')
+                : '';
+
+            return {
+                text,
+                voiceover_text: '',
+                background_url: file,
+                background_type: 'video',
+                video_duration: Math.round(dur * 100) / 100,
+                duration: Math.round(dur * 100) / 100,
+                videoAudioVolume: 100,
+                backgroundMusicEnabled: false,
+                textStyle: settings.textStyle || 'box',
+                textAnimation: 'pop',
+                textFadeInDuration: 1.5,
+                textFadeOutDuration: 1.5,
+                glowColor: settings.glowColor || '#00ffff',
+                glowSize: settings.glowSize ?? 1,
+                font: settings.font || 'noto',
+                blockColor: settings.blockColor || '#ffdd00',
+                textColor: settings.textColor || '#000000',
+                textStrokeColor: settings.textStrokeColor || '#000000',
+                textStrokeSize: settings.textStrokeSize ?? 0,
+                boxBorderRadius: settings.boxBorderRadius ?? 20,
+                blockBorderRadius: settings.blockBorderRadius ?? 10,
+                sceneFadeInDuration: 1.5,
+                sceneFadeOutDuration: 1.5,
+                textNoWrap: true,
+            };
+        }));
+
+        writeJsonFile(CONTENT_PATH, scenes);
+        socket.emit('lv-split-progress', { pct: 100 });
+        socket.emit('lv-split-done', { chunkCount: chunks.length });
+    });
+
+    // ── Batch render the split scenes into a single final MP4 ──
+    socket.on('long-video-render', async ({ batchSize = 20 }) => {
+        const segments = readJsonFile(CONTENT_PATH, []);
+        if (!segments.length) {
+            return socket.emit('lv-render-error', { message: 'No scenes loaded. Split a video first.' });
+        }
+
+        const savedContent = JSON.stringify(segments);
+        const ts = Date.now();
+        const rendersDir = path.join(__dirname, 'renders');
+        if (!fs.existsSync(rendersDir)) fs.mkdirSync(rendersDir, { recursive: true });
+        const batchFiles = [];
+
+        const totalBatches = Math.ceil(segments.length / batchSize);
+        socket.emit('lv-log', `🎬 Rendering ${segments.length} scenes in ${totalBatches} batch(es) of ${batchSize}…`);
+
+        try {
+            for (let b = 0; b < totalBatches; b++) {
+                const batch = segments.slice(b * batchSize, (b + 1) * batchSize);
+                writeJsonFile(CONTENT_PATH, batch);
+
+                const pct = Math.round((b / totalBatches) * 80);
+                socket.emit('lv-render-progress', { batch: b + 1, total: totalBatches, phase: 'render', pct });
+                socket.emit('lv-log', `🎬 Batch ${b + 1}/${totalBatches}…`);
+
+                await new Promise((resolve, reject) => {
+                    const proc = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+                    proc.stdout?.on('data', d => socket.emit('lv-log', d.toString().trim()));
+                    proc.stderr?.on('data', d => socket.emit('lv-log', d.toString().trim()));
+                    proc.on('close', code => code === 0 ? resolve() : reject(new Error(`Render exited ${code}`)));
+                });
+
+                const batchFile = `renders/lv-batch-${ts}-${b}.mp4`;
+                fs.renameSync('out/1.mp4', batchFile);
+                batchFiles.push(batchFile);
+                socket.emit('lv-log', `✅ Batch ${b + 1} done`);
+            }
+
+            // Concat all batch files
+            socket.emit('lv-render-progress', { phase: 'concat', pct: 85 });
+            socket.emit('lv-log', '🔗 Concatenating batches…');
+
+            const listPath = `renders/lv-list-${ts}.txt`;
+            fs.writeFileSync(listPath, batchFiles.map(f => `file '${path.resolve(f)}'`).join('\n'));
+
+            const finalFile = `renders/lv-final-${ts}.mp4`;
+            await new Promise((resolve, reject) => {
+                const proc = spawn('ffmpeg', [
+                    '-f', 'concat', '-safe', '0',
+                    '-i', listPath,
+                    '-c', 'copy',
+                    finalFile,
+                ]);
+                proc.on('close', code => code === 0 ? resolve() : reject(new Error(`Concat exited ${code}`)));
+            });
+
+            fs.unlinkSync(listPath);
+            batchFiles.forEach(f => { try { fs.unlinkSync(f); } catch (_) {} });
+
+            writeJsonFile(CONTENT_PATH, JSON.parse(savedContent));
+            socket.emit('lv-render-progress', { phase: 'done', pct: 100 });
+            socket.emit('lv-done', { file: finalFile });
+            socket.emit('lv-log', `✅ Done: ${finalFile}`);
+
+        } catch (err) {
+            try { writeJsonFile(CONTENT_PATH, JSON.parse(savedContent)); } catch (_) {}
+            socket.emit('lv-render-error', { message: err.message });
+        }
+    });
+});
+
+// ─────────────────────────────────────────
 // MEDIA LIBRARY ROUTES
 // ─────────────────────────────────────────
 
