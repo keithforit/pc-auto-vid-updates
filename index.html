@@ -1112,35 +1112,39 @@
 
       <!-- Record Screen -->
       <div class="settings-section" style="margin-bottom:18px;padding:20px">
-        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:6px">⏺️ Record Screen</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Optional — record your screen first, then upload it below. Raw video, up to 40 minutes.</div>
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:6px" data-i18n="sr_title">⏺️ Record Screen</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px" data-i18n="sr_desc">Optional — record your screen first, then upload it below. Raw video, up to 40 minutes.</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
           <select id="sr-quality" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;font-size:13px">
-            <option value="low">Low — ~300 MB / 40 min</option>
-            <option value="med" selected>Medium — ~900 MB / 40 min</option>
-            <option value="high">High — ~1.8 GB / 40 min</option>
+            <option value="low" data-i18n="sr_quality_low">Low — ~300 MB / 40 min</option>
+            <option value="med" selected data-i18n="sr_quality_med">Medium — ~900 MB / 40 min</option>
+            <option value="high" data-i18n="sr_quality_high">High — ~1.8 GB / 40 min</option>
           </select>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="checkbox" id="sr-mic" checked style="width:14px;height:14px;cursor:pointer">
-            <label for="sr-mic" style="font-size:13px;cursor:pointer">Include mic</label>
+            <label for="sr-mic" style="font-size:13px;cursor:pointer" data-i18n="sr_include_mic">Include mic</label>
           </div>
         </div>
-        <div id="sr-start-wrap">
-          <button class="btn" id="sr-start-btn" onclick="srStart()" style="background:#dc2626;border-color:#dc2626">⏺️ Start Recording</button>
+        <div style="font-size:12px;color:var(--text-muted);background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5" data-i18n-html="sr_audio_tip">
+          💡 When the screen picker appears — select <strong style="color:var(--text-soft)">Entire Screen</strong>, then tick <strong style="color:var(--text-soft)">Share system audio</strong> before clicking Share.
         </div>
+        <div id="sr-start-wrap">
+          <button class="btn" id="sr-start-btn" onclick="srStart()" style="background:#dc2626;border-color:#dc2626" data-i18n="sr_start_btn">⏺️ Start Recording</button>
+        </div>
+        <div id="sr-no-audio-warn" style="display:none;margin-top:8px;font-size:12px;color:#f59e0b" data-i18n="sr_no_audio_warn">⚠️ No system audio detected — stop and retry, ticking "Share system audio" in the screen picker.</div>
         <div id="sr-recording-wrap" style="display:none">
           <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:8px">
             <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;animation:srPulse 1s infinite"></div>
-            <span style="font-size:14px;font-weight:700;color:#ef4444">Recording</span>
+            <span style="font-size:14px;font-weight:700;color:#ef4444" data-i18n="sr_recording_label">Recording</span>
             <span id="sr-timer" style="font-size:14px;font-weight:700;color:var(--text-main);margin-left:auto;font-variant-numeric:tabular-nums">00:00:00</span>
-            <button class="btn sm" onclick="srStop()" style="background:#374151;border-color:#4b5563;margin-left:8px">⏹ Stop</button>
+            <button class="btn sm" onclick="srStop()" style="background:#374151;border-color:#4b5563;margin-left:8px" data-i18n="sr_stop_btn">⏹ Stop</button>
           </div>
         </div>
-        <div id="sr-finalizing-wrap" style="display:none;font-size:13px;color:var(--text-muted);margin-top:10px">⏳ Saving recording…</div>
+        <div id="sr-finalizing-wrap" style="display:none;font-size:13px;color:var(--text-muted);margin-top:10px" data-i18n="sr_converting">⏳ Converting to MP4… (may take a moment for longer recordings)</div>
         <div id="sr-done-box" style="display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px">
-          <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:4px">✅ Recording saved</div>
+          <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:4px" data-i18n="sr_done_title">✅ Recording saved</div>
           <div id="sr-done-file" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
-          <a id="sr-download-link" href="#" style="display:inline-block;padding:6px 16px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none">⬇️ Download</a>
+          <a id="sr-download-link" href="#" style="display:inline-block;padding:6px 16px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none" data-i18n="sr_download_btn">⬇️ Download</a>
         </div>
       </div>
 
@@ -1662,6 +1666,23 @@
       // Style preview cards
       style_preview_text: 'Text',
       style_preview_sample: 'Text sample',
+      // Tabs (new layout)
+      tab_longvideo: '📹 Long Video',
+      // Screen recorder
+      sr_title: '⏺️ Record Screen',
+      sr_desc: 'Optional — record your screen first, then upload it below. Raw video, up to 40 minutes.',
+      sr_quality_low: 'Low — ~300 MB / 40 min',
+      sr_quality_med: 'Medium — ~900 MB / 40 min',
+      sr_quality_high: 'High — ~1.8 GB / 40 min',
+      sr_include_mic: 'Include mic',
+      sr_audio_tip: '💡 When the screen picker appears — select <strong style="color:var(--text-soft)">Entire Screen</strong>, then tick <strong style="color:var(--text-soft)">Share system audio</strong> before clicking Share.',
+      sr_start_btn: '⏺️ Start Recording',
+      sr_no_audio_warn: '⚠️ No system audio detected — stop and retry, ticking "Share system audio" in the screen picker.',
+      sr_recording_label: 'Recording',
+      sr_stop_btn: '⏹ Stop',
+      sr_converting: '⏳ Converting to MP4… (may take a moment for longer recordings)',
+      sr_done_title: '✅ Recording saved',
+      sr_download_btn: '⬇️ Download',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -2055,6 +2076,23 @@
       // Style preview cards
       style_preview_text: 'テキスト',
       style_preview_sample: 'テキストサンプル',
+      // Tabs (new layout)
+      tab_longvideo: '📹 ロングビデオ',
+      // Screen recorder
+      sr_title: '⏺️ 画面録画',
+      sr_desc: '任意 — まず画面を録画し、下にアップロードしてください。生動画、最大40分。',
+      sr_quality_low: '低画質 — 約300 MB / 40分',
+      sr_quality_med: '中画質 — 約900 MB / 40分',
+      sr_quality_high: '高画質 — 約1.8 GB / 40分',
+      sr_include_mic: 'マイクを含める',
+      sr_audio_tip: '💡 画面選択ダイアログが開いたら「<strong style="color:var(--text-soft)">画面全体</strong>」を選び、「<strong style="color:var(--text-soft)">システム音声を共有</strong>」にチェックを入れてから「共有」をクリックしてください。',
+      sr_start_btn: '⏺️ 録画開始',
+      sr_no_audio_warn: '⚠️ システム音声が検出されませんでした — 停止して、画面選択で「システム音声を共有」にチェックを入れて再試行してください。',
+      sr_recording_label: '録画中',
+      sr_stop_btn: '⏹ 停止',
+      sr_converting: '⏳ MP4に変換中…（長い録画は少し時間がかかります）',
+      sr_done_title: '✅ 録画が保存されました',
+      sr_download_btn: '⬇️ ダウンロード',
     }
   };
 
@@ -2070,8 +2108,8 @@
     if (sub) sub.textContent = t.subtitle;
     // Tabs
     const tabs = document.querySelectorAll('.tab');
-    const tabKeys = ['tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
-    tabs.forEach((tab, i) => { if (tabKeys[i]) tab.textContent = t[tabKeys[i]]; });
+    const tabKeys = ['tab_longvideo','tab_scenes','tab_media','tab_settings'];
+    tabs.forEach((tab, i) => { if (tabKeys[i] && t[tabKeys[i]]) tab.textContent = t[tabKeys[i]]; });
     // Theme label
     const isLight = document.getElementById('theme-checkbox')?.checked;
     const label = document.getElementById('theme-label');
@@ -2084,6 +2122,11 @@
         if (attr) el.setAttribute(attr, t[key]);
         else el.textContent = t[key];
       }
+    });
+    // Translate elements that contain HTML markup (bold etc.)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      if (t[key] !== undefined) el.innerHTML = t[key];
     });
     // Update app title text while preserving the version badge
     const titleEl = document.getElementById('app-title');
@@ -9974,8 +10017,12 @@
     btn.disabled = true;
     btn.textContent = 'Requesting screen access…';
     try {
-      // audio:true lets the browser's picker offer a "Share audio" checkbox for system sound
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+      // displaySurface:'monitor' hints the browser to pre-select Entire Screen,
+      // where the "Share system audio" toggle is visible. audio:true enables the toggle.
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30, displaySurface: 'monitor' },
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
 
       const systemAudioTracks = displayStream.getAudioTracks();
       const micOn = document.getElementById('sr-mic').checked;
@@ -10027,6 +10074,7 @@
         _srStream.getTracks().forEach(t => t.stop());
         clearInterval(_srTimerInterval);
         document.getElementById('sr-recording-wrap').style.display = 'none';
+        document.getElementById('sr-no-audio-warn').style.display = 'none';
         document.getElementById('sr-finalizing-wrap').style.display = 'block';
         try {
           const res = await fetch(`/screen-record/stop/${_srSessionId}`, { method: 'POST' });
@@ -10050,7 +10098,13 @@
 
       document.getElementById('sr-start-wrap').style.display = 'none';
       document.getElementById('sr-done-box').style.display = 'none';
+      document.getElementById('sr-no-audio-warn').style.display = 'none';
       document.getElementById('sr-recording-wrap').style.display = 'block';
+
+      // Warn if system audio wasn't shared in the picker
+      if (systemAudioTracks.length === 0) {
+        document.getElementById('sr-no-audio-warn').style.display = 'block';
+      }
 
       const startTime = Date.now();
       _srTimerInterval = setInterval(() => {
@@ -10063,7 +10117,7 @@
 
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = '⏺️ Start Recording';
+      btn.textContent = (I18N[window._appLang || 'en'] || I18N.en).sr_start_btn;
       if (e.name !== 'NotAllowedError') alert('Could not start recording: ' + e.message);
     }
   }

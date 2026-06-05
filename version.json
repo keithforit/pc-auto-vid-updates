@@ -1,11 +1,17 @@
 {
-  "version": "1.2.87",
+  "version": "1.2.88",
   "date": "2026-06-05",
-  "notes": "Add screen recorder to Long Video tab, simplify navigation to 4 tabs",
+  "notes": "Screen recorder: MP4 output, system audio tip, Japanese localisation",
   "files": [
     "index.html",
     "server.js",
     "parser-captions.js",
-    "parser.js"
+    "parser.js",
+    "generate-audio.js",
+    "generate-audio-ja.js",
+    "generate-audio-voicevox.js",
+    "src/Caption.tsx",
+    "src/Main.tsx",
+    "src/Background.tsx"
   ]
 }

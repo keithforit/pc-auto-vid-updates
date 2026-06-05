@@ -1551,23 +1551,30 @@ app.post('/screen-record/stop/:sessionId', (req, res) => {
     if (!session) return res.status(404).json({ error: 'Session not found' });
     delete screenRecordSessions[req.params.sessionId];
     session.stream.end(() => {
-        const finalName = `screen-recording-${Date.now()}.webm`;
+        const { execFile } = require('child_process');
+        const webmPath = session.filePath;
+        const finalName = `screen-recording-${Date.now()}.mp4`;
         const rendersDir = path.join(__dirname, 'renders');
         if (!fs.existsSync(rendersDir)) fs.mkdirSync(rendersDir, { recursive: true });
         const finalPath = path.join(rendersDir, finalName);
-        try {
-            fs.renameSync(session.filePath, finalPath);
-            const size = fs.statSync(finalPath).size;
+        execFile('ffmpeg', [
+            '-i', webmPath,
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-movflags', '+faststart',
+            finalPath,
+        ], (err) => {
+            try { fs.unlinkSync(webmPath); } catch (_) {}
+            if (err) return res.status(500).json({ error: 'Conversion failed: ' + err.message });
+            const size = fs.existsSync(finalPath) ? fs.statSync(finalPath).size : 0;
             res.json({ filename: finalName, size });
-        } catch (e) {
-            res.status(500).json({ error: e.message });
-        }
+        });
     });
 });
 
 app.get('/screen-record/download/:filename', (req, res) => {
     const { filename } = req.params;
-    if (!/^screen-recording-\d+\.webm$/.test(filename)) {
+    if (!/^screen-recording-\d+\.mp4$/.test(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
     }
     const filePath = path.join(__dirname, 'renders', filename);
