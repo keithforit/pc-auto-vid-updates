@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Video Factory</title>
+  <title>AI Long Video Factory</title>
   <script src="/socket.io/socket.io.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;900&family=Noto+Serif+JP:wght@700&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
@@ -639,13 +639,14 @@
     .gt-info-bar { display: flex; align-items: center; gap: 10px; padding: 7px 14px; background: var(--bg-input); border-top: 1px solid var(--bg-card); font-size: 11px; color: var(--text-dim); min-height: 30px; }
     .gt-info-scene { color: var(--text-soft); font-weight: 700; }
     .gt-info-frame { color: var(--text-dim); font-family: monospace; }
+    @keyframes srPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
   </style>
 </head>
 <body>
 <div class="box">
   <div class="app-toolbar">
     <div class="app-toolbar-left">
-      <h1 id="app-title" style="margin:0;font-size:22px;display:flex;align-items:center;gap:10px">🎬 AI Video Factory <span id="app-version-badge" style="font-size:12px;font-weight:500;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:0.5px">Version …</span></h1>
+      <h1 id="app-title" style="margin:0;font-size:22px;display:flex;align-items:center;gap:10px">🎬 AI Long Video Factory <span id="app-version-badge" style="font-size:12px;font-weight:500;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:0.5px">Version …</span></h1>
       <p class="subtitle" style="margin:0;font-size:13px" id="app-subtitle" data-i18n="app_subtitle">Paste your formatted script, generate the video, then fine-tune scenes.</p>
     </div>
     <div class="app-toolbar-right">
@@ -669,16 +670,14 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('create')">➕ Create</div>
-    <div class="tab" onclick="switchTab('editor')">🎞 Text to Video</div>
+    <div class="tab active" onclick="switchTab('longvideo')">📹 Long Video</div>
     <div class="tab" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
-    <!-- Timeline tab hidden — preserved for future use -->
   </div>
 
-  <!-- CREATE TAB -->
-  <div class="panel active" id="tab-create">
+  <!-- CREATE TAB — hidden, kept for JS compatibility -->
+  <div class="panel" id="tab-create" style="display:none!important">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="font-size:13px;color:var(--text-muted);" data-i18n="create_desc">Start here: create scenes, arrange the flow, then render the video.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -703,8 +702,8 @@
     <div id="editor-log"></div>
   </div>
 
-  <!-- TEXT TO VIDEO TAB -->
-  <div class="panel" id="tab-editor">
+  <!-- TEXT TO VIDEO TAB — hidden, kept for JS compatibility -->
+  <div class="panel" id="tab-editor" style="display:none!important">
 
     <!-- Content Type Selector -->
     <div class="settings-section" style="margin-bottom:18px;padding:16px 18px">
@@ -1107,6 +1106,140 @@
   </div>
 </div>
 
+  <!-- LONG VIDEO TAB -->
+  <div class="panel active" id="tab-longvideo">
+    <div style="max-width:640px">
+
+      <!-- Record Screen -->
+      <div class="settings-section" style="margin-bottom:18px;padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:6px">⏺️ Record Screen</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Optional — record your screen first, then upload it below. Raw video, up to 40 minutes.</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <select id="sr-quality" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;font-size:13px">
+            <option value="low">Low — ~300 MB / 40 min</option>
+            <option value="med" selected>Medium — ~900 MB / 40 min</option>
+            <option value="high">High — ~1.8 GB / 40 min</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="sr-mic" checked style="width:14px;height:14px;cursor:pointer">
+            <label for="sr-mic" style="font-size:13px;cursor:pointer">Include mic</label>
+          </div>
+        </div>
+        <div id="sr-start-wrap">
+          <button class="btn" id="sr-start-btn" onclick="srStart()" style="background:#dc2626;border-color:#dc2626">⏺️ Start Recording</button>
+        </div>
+        <div id="sr-recording-wrap" style="display:none">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;animation:srPulse 1s infinite"></div>
+            <span style="font-size:14px;font-weight:700;color:#ef4444">Recording</span>
+            <span id="sr-timer" style="font-size:14px;font-weight:700;color:var(--text-main);margin-left:auto;font-variant-numeric:tabular-nums">00:00:00</span>
+            <button class="btn sm" onclick="srStop()" style="background:#374151;border-color:#4b5563;margin-left:8px">⏹ Stop</button>
+          </div>
+        </div>
+        <div id="sr-finalizing-wrap" style="display:none;font-size:13px;color:var(--text-muted);margin-top:10px">⏳ Saving recording…</div>
+        <div id="sr-done-box" style="display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px">
+          <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:4px">✅ Recording saved</div>
+          <div id="sr-done-file" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+          <a id="sr-download-link" href="#" style="display:inline-block;padding:6px 16px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none">⬇️ Download</a>
+        </div>
+      </div>
+
+      <!-- Step 1: Upload -->
+      <div class="settings-section" style="margin-bottom:18px;padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:14px">📥 Step 1 — Upload Source Video</div>
+        <div id="lv-drop-zone" style="border:2px dashed var(--border-mid);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--bg-input)" onclick="document.getElementById('lv-file-input').click()">
+          <div style="font-size:36px;margin-bottom:10px">🎬</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text-main)">Drop video here or click to browse</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">MP4, MOV — any length, up to ~8 GB</div>
+          <div id="lv-file-name" style="display:none;margin-top:10px;font-size:13px;color:var(--accent);font-weight:600"></div>
+        </div>
+        <input type="file" id="lv-file-input" accept="video/mp4,video/quicktime,video/*" style="display:none" onchange="lvHandleFileSelect(this)">
+        <div id="lv-upload-wrap" style="display:none;margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--text-muted)">Uploading…</span>
+            <span id="lv-upload-pct" style="font-size:12px;color:var(--accent)">0%</span>
+          </div>
+          <div style="background:var(--bg-card);border-radius:4px;height:6px;overflow:hidden">
+            <div id="lv-upload-bar" style="background:var(--accent);width:0%;height:100%;transition:width 0.2s"></div>
+          </div>
+        </div>
+        <div id="lv-upload-done" style="display:none;margin-top:10px;font-size:13px;color:#34d399">✅ Video uploaded — ready to split</div>
+      </div>
+
+      <!-- Step 2: Transcript -->
+      <div class="settings-section" style="margin-bottom:18px;padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:6px">📝 Step 2 — Transcript <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(optional)</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Paste your script — one caption per line. Each line maps to a scene in order. Leave blank for empty scenes you can fill in later.</div>
+        <textarea id="lv-transcript" placeholder="Line 1 → Scene 1 caption&#10;Line 2 → Scene 2 caption&#10;…" style="height:140px"></textarea>
+      </div>
+
+      <!-- Step 3: Split -->
+      <div class="settings-section" style="margin-bottom:18px;padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:14px">✂️ Step 3 — Split Into Scenes</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text-muted)">Chunk size:</label>
+          <select id="lv-chunk-size" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;font-size:13px" onchange="lvUpdateEstimate()">
+            <option value="3">3 seconds</option>
+            <option value="5" selected>5 seconds</option>
+            <option value="8">8 seconds</option>
+            <option value="10">10 seconds</option>
+            <option value="15">15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+          </select>
+          <span id="lv-split-estimate" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+        <button class="btn full" id="lv-split-btn" onclick="lvStartSplit()" disabled>✂️ Split Video into Scenes</button>
+        <div id="lv-split-wrap" style="display:none;margin-top:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span id="lv-split-status" style="font-size:12px;color:var(--text-muted)">Splitting…</span>
+            <span id="lv-split-pct" style="font-size:12px;color:var(--accent)">0%</span>
+          </div>
+          <div style="background:var(--bg-card);border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px">
+            <div id="lv-split-bar" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+          </div>
+          <div id="lv-split-log" style="background:var(--log-bg);color:var(--log-text);padding:10px;height:90px;overflow-y:auto;border-radius:8px;font-family:monospace;font-size:11px;border:1px solid var(--border)"></div>
+        </div>
+        <div id="lv-split-done" style="display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px">
+          <div id="lv-split-done-msg" style="font-size:14px;font-weight:700;color:#34d399"></div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Scenes loaded. Edit them in the <a href="#" onclick="switchTab('scenes');return false" style="color:var(--accent)">Scenes tab</a> before rendering.</div>
+        </div>
+      </div>
+
+      <!-- Step 4: Batch Render -->
+      <div class="settings-section" style="padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:14px">🎬 Step 4 — Batch Render</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Renders in groups, then stitches everything into one final MP4. Original video audio is preserved.</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text-muted)">Scenes per batch:</label>
+          <select id="lv-batch-size" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;font-size:13px">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <button class="btn full" id="lv-render-btn" onclick="lvStartRender()" disabled>🎬 Batch Render Long Video</button>
+        <div id="lv-render-wrap" style="display:none;margin-top:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span id="lv-render-status" style="font-size:12px;color:var(--text-muted)">Starting…</span>
+            <span id="lv-render-pct" style="font-size:12px;color:var(--accent)">0%</span>
+          </div>
+          <div style="background:var(--bg-card);border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px">
+            <div id="lv-render-bar" style="background:linear-gradient(90deg,#10b981,#06b6d4);width:0%;height:100%;transition:width 0.4s"></div>
+          </div>
+          <div id="lv-render-log" style="background:var(--log-bg);color:var(--log-text);padding:10px;height:200px;overflow-y:auto;border-radius:8px;font-family:monospace;font-size:11px;border:1px solid var(--border)"></div>
+        </div>
+        <div id="lv-done-box" style="display:none;margin-top:16px;padding:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.4);border-radius:10px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">🎉</div>
+          <div style="font-size:16px;font-weight:700;color:#34d399">Long video ready!</div>
+          <div id="lv-done-file" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- TIMELINE TAB — hidden, preserved for future use -->
   <div class="panel" id="tab-timeline" style="display:none!important">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
@@ -1276,7 +1409,7 @@
       bgmusic_yes: 'Yes',
       bgmusic_no: 'No',
       // App header
-      app_title: '🎬 AI Video Factory',
+      app_title: '🎬 AI Long Video Factory',
       app_subtitle: 'Paste your formatted script, generate the video, then fine-tune scenes.',
       // Create tab
       create_desc: 'Create scenes, arrange the flow, then render the video.',
@@ -1956,7 +2089,7 @@
     const titleEl = document.getElementById('app-title');
     if (titleEl) {
       const badge = document.getElementById('app-version-badge');
-      titleEl.textContent = t.app_title || '🎬 AI Video Factory';
+      titleEl.textContent = t.app_title || '🎬 AI Long Video Factory';
       if (badge) titleEl.appendChild(badge);
     }
     // Translate all data-i18n-placeholder elements
@@ -2055,21 +2188,20 @@
   })();
 
   /* ── Tabs ── */
-  const TAB_NAMES = ['create','editor','scenes','media','settings'];
   function switchTab(name) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
     stopAudioElement(currentVoicePreviewAudio);
     currentVoicePreviewAudio = null;
     _restoreVoicePreviewButton();
-    document.querySelectorAll('.tab').forEach((t,i)   => t.classList.toggle('active', TAB_NAMES[i] === name));
-    document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', TAB_NAMES[i] === name));
-    if (name === 'create')   { loadCreateScenes(); }
+    document.querySelectorAll('.tab').forEach(t => {
+      const m = (t.getAttribute('onclick') || '').match(/switchTab\('([^']+)'\)/);
+      t.classList.toggle('active', m ? m[1] === name : false);
+    });
+    document.querySelectorAll('[id^="tab-"]').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
     if (name === 'scenes')   { loadSegments(); }
     if (name === 'settings') { loadSettingsUI(); }
     if (name === 'media')    { loadMediaLibrary(); }
-    // if (name === 'timeline') { loadGlobalTimeline(); }
-    // Re-apply language translations after tab switch (static panels)
     if (window._appLang && window._appLang !== 'en') {
       setTimeout(() => setAppLang(window._appLang), 50);
     }
@@ -8950,7 +9082,6 @@
 
   /* Re-render */
   let rerenderActive = false;
-  let scenesRerenderActive = false;
   let _renderRunning = false;
 
   function addRerenderLog(msg) {
@@ -8959,6 +9090,8 @@
     w.innerHTML += `<div class="log-line${cls?' '+cls:''}">> ${msg}</div>`;
     w.scrollTop = w.scrollHeight;
   }
+
+  let scenesRerenderActive = false;
 
   function addScenesRerenderLog(msg) {
     const log = document.getElementById('scenes-rerender-log');
@@ -9663,6 +9796,289 @@
       checkBtn.disabled    = false;
       applyBtn.textContent = '⬇️ Download & Install Update';
     }
+  }
+
+  /* ─────────────────── LONG VIDEO TAB ─────────────────── */
+  let _lvUploadedFilename = null;
+
+  // Drop-zone wiring (runs after DOM is ready since script is at end of body)
+  (function () {
+    const zone = document.getElementById('lv-drop-zone');
+    if (!zone) return;
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border-mid)'; });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = 'var(--border-mid)';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('video/')) {
+        document.getElementById('lv-file-name').textContent = file.name;
+        document.getElementById('lv-file-name').style.display = 'block';
+        lvUploadFile(file);
+      }
+    });
+  })();
+
+  function lvHandleFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('lv-file-name').textContent = file.name;
+    document.getElementById('lv-file-name').style.display = 'block';
+    lvUploadFile(file);
+  }
+
+  function lvUploadFile(file) {
+    const wrap    = document.getElementById('lv-upload-wrap');
+    const bar     = document.getElementById('lv-upload-bar');
+    const pctEl   = document.getElementById('lv-upload-pct');
+    const doneEl  = document.getElementById('lv-upload-done');
+    const splitBtn = document.getElementById('lv-split-btn');
+
+    wrap.style.display = 'block';
+    doneEl.style.display = 'none';
+    splitBtn.disabled = true;
+    _lvUploadedFilename = null;
+
+    const fd = new FormData();
+    fd.append('video', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) {
+        const p = Math.round(e.loaded / e.total * 100);
+        bar.style.width = p + '%';
+        pctEl.textContent = p + '%';
+      }
+    };
+    xhr.onload = () => {
+      wrap.style.display = 'none';
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (data.error) { alert('Upload failed: ' + data.error); return; }
+        _lvUploadedFilename = data.filename;
+        doneEl.style.display = 'block';
+        splitBtn.disabled = false;
+        lvUpdateEstimate();
+      } catch { alert('Upload failed.'); }
+    };
+    xhr.onerror = () => { wrap.style.display = 'none'; alert('Upload failed — check the file and try again.'); };
+    xhr.open('POST', '/upload-long-video');
+    xhr.send(fd);
+  }
+
+  function lvUpdateEstimate() {
+    const size = parseInt(document.getElementById('lv-chunk-size').value);
+    const el   = document.getElementById('lv-split-estimate');
+    el.textContent = _lvUploadedFilename ? `~${size}s per scene` : '';
+  }
+
+  function lvStartSplit() {
+    if (!_lvUploadedFilename) return;
+    const chunkDuration = parseInt(document.getElementById('lv-chunk-size').value);
+    const transcript    = document.getElementById('lv-transcript').value;
+
+    document.getElementById('lv-split-wrap').style.display = 'block';
+    document.getElementById('lv-split-done').style.display = 'none';
+    document.getElementById('lv-split-bar').style.width = '0%';
+    document.getElementById('lv-split-pct').textContent = '0%';
+    document.getElementById('lv-split-log').textContent = '';
+    document.getElementById('lv-split-status').textContent = 'Splitting…';
+    document.getElementById('lv-split-btn').disabled = true;
+
+    socket.emit('split-long-video', { filename: _lvUploadedFilename, chunkDuration, transcriptText: transcript });
+  }
+
+  socket.on('lv-split-log', msg => {
+    const el = document.getElementById('lv-split-log');
+    if (!el) return;
+    el.textContent += msg + '\n';
+    el.scrollTop = el.scrollHeight;
+    document.getElementById('lv-split-status').textContent = msg.replace(/[📊✂️✅📐]/gu, '').trim().slice(0, 60);
+  });
+
+  socket.on('lv-split-progress', ({ pct }) => {
+    document.getElementById('lv-split-bar').style.width = pct + '%';
+    document.getElementById('lv-split-pct').textContent = pct + '%';
+  });
+
+  socket.on('lv-split-done', ({ chunkCount }) => {
+    document.getElementById('lv-split-bar').style.width = '100%';
+    document.getElementById('lv-split-pct').textContent = '100%';
+    document.getElementById('lv-split-status').textContent = 'Split complete!';
+    document.getElementById('lv-split-done').style.display = 'block';
+    document.getElementById('lv-split-done-msg').textContent = `✅ ${chunkCount} scenes created`;
+    document.getElementById('lv-split-btn').disabled = false;
+    document.getElementById('lv-render-btn').disabled = false;
+  });
+
+  socket.on('lv-split-error', ({ message }) => {
+    document.getElementById('lv-split-status').textContent = '❌ ' + message;
+    document.getElementById('lv-split-log').textContent += '❌ ' + message + '\n';
+    document.getElementById('lv-split-btn').disabled = false;
+  });
+
+  function lvStartRender() {
+    const batchSize = parseInt(document.getElementById('lv-batch-size').value);
+
+    document.getElementById('lv-render-wrap').style.display = 'block';
+    document.getElementById('lv-done-box').style.display = 'none';
+    document.getElementById('lv-render-bar').style.width = '0%';
+    document.getElementById('lv-render-pct').textContent = '0%';
+    document.getElementById('lv-render-log').textContent = '';
+    document.getElementById('lv-render-status').textContent = 'Starting…';
+    document.getElementById('lv-render-btn').disabled = true;
+
+    socket.emit('long-video-render', { batchSize });
+  }
+
+  socket.on('lv-log', msg => {
+    const el = document.getElementById('lv-render-log');
+    if (!el) return;
+    el.textContent += msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  });
+
+  socket.on('lv-render-progress', ({ batch, total, phase, pct }) => {
+    if (pct !== undefined) {
+      document.getElementById('lv-render-bar').style.width = pct + '%';
+      document.getElementById('lv-render-pct').textContent = pct + '%';
+    }
+    const stat = document.getElementById('lv-render-status');
+    if (phase === 'render' && batch && total) stat.textContent = `Rendering batch ${batch}/${total}…`;
+    else if (phase === 'concat') stat.textContent = 'Concatenating segments…';
+    else if (phase === 'done')   stat.textContent = 'Complete!';
+  });
+
+  socket.on('lv-done', ({ file }) => {
+    document.getElementById('lv-render-bar').style.width = '100%';
+    document.getElementById('lv-render-pct').textContent = '100%';
+    document.getElementById('lv-render-status').textContent = 'Complete!';
+    document.getElementById('lv-done-box').style.display = 'block';
+    document.getElementById('lv-done-file').textContent = file;
+    document.getElementById('lv-render-btn').disabled = false;
+  });
+
+  socket.on('lv-render-error', ({ message }) => {
+    document.getElementById('lv-render-status').textContent = '❌ ' + message;
+    document.getElementById('lv-render-btn').disabled = false;
+  });
+
+  /* ─────────────────── SCREEN RECORDER ─────────────────── */
+  let _srRecorder = null;
+  let _srSessionId = null;
+  let _srTimerInterval = null;
+  let _srStream = null;
+
+  async function srStart() {
+    const btn = document.getElementById('sr-start-btn');
+    btn.disabled = true;
+    btn.textContent = 'Requesting screen access…';
+    try {
+      // audio:true lets the browser's picker offer a "Share audio" checkbox for system sound
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+
+      const systemAudioTracks = displayStream.getAudioTracks();
+      const micOn = document.getElementById('sr-mic').checked;
+      let micAudioTracks = [];
+      if (micOn) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          micAudioTracks = micStream.getAudioTracks();
+        } catch (_) { /* mic denied — continue without audio */ }
+      }
+
+      // Mix system audio + mic if both present, otherwise use whichever is available
+      let finalAudioTracks = [];
+      if (systemAudioTracks.length > 0 && micAudioTracks.length > 0) {
+        const ctx = new AudioContext();
+        const dest = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(new MediaStream(systemAudioTracks)).connect(dest);
+        ctx.createMediaStreamSource(new MediaStream(micAudioTracks)).connect(dest);
+        finalAudioTracks = dest.stream.getAudioTracks();
+      } else {
+        finalAudioTracks = [...systemAudioTracks, ...micAudioTracks];
+      }
+
+      _srStream = new MediaStream([...displayStream.getVideoTracks(), ...finalAudioTracks]);
+
+      const startRes = await fetch('/screen-record/start', { method: 'POST' });
+      const { sessionId } = await startRes.json();
+      _srSessionId = sessionId;
+
+      const bitrateMap = { low: 1_000_000, med: 3_000_000, high: 6_000_000 };
+      const bitrate = bitrateMap[document.getElementById('sr-quality').value] || 3_000_000;
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus' : 'video/webm;codecs=vp8,opus';
+
+      _srRecorder = new MediaRecorder(_srStream, { mimeType, videoBitsPerSecond: bitrate });
+
+      _srRecorder.ondataavailable = async (e) => {
+        if (e.data.size === 0) return;
+        try {
+          await fetch(`/screen-record/chunk/${_srSessionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            body: e.data,
+          });
+        } catch (_) {}
+      };
+
+      _srRecorder.onstop = async () => {
+        _srStream.getTracks().forEach(t => t.stop());
+        clearInterval(_srTimerInterval);
+        document.getElementById('sr-recording-wrap').style.display = 'none';
+        document.getElementById('sr-finalizing-wrap').style.display = 'block';
+        try {
+          const res = await fetch(`/screen-record/stop/${_srSessionId}`, { method: 'POST' });
+          const data = await res.json();
+          srShowDone(data.filename, data.size);
+        } catch (e) {
+          alert('Failed to save recording: ' + e.message);
+        }
+        document.getElementById('sr-finalizing-wrap').style.display = 'none';
+        document.getElementById('sr-start-wrap').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '🔴 Start Recording';
+      };
+
+      // Handle user clicking "Stop sharing" in the browser chrome
+      displayStream.getVideoTracks()[0].addEventListener('ended', () => {
+        if (_srRecorder && _srRecorder.state !== 'inactive') _srRecorder.stop();
+      });
+
+      _srRecorder.start(30_000); // flush a chunk every 30 seconds
+
+      document.getElementById('sr-start-wrap').style.display = 'none';
+      document.getElementById('sr-done-box').style.display = 'none';
+      document.getElementById('sr-recording-wrap').style.display = 'block';
+
+      const startTime = Date.now();
+      _srTimerInterval = setInterval(() => {
+        const s = Math.floor((Date.now() - startTime) / 1000);
+        const h = String(Math.floor(s / 3600)).padStart(2, '0');
+        const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+        const sec = String(s % 60).padStart(2, '0');
+        document.getElementById('sr-timer').textContent = `${h}:${m}:${sec}`;
+      }, 1000);
+
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '⏺️ Start Recording';
+      if (e.name !== 'NotAllowedError') alert('Could not start recording: ' + e.message);
+    }
+  }
+
+  function srStop() {
+    if (_srRecorder && _srRecorder.state !== 'inactive') _srRecorder.stop();
+  }
+
+  function srShowDone(filename, size) {
+    const mb = size ? ` — ${(size / 1024 / 1024).toFixed(0)} MB` : '';
+    document.getElementById('sr-done-file').textContent = filename + mb;
+    const link = document.getElementById('sr-download-link');
+    link.href = `/screen-record/download/${filename}`;
+    link.setAttribute('download', filename);
+    document.getElementById('sr-done-box').style.display = 'block';
   }
 </script>
 

@@ -1,9 +1,11 @@
 {
-  "version": "1.2.86",
+  "version": "1.2.87",
   "date": "2026-06-05",
-  "notes": "Auto-detect free port at startup — if 3000 is taken, automatically uses 3001, 3002, etc.",
+  "notes": "Add screen recorder to Long Video tab, simplify navigation to 4 tabs",
   "files": [
+    "index.html",
     "server.js",
-    "version.json"
+    "parser-captions.js",
+    "parser.js"
   ]
 }

@@ -1521,6 +1521,61 @@ app.post('/media-library/delete-image', (req, res) => {
 });
 
 // ─────────────────────────────────────────
+// SCREEN RECORDER ROUTES
+// ─────────────────────────────────────────
+
+const screenRecordSessions = {};
+
+app.post('/screen-record/start', (req, res) => {
+    const sessionId = `sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const dir = path.join(__dirname, 'public', 'screen-recordings');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, `${sessionId}.webm`);
+    const stream = fs.createWriteStream(filePath);
+    screenRecordSessions[sessionId] = { filePath, stream };
+    res.json({ sessionId });
+});
+
+app.post('/screen-record/chunk/:sessionId',
+    express.raw({ type: 'application/octet-stream', limit: '100mb' }),
+    (req, res) => {
+        const session = screenRecordSessions[req.params.sessionId];
+        if (!session) return res.status(404).json({ error: 'Session not found' });
+        session.stream.write(Buffer.from(req.body));
+        res.json({ ok: true });
+    }
+);
+
+app.post('/screen-record/stop/:sessionId', (req, res) => {
+    const session = screenRecordSessions[req.params.sessionId];
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    delete screenRecordSessions[req.params.sessionId];
+    session.stream.end(() => {
+        const finalName = `screen-recording-${Date.now()}.webm`;
+        const rendersDir = path.join(__dirname, 'renders');
+        if (!fs.existsSync(rendersDir)) fs.mkdirSync(rendersDir, { recursive: true });
+        const finalPath = path.join(rendersDir, finalName);
+        try {
+            fs.renameSync(session.filePath, finalPath);
+            const size = fs.statSync(finalPath).size;
+            res.json({ filename: finalName, size });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+});
+
+app.get('/screen-record/download/:filename', (req, res) => {
+    const { filename } = req.params;
+    if (!/^screen-recording-\d+\.webm$/.test(filename)) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = path.join(__dirname, 'renders', filename);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+    res.download(filePath, filename);
+});
+
+// ─────────────────────────────────────────
 // AUTO-UPDATE ROUTES
 // ─────────────────────────────────────────
 const UPDATE_REPO_RAW = 'https://raw.githubusercontent.com/keithforit/pc-auto-vid-updates/main';
