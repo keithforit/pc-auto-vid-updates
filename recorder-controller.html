@@ -133,6 +133,7 @@
         save_failed:  'Save failed: ',
         cant_start:   'Could not start recording: ',
         no_server:    'Could not reach the server — please make sure the app is running, then try again.',
+        no_ffmpeg:    '⚠️ Saved as WebM (ffmpeg not installed). Install ffmpeg for MP4: brew install ffmpeg',
       },
       ja: {
         quality_low:  '低画質',
@@ -148,6 +149,7 @@
         requesting:   '画面アクセスを要求中…',
         save_failed:  '保存に失敗しました: ',
         no_server:    'サーバーに接続できませんでした — アプリが起動しているか確認して、もう一度お試しください。',
+        no_ffmpeg:    '⚠️ WebMで保存しました（ffmpegが未インストール）。MP4に変換するには: brew install ffmpeg',
         cant_start:   '録画を開始できませんでした: ',
       },
     };
@@ -266,6 +268,7 @@
             bc.postMessage({ type: 'recording-done', filename: data.filename, size: data.size });
             const mb = data.size ? ` — ${(data.size / 1024 / 1024).toFixed(0)} MB` : '';
             document.getElementById('rc-done-file').textContent = data.filename + mb;
+            if (data.noFfmpeg) setStatus(t.no_ffmpeg);
             const link = document.getElementById('rc-download-link');
             link.href = `/screen-record/download/${data.filename}`;
             link.setAttribute('download', data.filename);

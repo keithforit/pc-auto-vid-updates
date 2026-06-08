@@ -2137,7 +2137,8 @@ app.post('/screen-record/stop/:sessionId', (req, res) => {
     session.stream.end(() => {
         const { execFile } = require('child_process');
         const webmPath = session.filePath;
-        const finalName = `screen-recording-${Date.now()}.mp4`;
+        const ts = Date.now();
+        const finalName = `screen-recording-${ts}.mp4`;
         const finalPath = path.join(RECORDINGS_DIR, finalName);
         execFile('ffmpeg', [
             '-i', webmPath,
@@ -2146,17 +2147,34 @@ app.post('/screen-record/stop/:sessionId', (req, res) => {
             '-movflags', '+faststart',
             finalPath,
         ], (err) => {
+            if (!err) {
+                // ffmpeg succeeded — remove temp webm, return mp4
+                try { fs.unlinkSync(webmPath); } catch (_) {}
+                const size = fs.existsSync(finalPath) ? fs.statSync(finalPath).size : 0;
+                return res.json({ filename: finalName, size });
+            }
+            if (err.code === 'ENOENT') {
+                // ffmpeg not installed — save the raw webm so the recording isn't lost
+                const webmName = `screen-recording-${ts}.webm`;
+                const webmFinal = path.join(RECORDINGS_DIR, webmName);
+                try {
+                    fs.renameSync(webmPath, webmFinal);
+                    const size = fs.statSync(webmFinal).size;
+                    return res.json({ filename: webmName, size, noFfmpeg: true });
+                } catch (e2) {
+                    return res.status(500).json({ error: 'Failed to save recording: ' + e2.message });
+                }
+            }
+            // other ffmpeg error
             try { fs.unlinkSync(webmPath); } catch (_) {}
-            if (err) return res.status(500).json({ error: 'Conversion failed: ' + err.message });
-            const size = fs.existsSync(finalPath) ? fs.statSync(finalPath).size : 0;
-            res.json({ filename: finalName, size });
+            return res.status(500).json({ error: 'Conversion failed: ' + err.message });
         });
     });
 });
 
 app.get('/screen-record/download/:filename', (req, res) => {
     const { filename } = req.params;
-    if (!/^screen-recording-\d+\.mp4$/.test(filename)) {
+    if (!/^screen-recording-\d+\.(mp4|webm)$/.test(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
     }
     const filePath = path.join(RECORDINGS_DIR, filename);
