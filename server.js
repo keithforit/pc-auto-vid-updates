@@ -2054,28 +2054,33 @@ const RECORDINGS_DIR = path.join(__dirname, 'Recordings');
 const SR_TEMP_DIR    = path.join(__dirname, 'public', 'screen-recordings');
 
 app.post('/screen-record/start', (req, res) => {
-    // Clean up any previous undownloaded recordings
-    if (fs.existsSync(RECORDINGS_DIR)) {
-        for (const f of fs.readdirSync(RECORDINGS_DIR)) {
-            try { fs.unlinkSync(path.join(RECORDINGS_DIR, f)); } catch (_) {}
+    try {
+        // Clean up any previous undownloaded recordings
+        if (fs.existsSync(RECORDINGS_DIR)) {
+            for (const f of fs.readdirSync(RECORDINGS_DIR)) {
+                try { fs.unlinkSync(path.join(RECORDINGS_DIR, f)); } catch (_) {}
+            }
+        } else {
+            fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
         }
-    } else {
-        fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
-    }
-    // Also purge orphaned temp webm files from crashed sessions
-    if (fs.existsSync(SR_TEMP_DIR)) {
-        for (const f of fs.readdirSync(SR_TEMP_DIR)) {
-            try { fs.unlinkSync(path.join(SR_TEMP_DIR, f)); } catch (_) {}
+        // Also purge orphaned temp webm files from crashed sessions
+        if (fs.existsSync(SR_TEMP_DIR)) {
+            for (const f of fs.readdirSync(SR_TEMP_DIR)) {
+                try { fs.unlinkSync(path.join(SR_TEMP_DIR, f)); } catch (_) {}
+            }
+        } else {
+            fs.mkdirSync(SR_TEMP_DIR, { recursive: true });
         }
-    } else {
-        fs.mkdirSync(SR_TEMP_DIR, { recursive: true });
-    }
 
-    const sessionId = `sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const filePath = path.join(SR_TEMP_DIR, `${sessionId}.webm`);
-    const stream = fs.createWriteStream(filePath);
-    screenRecordSessions[sessionId] = { filePath, stream };
-    res.json({ sessionId });
+        const sessionId = `sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const filePath = path.join(SR_TEMP_DIR, `${sessionId}.webm`);
+        const stream = fs.createWriteStream(filePath);
+        screenRecordSessions[sessionId] = { filePath, stream };
+        res.json({ sessionId });
+    } catch (e) {
+        console.error('screen-record/start error:', e);
+        res.status(500).json({ error: 'Failed to start session: ' + e.message });
+    }
 });
 
 app.post('/screen-record/chunk/:sessionId',

@@ -198,6 +198,18 @@
         _displayStream = displayStream;
         resize('rec');
 
+        // Try to reach the server — retry once if the first attempt fails (e.g. mid-restart)
+        let startRes;
+        try {
+          startRes = await fetch('/screen-record/start', { method: 'POST' });
+        } catch (_) {
+          await new Promise(r => setTimeout(r, 1500));
+          startRes = await fetch('/screen-record/start', { method: 'POST' });
+        }
+        const { sessionId, error: startErr } = await startRes.json();
+        if (!startRes.ok || !sessionId) throw new Error(startErr || 'Server could not start session');
+        _sessionId = sessionId;
+
         const sysAudio = displayStream.getAudioTracks();
         const micOn = document.getElementById('rc-mic').checked;
         let micTracks = [];
@@ -221,10 +233,6 @@
         }
 
         _stream = new MediaStream([...displayStream.getVideoTracks(), ...finalAudio]);
-
-        const startRes = await fetch('/screen-record/start', { method: 'POST' });
-        const { sessionId } = await startRes.json();
-        _sessionId = sessionId;
 
         const bitrateMap = { low: 1_000_000, med: 3_000_000, high: 6_000_000 };
         const bitrate = bitrateMap[document.getElementById('rc-quality').value] || 3_000_000;

@@ -1,7 +1,7 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "date": "2026-06-08",
-  "notes": "Long Video tab: remove leftover wrapper div, content now aligns with tabs at full box width",
+  "notes": "Screen recorder: wrap start handler in try-catch, retry fetch once on failure (handles mid-restart timing)",
   "files": [
     "long-index.html",
     "server.js",
