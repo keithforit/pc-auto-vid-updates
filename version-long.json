@@ -1,7 +1,7 @@
 {
-  "version": "1.2.98",
+  "version": "1.2.99",
   "date": "2026-06-08",
-  "notes": "Fix fileMap direction: correctly restore pc-long-vid UI on client update",
+  "notes": "Long Video tab: fix content not spanning full width (remove max-width:640px constraint)",
   "files": [
     "long-index.html",
     "server.js",
