@@ -1,7 +1,7 @@
 {
-  "version": "1.2.96",
+  "version": "1.2.97",
   "date": "2026-06-08",
-  "notes": "Screen recorder pop-out: localize all UI text (EN/JA) based on main app language",
+  "notes": "Screen recorder pop-out: auto-detect language, clearer error when server unreachable",
   "files": [
     "index.html",
     "server.js",

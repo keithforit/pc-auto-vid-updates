@@ -115,7 +115,8 @@
   <script>
     const bc = new BroadcastChannel('sr-controller');
 
-    const _lang = new URLSearchParams(location.search).get('lang') || 'en';
+    const _lang = new URLSearchParams(location.search).get('lang')
+      || (navigator.language.startsWith('ja') ? 'ja' : 'en');
     const I18N = {
       en: {
         quality_low:  'Low quality',
@@ -131,6 +132,7 @@
         requesting:   'Requesting screen access…',
         save_failed:  'Save failed: ',
         cant_start:   'Could not start recording: ',
+        no_server:    'Could not reach the server — please make sure the app is running, then try again.',
       },
       ja: {
         quality_low:  '低画質',
@@ -145,6 +147,7 @@
         again:        '再録画',
         requesting:   '画面アクセスを要求中…',
         save_failed:  '保存に失敗しました: ',
+        no_server:    'サーバーに接続できませんでした — アプリが起動しているか確認して、もう一度お試しください。',
         cant_start:   '録画を開始できませんでした: ',
       },
     };
@@ -292,7 +295,10 @@
         btn.disabled = false;
         setStatus('');
         resize('idle');
-        if (e.name !== 'NotAllowedError') alert(t.cant_start + e.message);
+        if (e.name !== 'NotAllowedError') {
+          const msg = e.message === 'Failed to fetch' ? t.no_server : t.cant_start + e.message;
+          alert(msg);
+        }
         show('panel-idle');
       }
     }
