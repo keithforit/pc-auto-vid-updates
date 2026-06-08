@@ -108,6 +108,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Disable timeouts for large file uploads (videos can be several GB)
+server.headersTimeout = 0;
+server.requestTimeout = 0;
+server.timeout = 0;
+
 app.use(express.json());
 app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -1640,6 +1645,104 @@ io.on('connection', (socket) => {
             socket.emit('lv-render-error', { message: err.message });
         }
     });
+
+    // ── Auto-detect scene cuts + silences with live progress ──
+    socket.on('lv-detect-scenes', async ({ filename, threshold = 0.3 }) => {
+        const { spawn } = require('child_process');
+        const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
+        if (!fs.existsSync(srcPath)) {
+            return socket.emit('lv-detect-error', { message: 'Source file not found.' });
+        }
+        const thresh = Math.min(0.9, Math.max(0.1, parseFloat(threshold) || 0.3));
+
+        function parseTimeStr(str) {
+            if (!str) return null;
+            const p = str.split(':');
+            if (p.length !== 3) return null;
+            return parseInt(p[0]) * 3600 + parseInt(p[1]) * 60 + parseFloat(p[2]);
+        }
+
+        // Get total duration for progress %
+        let totalDuration = 0;
+        try {
+            const probe = JSON.parse(await new Promise((res, rej) => {
+                const { execFile } = require('child_process');
+                execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', srcPath],
+                    (e, out) => e ? rej(e) : res(out));
+            }));
+            totalDuration = parseFloat(probe.format?.duration) || 0;
+        } catch (_) {}
+
+        // Phase 1: scene cut detection
+        socket.emit('lv-detect-progress', { phase: 1, pct: 0, label: 'Phase 1/2 — scene cuts…' });
+        const sceneTimestamps = [];
+        await new Promise((resolve) => {
+            const proc = spawn('ffmpeg', [
+                '-i', srcPath,
+                '-vf', `select=gt(scene\\,${thresh}),showinfo`,
+                '-vsync', 'vfr', '-an', '-f', 'null', '-'
+            ]);
+            proc.stderr.on('data', (chunk) => {
+                const s = chunk.toString();
+                const reScene = /pts_time:([\d.]+)/g;
+                let m;
+                while ((m = reScene.exec(s)) !== null) {
+                    const t = parseFloat(m[1]);
+                    if (!isNaN(t)) sceneTimestamps.push(t);
+                }
+                const tm = s.match(/time=(\d{2}:\d{2}:\d{2}\.\d+)/);
+                if (tm && totalDuration > 0) {
+                    const cur = parseTimeStr(tm[1]);
+                    if (cur !== null) {
+                        const pct = Math.min(99, Math.round(cur / totalDuration * 100));
+                        socket.emit('lv-detect-progress', { phase: 1, pct, label: 'Phase 1/2 — scene cuts…' });
+                    }
+                }
+            });
+            proc.on('close', resolve);
+        });
+
+        // Phase 2: silence detection
+        socket.emit('lv-detect-progress', { phase: 2, pct: 0, label: 'Phase 2/2 — silences…' });
+        const silenceTimestamps = [];
+        await new Promise((resolve) => {
+            const proc = spawn('ffmpeg', [
+                '-i', srcPath,
+                '-af', 'silencedetect=noise=-30dB:duration=0.8',
+                '-f', 'null', '-'
+            ]);
+            proc.stderr.on('data', (chunk) => {
+                const s = chunk.toString();
+                const reSil = /silence_end:\s*([\d.]+)/g;
+                let m;
+                while ((m = reSil.exec(s)) !== null) {
+                    const t = parseFloat(m[1]);
+                    if (!isNaN(t)) silenceTimestamps.push(t);
+                }
+                const tm = s.match(/time=(\d{2}:\d{2}:\d{2}\.\d+)/);
+                if (tm && totalDuration > 0) {
+                    const cur = parseTimeStr(tm[1]);
+                    if (cur !== null) {
+                        const pct = Math.min(99, Math.round(cur / totalDuration * 100));
+                        socket.emit('lv-detect-progress', { phase: 2, pct, label: 'Phase 2/2 — silences…' });
+                    }
+                }
+            });
+            proc.on('close', resolve);
+        });
+
+        // Merge + deduplicate
+        const all = [...sceneTimestamps, ...silenceTimestamps].sort((a, b) => a - b);
+        const merged = [];
+        for (const t of all) {
+            if (t < 2) continue;
+            if (totalDuration > 0 && t > totalDuration - 2) continue;
+            if (merged.length === 0 || t - merged[merged.length - 1] >= 1.5) {
+                merged.push(Math.round(t * 10) / 10);
+            }
+        }
+        socket.emit('lv-detect-done', { timestamps: merged, totalDuration });
+    });
 });
 
 // ─────────────────────────────────────────
@@ -1735,6 +1838,211 @@ app.post('/media-library/delete-image', (req, res) => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         res.json({ ok: true, brandImages: lib.brandImages });
     } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─────────────────────────────────────────
+// LONG VIDEO EDITOR ROUTES
+// ─────────────────────────────────────────
+
+// GET /lv-video-info?filename=X  →  { duration }
+app.get('/lv-video-info', (req, res) => {
+    const { execFile } = require('child_process');
+    const filename = req.query.filename;
+    if (!filename) return res.status(400).json({ error: 'filename required' });
+    const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
+    if (!fs.existsSync(srcPath)) return res.status(404).json({ error: 'File not found' });
+    execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', srcPath], (err, stdout) => {
+        if (err) return res.status(500).json({ error: err.message });
+        try {
+            const probe = JSON.parse(stdout);
+            const duration = parseFloat(probe.format?.duration) || 0;
+            res.json({ duration });
+        } catch (e) { res.status(500).json({ error: 'ffprobe parse error' }); }
+    });
+});
+
+// POST /lv-detect-scenes  →  { timestamps: [number, ...] }
+app.post('/lv-detect-scenes', async (req, res) => {
+    const { execFile } = require('child_process');
+    const { filename, threshold = 0.3 } = req.body;
+    if (!filename) return res.status(400).json({ error: 'filename required' });
+    const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
+    if (!fs.existsSync(srcPath)) return res.status(404).json({ error: 'File not found' });
+
+    const thresh = Math.min(0.9, Math.max(0.1, parseFloat(threshold) || 0.3));
+
+    // Get duration first
+    let totalDuration = 0;
+    try {
+        const probe = JSON.parse(await new Promise((resolve, reject) => {
+            execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', srcPath],
+                (e, out) => e ? reject(e) : resolve(out));
+        }));
+        totalDuration = parseFloat(probe.format?.duration) || 0;
+    } catch (_) {}
+
+    // Scene detection
+    const sceneTimestamps = [];
+    try {
+        await new Promise((resolve) => {
+            execFile('ffmpeg', [
+                '-i', srcPath,
+                '-vf', `select=gt(scene\\,${thresh}),showinfo`,
+                '-vsync', 'vfr',
+                '-an', '-f', 'null', '-'
+            ], { maxBuffer: 50 * 1024 * 1024 }, (err, stdout, stderr) => {
+                const combined = (stdout || '') + (stderr || '');
+                const re = /pts_time:([\d.]+)/g;
+                let m;
+                while ((m = re.exec(combined)) !== null) {
+                    const t = parseFloat(m[1]);
+                    if (!isNaN(t)) sceneTimestamps.push(t);
+                }
+                resolve();
+            });
+        });
+    } catch (_) {}
+
+    // Silence detection
+    const silenceTimestamps = [];
+    try {
+        await new Promise((resolve) => {
+            execFile('ffmpeg', [
+                '-i', srcPath,
+                '-af', 'silencedetect=noise=-30dB:duration=0.8',
+                '-f', 'null', '-'
+            ], { maxBuffer: 50 * 1024 * 1024 }, (err, stdout, stderr) => {
+                const combined = (stdout || '') + (stderr || '');
+                const re = /silence_end:\s*([\d.]+)/g;
+                let m;
+                while ((m = re.exec(combined)) !== null) {
+                    const t = parseFloat(m[1]);
+                    if (!isNaN(t)) silenceTimestamps.push(t);
+                }
+                resolve();
+            });
+        });
+    } catch (_) {}
+
+    // Merge, sort, deduplicate within 1.5s, filter < 2s and > (duration - 2s)
+    const all = [...sceneTimestamps, ...silenceTimestamps].sort((a, b) => a - b);
+    const merged = [];
+    for (const t of all) {
+        if (t < 2) continue;
+        if (totalDuration > 0 && t > totalDuration - 2) continue;
+        if (merged.length === 0 || t - merged[merged.length - 1] >= 1.5) {
+            merged.push(Math.round(t * 10) / 10);
+        }
+    }
+
+    res.json({ timestamps: merged });
+});
+
+// POST /lv-split-at-timestamps  →  { chunkCount, scenes }
+app.post('/lv-split-at-timestamps', async (req, res) => {
+    const { execFile } = require('child_process');
+    const { filename, timestamps = [], transcriptText = '' } = req.body;
+    if (!filename) return res.status(400).json({ error: 'filename required' });
+    const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
+    if (!fs.existsSync(srcPath)) return res.status(404).json({ error: 'File not found' });
+
+    // Sort and validate timestamps
+    const sorted = [...timestamps]
+        .map(t => parseFloat(t))
+        .filter(t => !isNaN(t) && t > 0)
+        .sort((a, b) => a - b);
+
+    const ts = Date.now();
+    const bgDir = path.join(__dirname, 'public', 'backgrounds');
+    if (!fs.existsSync(bgDir)) fs.mkdirSync(bgDir, { recursive: true });
+    const outPattern = path.join(bgDir, `lv-${ts}-%04d.mp4`);
+
+    // Build ffmpeg args: -segment_times "t1,t2,t3"
+    const segTimes = sorted.join(',');
+    const args = [
+        '-i', srcPath,
+        '-c', 'copy',
+        '-f', 'segment',
+    ];
+    if (segTimes) {
+        args.push('-segment_times', segTimes);
+    }
+    args.push(
+        '-reset_timestamps', '1',
+        '-avoid_negative_ts', 'make_zero',
+        outPattern
+    );
+
+    try {
+        await new Promise((resolve, reject) => {
+            execFile('ffmpeg', args, { maxBuffer: 50 * 1024 * 1024 }, (err) => {
+                if (err) reject(err); else resolve();
+            });
+        });
+    } catch (e) {
+        return res.status(500).json({ error: 'ffmpeg split failed: ' + e.message });
+    }
+
+    // Collect created chunks
+    const chunks = fs.readdirSync(bgDir)
+        .filter(f => f.startsWith(`lv-${ts}-`) && f.endsWith('.mp4'))
+        .sort();
+
+    if (!chunks.length) {
+        return res.status(500).json({ error: 'ffmpeg produced no output chunks.' });
+    }
+
+    // Distribute transcript lines evenly across scenes
+    const transcriptLines = transcriptText
+        ? transcriptText.split('\n').map(l => l.trim()).filter(Boolean)
+        : [];
+
+    const settings = readSettings();
+    const scenes = await Promise.all(chunks.map(async (file, i) => {
+        const fp = path.join(bgDir, file);
+        let dur = 5;
+        try {
+            const probe = JSON.parse(await new Promise((resolve, reject) => {
+                execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', fp],
+                    (e, out) => e ? reject(e) : resolve(out));
+            }));
+            dur = parseFloat(probe.format?.duration) || 5;
+        } catch (_) {}
+
+        const text = transcriptLines.length
+            ? (transcriptLines[Math.floor(i / chunks.length * transcriptLines.length)] || '')
+            : '';
+
+        return {
+            text,
+            voiceover_text: '',
+            background_url: file,
+            background_type: 'video',
+            video_duration: Math.round(dur * 100) / 100,
+            duration: Math.round(dur * 100) / 100,
+            videoAudioVolume: 100,
+            backgroundMusicEnabled: false,
+            textStyle: settings.textStyle || 'box',
+            textAnimation: 'pop',
+            textFadeInDuration: 1.5,
+            textFadeOutDuration: 1.5,
+            glowColor: settings.glowColor || '#00ffff',
+            glowSize: settings.glowSize ?? 1,
+            font: settings.font || 'noto',
+            blockColor: settings.blockColor || '#ffdd00',
+            textColor: settings.textColor || '#000000',
+            textStrokeColor: settings.textStrokeColor || '#000000',
+            textStrokeSize: settings.textStrokeSize ?? 0,
+            boxBorderRadius: settings.boxBorderRadius ?? 20,
+            blockBorderRadius: settings.blockBorderRadius ?? 10,
+            sceneFadeInDuration: 1.5,
+            sceneFadeOutDuration: 1.5,
+            textNoWrap: true,
+        };
+    }));
+
+    writeJsonFile(CONTENT_PATH, scenes);
+    res.json({ chunkCount: chunks.length, scenes });
 });
 
 // ─────────────────────────────────────────

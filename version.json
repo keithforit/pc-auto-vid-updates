@@ -1,7 +1,7 @@
 {
-  "version": "1.2.89",
-  "date": "2026-06-05",
-  "notes": "Restore long video upload + split + batch render routes",
+  "version": "1.2.90",
+  "date": "2026-06-08",
+  "notes": "Screen recorder: fix browser indicator stuck after stop, fix stream leaks on error, add floating pop-out controller window",
   "files": [
     "index.html",
     "server.js",
@@ -12,6 +12,7 @@
     "generate-audio-voicevox.js",
     "src/Caption.tsx",
     "src/Main.tsx",
-    "src/Background.tsx"
+    "src/Background.tsx",
+    "recorder-controller.html"
   ]
 }
