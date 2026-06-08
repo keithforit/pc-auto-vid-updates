@@ -204,6 +204,7 @@
           try {
             const res = await fetch(`/screen-record/stop/${_sessionId}`, { method: 'POST' });
             const data = await res.json();
+            if (!res.ok || !data.filename) throw new Error(data.error || 'Conversion failed');
             bc.postMessage({ type: 'recording-done', filename: data.filename, size: data.size });
             const mb = data.size ? ` — ${(data.size / 1024 / 1024).toFixed(0)} MB` : '';
             document.getElementById('rc-done-file').textContent = data.filename + mb;
