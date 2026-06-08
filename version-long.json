@@ -1,7 +1,7 @@
 {
-  "version": "1.3.2",
+  "version": "1.3.3",
   "date": "2026-06-08",
-  "notes": "Single-instance guard: kill previous server process on startup so re-running never opens extra browser tabs",
+  "notes": "Single-instance guard: also kill stale processes on ports 3000-3004 via lsof, fixes pre-PID-file instances",
   "files": [
     "long-index.html",
     "server.js",

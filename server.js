@@ -8,17 +8,34 @@ const multer = require('multer');
 const mp3Duration = require('mp3-duration');
 
 // ── Single-instance guard ─────────────────────────────────────────────────────
-// Kill any previous server instance so re-running the script never opens extra
-// browser tabs or leaves stale processes on higher ports.
+// Kill ALL stale server instances so re-running the script always binds to 3000
+// and never opens extra browser tabs.
 const PID_FILE = path.join(__dirname, '.server.pid');
 (function singleInstance() {
+    // 1. Kill the known previous instance via PID file
     if (fs.existsSync(PID_FILE)) {
         const prev = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim(), 10);
         if (prev && !isNaN(prev) && prev !== process.pid) {
-            try { process.kill(prev, 0); process.kill(prev, 'SIGTERM'); console.log(`🛑 Stopped previous instance (PID ${prev})`); }
-            catch (_) { /* already gone */ }
+            try { process.kill(prev, 'SIGTERM'); console.log(`🛑 Stopped previous instance (PID ${prev})`); }
+            catch (_) {}
         }
+        try { fs.unlinkSync(PID_FILE); } catch (_) {}
     }
+    // 2. Also clear any stale processes on ports 3000-3004 (covers instances that
+    //    predate the PID file, i.e. multiple tabs issue before v1.3.2).
+    let killed = false;
+    for (let p = 3000; p <= 3004; p++) {
+        try {
+            const pids = execSync(`lsof -ti tcp:${p} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
+            for (const pid of pids.split('\n').filter(s => s && parseInt(s) !== process.pid)) {
+                try { process.kill(parseInt(pid), 'SIGTERM'); console.log(`🛑 Cleared stale process on port ${p} (PID ${pid})`); killed = true; }
+                catch (_) {}
+            }
+        } catch (_) {}
+    }
+    // 3. Brief pause so the OS can release the ports before we try to bind
+    if (killed) { try { execSync('sleep 0.4'); } catch (_) {} }
+    // 4. Write our own PID
     fs.writeFileSync(PID_FILE, String(process.pid));
     const cleanup = () => { try { fs.unlinkSync(PID_FILE); } catch (_) {} };
     process.on('exit', cleanup);
