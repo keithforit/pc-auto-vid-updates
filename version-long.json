@@ -1,7 +1,7 @@
 {
-  "version": "1.2.97",
+  "version": "1.2.98",
   "date": "2026-06-08",
-  "notes": "All screen recorder improvements: popup controller, stream fixes, localization, Recordings folder",
+  "notes": "Fix fileMap direction: correctly restore pc-long-vid UI on client update",
   "files": [
     "long-index.html",
     "server.js",
@@ -16,6 +16,6 @@
     "recorder-controller.html"
   ],
   "fileMap": {
-    "index.html": "long-index.html"
+    "long-index.html": "index.html"
   }
 }
