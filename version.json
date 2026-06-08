@@ -1,7 +1,7 @@
 {
-  "version": "1.2.95",
+  "version": "1.2.96",
   "date": "2026-06-08",
-  "notes": "Screen recorder pop-out: show proper error instead of undefined when recording save fails",
+  "notes": "Screen recorder pop-out: localize all UI text (EN/JA) based on main app language",
   "files": [
     "index.html",
     "server.js",

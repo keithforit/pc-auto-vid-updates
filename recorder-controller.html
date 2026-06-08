@@ -73,11 +73,11 @@
   <div id="panel-idle" class="panel">
     <div class="row">
       <select id="rc-quality">
-        <option value="low">Low quality</option>
-        <option value="med" selected>Medium quality</option>
-        <option value="high">High quality</option>
+        <option id="rc-opt-low" value="low">Low quality</option>
+        <option id="rc-opt-med" value="med" selected>Medium quality</option>
+        <option id="rc-opt-high" value="high">High quality</option>
       </select>
-      <label><input type="checkbox" id="rc-mic" checked> Mic</label>
+      <label><input type="checkbox" id="rc-mic" checked> <span id="rc-mic-label">Mic</span></label>
     </div>
     <div class="row center">
       <button id="btn-start" class="btn-rec" onclick="rcStart()">⏺ Start Recording</button>
@@ -91,22 +91,22 @@
       <span id="timer">00:00:00</span>
     </div>
     <div class="row center">
-      <button class="btn-stop" onclick="rcStop()">⏹ Stop Recording</button>
+      <button id="btn-stop" class="btn-stop" onclick="rcStop()">⏹ Stop Recording</button>
     </div>
   </div>
 
   <!-- Finalizing -->
   <div id="panel-final" class="panel hidden">
-    <div style="font-size:13px;color:#9ca3af">⏳ Saving recording…</div>
+    <div id="rc-saving-text" style="font-size:13px;color:#9ca3af">⏳ Saving recording…</div>
   </div>
 
   <!-- Done -->
   <div id="panel-done" class="panel hidden">
-    <div class="done-title">✅ Recording saved</div>
+    <div id="rc-saved-title" class="done-title">✅ Recording saved</div>
     <div id="rc-done-file" class="done-file"></div>
     <div class="row center" style="gap:8px">
       <a id="rc-download-link" href="#" class="btn-dl">⬇ Download</a>
-      <button class="btn-sm" onclick="rcReset()">Record again</button>
+      <button id="btn-again" class="btn-sm" onclick="rcReset()">Record again</button>
     </div>
   </div>
 
@@ -114,6 +114,53 @@
 
   <script>
     const bc = new BroadcastChannel('sr-controller');
+
+    const _lang = new URLSearchParams(location.search).get('lang') || 'en';
+    const I18N = {
+      en: {
+        quality_low:  'Low quality',
+        quality_med:  'Medium quality',
+        quality_high: 'High quality',
+        mic:          'Mic',
+        start:        '⏺ Start Recording',
+        stop:         '⏹ Stop Recording',
+        saving:       '⏳ Saving recording…',
+        saved:        '✅ Recording saved',
+        download:     '⬇ Download',
+        again:        'Record again',
+        requesting:   'Requesting screen access…',
+        save_failed:  'Save failed: ',
+        cant_start:   'Could not start recording: ',
+      },
+      ja: {
+        quality_low:  '低画質',
+        quality_med:  '中画質',
+        quality_high: '高画質',
+        mic:          'マイク',
+        start:        '⏺ 録画開始',
+        stop:         '⏹ 録画停止',
+        saving:       '⏳ 保存中…',
+        saved:        '✅ 録画が保存されました',
+        download:     '⬇ ダウンロード',
+        again:        '再録画',
+        requesting:   '画面アクセスを要求中…',
+        save_failed:  '保存に失敗しました: ',
+        cant_start:   '録画を開始できませんでした: ',
+      },
+    };
+    const t = I18N[_lang] || I18N.en;
+
+    // Apply translations to static elements
+    document.getElementById('rc-opt-low').textContent  = t.quality_low;
+    document.getElementById('rc-opt-med').textContent  = t.quality_med;
+    document.getElementById('rc-opt-high').textContent = t.quality_high;
+    document.getElementById('rc-mic-label').textContent = t.mic;
+    document.getElementById('btn-start').textContent   = t.start;
+    document.getElementById('btn-stop').textContent    = t.stop;
+    document.getElementById('rc-saving-text').textContent = t.saving;
+    document.getElementById('rc-saved-title').textContent = t.saved;
+    document.getElementById('rc-download-link').textContent = t.download;
+    document.getElementById('btn-again').textContent   = t.again;
 
     let _rec = null, _stream = null, _displayStream = null, _micTracks = [];
     let _sessionId = null, _timerInterval = null;
@@ -138,7 +185,7 @@
     async function rcStart() {
       const btn = document.getElementById('btn-start');
       btn.disabled = true;
-      setStatus('Requesting screen access…');
+      setStatus(t.requesting);
       _displayStream = null; _micTracks = [];
       try {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
@@ -214,7 +261,7 @@
             resize('done');
             show('panel-done');
           } catch (err) {
-            setStatus('Save failed: ' + err.message);
+            setStatus(t.save_failed + err.message);
             resize('idle');
             show('panel-idle');
           }
@@ -245,7 +292,7 @@
         btn.disabled = false;
         setStatus('');
         resize('idle');
-        if (e.name !== 'NotAllowedError') alert('Could not start recording: ' + e.message);
+        if (e.name !== 'NotAllowedError') alert(t.cant_start + e.message);
         show('panel-idle');
       }
     }

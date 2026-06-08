@@ -10584,7 +10584,8 @@
     if (_srPopup && !_srPopup.closed) { _srPopup.focus(); return; }
     const w = 480, h = 430;
     const left = Math.max(0, screen.width - w - 20);
-    _srPopup = window.open('/recorder-controller.html', 'srController',
+    const lang = window._appLang || 'en';
+    _srPopup = window.open(`/recorder-controller.html?lang=${lang}`, 'srController',
       `popup,width=${w},height=${h},left=${left},top=20`);
     if (!_srPopup) alert('Popup blocked — please allow popups for this site in your browser settings, then try again.');
   }
