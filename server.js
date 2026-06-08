@@ -2129,7 +2129,8 @@ const UPDATE_REPO_RAW = 'https://raw.githubusercontent.com/keithforit/pc-auto-vi
 const UPDATABLE_FILES = ['index.html', 'server.js', 'parser-captions.js', 'parser.js'];
 
 function getLocalVersion() {
-    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'version.json'), 'utf8')).version || '0.0.0'; }
+    // pc-long-vid tracks its own version in version-long.json
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'version-long.json'), 'utf8')).version || '0.0.0'; }
     catch { return '0.0.0'; }
 }
 
@@ -2153,7 +2154,7 @@ app.get('/check-update', async (req, res) => {
     try {
         const https = require('https');
         const data = await new Promise((resolve, reject) => {
-            https.get(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`, r => {
+            https.get(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`, r => {
                 let body = '';
                 r.on('data', c => body += c);
                 r.on('end', () => resolve(body));
@@ -2186,19 +2187,22 @@ app.post('/apply-update', async (req, res) => {
                 }).on('error', reject);
             });
         }
-        // Fetch remote version.json first
-        const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`);
+        // Fetch remote version-long.json (pc-long-vid's own update track)
+        const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
         const filesToUpdate = remote.files || UPDATABLE_FILES;
-        // Download and replace each file (emit progress to all clients)
+        const fileMap = remote.fileMap || {};  // e.g. { "long-index.html": "index.html" }
+        // Download and replace each file, applying fileMap renames
         for (let idx = 0; idx < filesToUpdate.length; idx++) {
-            const file = filesToUpdate[idx];
-            io.emit('update-progress', { file, current: idx + 1, total: filesToUpdate.length });
-            const buf = await downloadFile(`${UPDATE_REPO_RAW}/${file}?t=${Date.now()}`);
-            fs.writeFileSync(path.join(__dirname, file), buf);
+            const remoteFile = filesToUpdate[idx];
+            const localFile  = fileMap[remoteFile] || remoteFile;
+            io.emit('update-progress', { file: localFile, current: idx + 1, total: filesToUpdate.length });
+            const buf = await downloadFile(`${UPDATE_REPO_RAW}/${remoteFile}?t=${Date.now()}`);
+            fs.mkdirSync(path.dirname(path.join(__dirname, localFile)), { recursive: true });
+            fs.writeFileSync(path.join(__dirname, localFile), buf);
         }
-        // Update local version.json
-        fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ version: remote.version }, null, 2));
+        // Update local version-long.json
+        fs.writeFileSync(path.join(__dirname, 'version-long.json'), JSON.stringify({ version: remote.version }, null, 2));
         res.json({ ok: true, version: remote.version, notes: remote.notes });
         // Restart the server after a short delay so the response can be sent
         setTimeout(() => {

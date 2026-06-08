@@ -1,12 +1,21 @@
 {
-  "version": "1.0.4",
-  "date": "2026-06-03",
-  "notes": "Generate button turns red ⏹ Stop while rendering — click to cancel. Works on both Scenes and Deliver tabs.",
+  "version": "1.2.97",
+  "date": "2026-06-08",
+  "notes": "All screen recorder improvements: popup controller, stream fixes, localization, Recordings folder",
   "files": [
     "long-index.html",
-    "server.js"
+    "server.js",
+    "parser-captions.js",
+    "parser.js",
+    "generate-audio.js",
+    "generate-audio-ja.js",
+    "generate-audio-voicevox.js",
+    "src/Caption.tsx",
+    "src/Main.tsx",
+    "src/Background.tsx",
+    "recorder-controller.html"
   ],
   "fileMap": {
-    "long-index.html": "index.html"
+    "index.html": "long-index.html"
   }
 }
