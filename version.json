@@ -1,7 +1,7 @@
 {
-  "version": "1.2.93",
+  "version": "1.2.94",
   "date": "2026-06-08",
-  "notes": "Screen recorder pop-out: fix recording/done state window height too small",
+  "notes": "Screen recordings: save to Recordings/ folder, auto-delete previous undownloaded recordings on new start",
   "files": [
     "index.html",
     "server.js",

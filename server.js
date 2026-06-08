@@ -2050,12 +2050,29 @@ app.post('/lv-split-at-timestamps', async (req, res) => {
 // ─────────────────────────────────────────
 
 const screenRecordSessions = {};
+const RECORDINGS_DIR = path.join(__dirname, 'Recordings');
+const SR_TEMP_DIR    = path.join(__dirname, 'public', 'screen-recordings');
 
 app.post('/screen-record/start', (req, res) => {
+    // Clean up any previous undownloaded recordings
+    if (fs.existsSync(RECORDINGS_DIR)) {
+        for (const f of fs.readdirSync(RECORDINGS_DIR)) {
+            try { fs.unlinkSync(path.join(RECORDINGS_DIR, f)); } catch (_) {}
+        }
+    } else {
+        fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
+    }
+    // Also purge orphaned temp webm files from crashed sessions
+    if (fs.existsSync(SR_TEMP_DIR)) {
+        for (const f of fs.readdirSync(SR_TEMP_DIR)) {
+            try { fs.unlinkSync(path.join(SR_TEMP_DIR, f)); } catch (_) {}
+        }
+    } else {
+        fs.mkdirSync(SR_TEMP_DIR, { recursive: true });
+    }
+
     const sessionId = `sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const dir = path.join(__dirname, 'public', 'screen-recordings');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const filePath = path.join(dir, `${sessionId}.webm`);
+    const filePath = path.join(SR_TEMP_DIR, `${sessionId}.webm`);
     const stream = fs.createWriteStream(filePath);
     screenRecordSessions[sessionId] = { filePath, stream };
     res.json({ sessionId });
@@ -2079,9 +2096,7 @@ app.post('/screen-record/stop/:sessionId', (req, res) => {
         const { execFile } = require('child_process');
         const webmPath = session.filePath;
         const finalName = `screen-recording-${Date.now()}.mp4`;
-        const rendersDir = path.join(__dirname, 'renders');
-        if (!fs.existsSync(rendersDir)) fs.mkdirSync(rendersDir, { recursive: true });
-        const finalPath = path.join(rendersDir, finalName);
+        const finalPath = path.join(RECORDINGS_DIR, finalName);
         execFile('ffmpeg', [
             '-i', webmPath,
             '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
@@ -2102,7 +2117,7 @@ app.get('/screen-record/download/:filename', (req, res) => {
     if (!/^screen-recording-\d+\.mp4$/.test(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
     }
-    const filePath = path.join(__dirname, 'renders', filename);
+    const filePath = path.join(RECORDINGS_DIR, filename);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
     res.download(filePath, filename);
 });
