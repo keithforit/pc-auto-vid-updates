@@ -7,6 +7,26 @@ const path = require('path');
 const multer = require('multer');
 const mp3Duration = require('mp3-duration');
 
+// ── Single-instance guard ─────────────────────────────────────────────────────
+// Kill any previous server instance so re-running the script never opens extra
+// browser tabs or leaves stale processes on higher ports.
+const PID_FILE = path.join(__dirname, '.server.pid');
+(function singleInstance() {
+    if (fs.existsSync(PID_FILE)) {
+        const prev = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim(), 10);
+        if (prev && !isNaN(prev) && prev !== process.pid) {
+            try { process.kill(prev, 0); process.kill(prev, 'SIGTERM'); console.log(`🛑 Stopped previous instance (PID ${prev})`); }
+            catch (_) { /* already gone */ }
+        }
+    }
+    fs.writeFileSync(PID_FILE, String(process.pid));
+    const cleanup = () => { try { fs.unlinkSync(PID_FILE); } catch (_) {} };
+    process.on('exit', cleanup);
+    process.on('SIGINT',  () => { cleanup(); process.exit(0); });
+    process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Load .env file if present
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
