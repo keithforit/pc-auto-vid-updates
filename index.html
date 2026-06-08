@@ -10582,7 +10582,7 @@
   let _srPopup = null;
   function srPopOut() {
     if (_srPopup && !_srPopup.closed) { _srPopup.focus(); return; }
-    const w = 340, h = 200;
+    const w = 480, h = 430;
     const left = Math.max(0, screen.width - w - 20);
     _srPopup = window.open('/recorder-controller.html', 'srController',
       `popup,width=${w},height=${h},left=${left},top=20`);

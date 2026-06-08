@@ -1,7 +1,7 @@
 {
-  "version": "1.2.91",
+  "version": "1.2.92",
   "date": "2026-06-08",
-  "notes": "Screen recorder pop-out: fixed window size, added Download button to done state",
+  "notes": "Screen recorder pop-out: open large for screen picker, shrink to compact controller once recording starts",
   "files": [
     "index.html",
     "server.js",

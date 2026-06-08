@@ -118,6 +118,17 @@
     let _rec = null, _stream = null, _displayStream = null, _micTracks = [];
     let _sessionId = null, _timerInterval = null;
 
+    const SZ = {
+      idle: [480, 430],
+      rec:  [320, 130],
+      done: [320, 180],
+    };
+    function resize(key) {
+      const [w, h] = SZ[key];
+      window.resizeTo(w, h);
+      window.moveTo(screen.width - w - 20, 20);
+    }
+
     function show(id) {
       ['panel-idle','panel-rec','panel-final','panel-done'].forEach(p =>
         document.getElementById(p).classList.toggle('hidden', p !== id));
@@ -135,6 +146,7 @@
           audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
         });
         _displayStream = displayStream;
+        resize('rec');
 
         const sysAudio = displayStream.getAudioTracks();
         const micOn = document.getElementById('rc-mic').checked;
@@ -198,9 +210,11 @@
             const link = document.getElementById('rc-download-link');
             link.href = `/screen-record/download/${data.filename}`;
             link.setAttribute('download', data.filename);
+            resize('done');
             show('panel-done');
           } catch (err) {
             setStatus('Save failed: ' + err.message);
+            resize('idle');
             show('panel-idle');
           }
           btn.disabled = false;
@@ -229,6 +243,7 @@
         _micTracks.forEach(t => t.stop()); _micTracks = [];
         btn.disabled = false;
         setStatus('');
+        resize('idle');
         if (e.name !== 'NotAllowedError') alert('Could not start recording: ' + e.message);
         show('panel-idle');
       }
@@ -241,6 +256,7 @@
     }
 
     function rcReset() {
+      resize('idle');
       show('panel-idle');
       setStatus('');
     }
