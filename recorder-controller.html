@@ -41,7 +41,15 @@
     button:disabled{opacity:.45;cursor:not-allowed}
     .btn-rec{background:#dc2626;border-color:#dc2626;padding:7px 20px;font-size:14px}
     .btn-stop{background:#374151;border-color:#6b7280;padding:7px 20px;font-size:14px}
-    .btn-sm{font-size:12px;padding:4px 12px}
+    .btn-sm{font-size:12px;padding:5px 14px}
+    .btn-dl{
+      display:inline-block;font-size:12px;font-weight:600;
+      padding:5px 14px;border-radius:7px;
+      background:#2563eb;border:1px solid #3b82f6;
+      color:#fff;text-decoration:none;cursor:pointer;
+      transition:opacity .15s;
+    }
+    .btn-dl:hover{opacity:.85}
     #timer{
       font-size:26px;font-weight:700;
       font-variant-numeric:tabular-nums;letter-spacing:1px;
@@ -55,7 +63,7 @@
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
     #status{font-size:11px;color:#6b7280;height:14px;text-align:center}
     .done-title{font-size:13px;font-weight:700;color:#34d399}
-    .done-file{font-size:11px;color:#6b7280;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .done-file{font-size:11px;color:#6b7280;max-width:290px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .hidden{display:none!important}
   </style>
 </head>
@@ -96,7 +104,10 @@
   <div id="panel-done" class="panel hidden">
     <div class="done-title">✅ Recording saved</div>
     <div id="rc-done-file" class="done-file"></div>
-    <button class="btn-sm" onclick="rcReset()">Record again</button>
+    <div class="row center" style="gap:8px">
+      <a id="rc-download-link" href="#" class="btn-dl">⬇ Download</a>
+      <button class="btn-sm" onclick="rcReset()">Record again</button>
+    </div>
   </div>
 
   <div id="status"></div>
@@ -113,32 +124,17 @@
     }
     function setStatus(msg) { document.getElementById('status').textContent = msg; }
 
-    const SMALL_W = 300, SMALL_H = 140;
-
-    function expandForPicker() {
-      const pw = 700, ph = 520;
-      window.resizeTo(pw, ph);
-      window.moveTo(Math.round((screen.width - pw) / 2), Math.round((screen.height - ph) / 2));
-    }
-
-    function shrinkToController() {
-      window.resizeTo(SMALL_W, SMALL_H);
-      window.moveTo(screen.width - SMALL_W - 20, 20);
-    }
-
     async function rcStart() {
       const btn = document.getElementById('btn-start');
       btn.disabled = true;
       setStatus('Requesting screen access…');
       _displayStream = null; _micTracks = [];
-      expandForPicker();
       try {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
           video: { frameRate: 30, displaySurface: 'monitor' },
           audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
         });
         _displayStream = displayStream;
-        shrinkToController();
 
         const sysAudio = displayStream.getAudioTracks();
         const micOn = document.getElementById('rc-mic').checked;
@@ -199,6 +195,9 @@
             bc.postMessage({ type: 'recording-done', filename: data.filename, size: data.size });
             const mb = data.size ? ` — ${(data.size / 1024 / 1024).toFixed(0)} MB` : '';
             document.getElementById('rc-done-file').textContent = data.filename + mb;
+            const link = document.getElementById('rc-download-link');
+            link.href = `/screen-record/download/${data.filename}`;
+            link.setAttribute('download', data.filename);
             show('panel-done');
           } catch (err) {
             setStatus('Save failed: ' + err.message);
@@ -226,7 +225,6 @@
         setStatus('');
 
       } catch (e) {
-        shrinkToController();
         if (_displayStream) { _displayStream.getTracks().forEach(t => t.stop()); _displayStream = null; }
         _micTracks.forEach(t => t.stop()); _micTracks = [];
         btn.disabled = false;
