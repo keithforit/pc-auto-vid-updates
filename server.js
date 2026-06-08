@@ -2090,6 +2090,11 @@ const screenRecordSessions = {};
 const RECORDINGS_DIR = path.join(__dirname, 'Recordings');
 const SR_TEMP_DIR    = path.join(__dirname, 'public', 'screen-recordings');
 
+// Check ffmpeg availability once at startup
+let ffmpegAvailable = false;
+try { execSync('ffmpeg -version 2>/dev/null'); ffmpegAvailable = true; }
+catch (_) { console.log('⚠️  ffmpeg not found — screen recordings will save as WebM until installed'); }
+
 app.post('/screen-record/start', (req, res) => {
     try {
         // Clean up any previous undownloaded recordings
@@ -2180,6 +2185,31 @@ app.get('/screen-record/download/:filename', (req, res) => {
     const filePath = path.join(RECORDINGS_DIR, filename);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
     res.download(filePath, filename);
+});
+
+app.get('/ffmpeg-check', (req, res) => res.json({ available: ffmpegAvailable }));
+
+app.post('/ffmpeg-install', (req, res) => {
+    // Check brew is available first
+    let brewOk = false;
+    try { execSync('brew --version 2>/dev/null'); brewOk = true; } catch (_) {}
+    if (!brewOk) {
+        return res.json({ started: false, error: 'no-brew' });
+    }
+    res.json({ started: true });
+    const proc = spawn('brew', ['install', 'ffmpeg'], { stdio: 'pipe' });
+    proc.stdout.on('data', d => io.emit('ffmpeg-install-log', d.toString()));
+    proc.stderr.on('data', d => io.emit('ffmpeg-install-log', d.toString()));
+    proc.on('close', code => {
+        if (code === 0) {
+            ffmpegAvailable = true;
+            io.emit('ffmpeg-install-done', { ok: true });
+            console.log('✅ ffmpeg installed successfully');
+        } else {
+            io.emit('ffmpeg-install-done', { ok: false });
+        }
+    });
+    proc.on('error', () => io.emit('ffmpeg-install-done', { ok: false }));
 });
 
 // ─────────────────────────────────────────

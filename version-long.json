@@ -1,7 +1,7 @@
 {
-  "version": "1.3.4",
+  "version": "1.3.5",
   "date": "2026-06-08",
-  "notes": "Screen recorder: fallback to WebM if ffmpeg missing, show install hint instead of error",
+  "notes": "One-click ffmpeg install button in app — no Terminal needed for non-technical users",
   "files": [
     "long-index.html",
     "server.js",

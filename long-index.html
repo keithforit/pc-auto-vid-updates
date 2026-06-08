@@ -1194,6 +1194,15 @@
         <div style="font-size:12px;color:var(--text-muted);background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5" data-i18n-html="sr_audio_tip">
           💡 When the screen picker appears — select <strong style="color:var(--text-soft)">Entire Screen</strong>, then tick <strong style="color:var(--text-soft)">Share system audio</strong> before clicking Share.
         </div>
+        <!-- ffmpeg missing warning — hidden by default, shown by JS if ffmpeg not installed -->
+        <div id="sr-ffmpeg-warn" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);border-radius:8px;font-size:13px;line-height:1.6">
+          <div style="font-weight:700;color:#f59e0b;margin-bottom:4px" data-i18n="sr_ffmpeg_title">⚠️ ffmpeg not installed</div>
+          <div style="color:var(--text-muted);margin-bottom:8px" data-i18n="sr_ffmpeg_desc">Recordings will save as WebM. Install ffmpeg for automatic MP4 conversion.</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button onclick="srInstallFfmpeg()" id="sr-ffmpeg-btn" class="btn sm" style="background:#d97706;border-color:#d97706" data-i18n="sr_ffmpeg_btn">⬇ Install ffmpeg automatically</button>
+            <span id="sr-ffmpeg-status" style="font-size:12px;color:var(--text-muted)"></span>
+          </div>
+        </div>
         <div id="sr-start-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <button class="btn" id="sr-start-btn" onclick="srStart()" style="background:#dc2626;border-color:#dc2626" data-i18n="sr_start_btn">⏺️ Start Recording</button>
           <button onclick="srPopOut()" style="background:none;border:1px solid var(--border-mid);color:var(--text-muted);font-size:12px;padding:5px 11px;border-radius:6px;cursor:pointer" title="Open a floating controller window you can place anywhere on your desktop" data-i18n="sr_popout_btn">⤢ Pop out controller</button>
@@ -1821,6 +1830,13 @@
       sr_quality_high: 'High — ~1.8 GB / 40 min',
       sr_include_mic: 'Include mic',
       sr_audio_tip: '💡 When the screen picker appears — select <strong style="color:var(--text-soft)">Entire Screen</strong>, then tick <strong style="color:var(--text-soft)">Share system audio</strong> before clicking Share.',
+      sr_ffmpeg_title: '⚠️ ffmpeg not installed',
+      sr_ffmpeg_desc:  'Recordings will save as WebM. Install ffmpeg for automatic MP4 conversion.',
+      sr_ffmpeg_btn:   '⬇ Install ffmpeg automatically',
+      sr_ffmpeg_installing: 'Installing… this may take a few minutes',
+      sr_ffmpeg_done:  '✅ ffmpeg installed — recordings will now save as MP4',
+      sr_ffmpeg_no_brew: '⚠️ Homebrew not found. Install it first at https://brew.sh, then restart the app.',
+      sr_ffmpeg_failed: '❌ Install failed. Try: brew install ffmpeg in Terminal.',
       sr_start_btn: '⏺️ Start Recording',
       sr_popout_btn: '⤢ Pop out controller',
       sr_no_audio_warn: '⚠️ No system audio detected — stop and retry, ticking "Share system audio" in the screen picker.',
@@ -2232,6 +2248,13 @@
       sr_quality_high: '高画質 — 約1.8 GB / 40分',
       sr_include_mic: 'マイクを含める',
       sr_audio_tip: '💡 画面選択ダイアログが開いたら「<strong style="color:var(--text-soft)">画面全体</strong>」を選び、「<strong style="color:var(--text-soft)">システム音声を共有</strong>」にチェックを入れてから「共有」をクリックしてください。',
+      sr_ffmpeg_title: '⚠️ ffmpegがインストールされていません',
+      sr_ffmpeg_desc:  '録画はWebMで保存されます。MP4に自動変換するにはffmpegが必要です。',
+      sr_ffmpeg_btn:   '⬇ ffmpegを自動インストール',
+      sr_ffmpeg_installing: 'インストール中… 数分かかる場合があります',
+      sr_ffmpeg_done:  '✅ ffmpegをインストールしました — 録画はMP4で保存されます',
+      sr_ffmpeg_no_brew: '⚠️ Homebrewが見つかりません。https://brew.sh でインストール後、アプリを再起動してください。',
+      sr_ffmpeg_failed: '❌ インストールに失敗しました。ターミナルで brew install ffmpeg を実行してください。',
       sr_start_btn: '⏺️ 録画開始',
       sr_popout_btn: '⤢ コントローラーを切り出す',
       sr_no_audio_warn: '⚠️ システム音声が検出されませんでした — 停止して、画面選択で「システム音声を共有」にチェックを入れて再試行してください。',
@@ -10576,6 +10599,45 @@
     link.setAttribute('download', filename);
     document.getElementById('sr-done-box').style.display = 'block';
   }
+
+  // ── ffmpeg auto-install ────────────────────────────────────────────────────
+  async function srCheckFfmpeg() {
+    try {
+      const { available } = await fetch('/ffmpeg-check').then(r => r.json());
+      document.getElementById('sr-ffmpeg-warn').style.display = available ? 'none' : 'block';
+    } catch (_) {}
+  }
+
+  async function srInstallFfmpeg() {
+    const _lt = I18N[window._appLang || 'en'] || I18N.en;
+    const btn = document.getElementById('sr-ffmpeg-btn');
+    const status = document.getElementById('sr-ffmpeg-status');
+    btn.disabled = true;
+    status.textContent = _lt.sr_ffmpeg_installing;
+    try {
+      const { started, error } = await fetch('/ffmpeg-install', { method: 'POST' }).then(r => r.json());
+      if (!started) {
+        btn.disabled = false;
+        status.textContent = error === 'no-brew' ? _lt.sr_ffmpeg_no_brew : _lt.sr_ffmpeg_failed;
+      }
+      // result comes via socket — see below
+    } catch (_) { btn.disabled = false; status.textContent = _lt.sr_ffmpeg_failed; }
+  }
+
+  socket.on('ffmpeg-install-done', ({ ok }) => {
+    const _lt = I18N[window._appLang || 'en'] || I18N.en;
+    const status = document.getElementById('sr-ffmpeg-status');
+    if (ok) {
+      document.getElementById('sr-ffmpeg-warn').style.display = 'none';
+      status.textContent = _lt.sr_ffmpeg_done;
+    } else {
+      document.getElementById('sr-ffmpeg-btn').disabled = false;
+      status.textContent = _lt.sr_ffmpeg_failed;
+    }
+  });
+
+  // Check when Long Video tab first becomes visible
+  srCheckFfmpeg();
 
   let _srPopup = null;
   function srPopOut() {
