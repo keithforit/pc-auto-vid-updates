@@ -1,12 +1,9 @@
 {
-  "version": "1.4.4",
+  "version": "1.4.5",
   "date": "2026-06-09",
-  "notes": "Rebrand title from AI Long Video Factory to PC Auto Vid in header and I18N strings",
+  "notes": "Remove Long Video tab and panel; Scenes tab is now the default; restore Create and Text to Video tabs",
   "files": [
     "index.html",
-    "src/Caption.tsx",
-    "src/Main.tsx",
-    "server.js",
     "version.json"
   ]
 }

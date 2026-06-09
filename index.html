@@ -639,34 +639,6 @@
     .gt-info-bar { display: flex; align-items: center; gap: 10px; padding: 7px 14px; background: var(--bg-input); border-top: 1px solid var(--bg-card); font-size: 11px; color: var(--text-dim); min-height: 30px; }
     .gt-info-scene { color: var(--text-soft); font-weight: 700; }
     .gt-info-frame { color: var(--text-dim); font-family: monospace; }
-    /* ── Long Video Tab ── */
-    .lv-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-card); }
-    .lv-section h3 { margin: 0 0 16px; font-size: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-    .lv-drop-zone { border: 2px dashed var(--border-mid); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s; user-select: none; }
-    .lv-drop-zone:hover, .lv-drop-zone.dragover { border-color: var(--accent); background: rgba(16,185,129,0.05); color: var(--text-soft); }
-    .lv-progress-bar { background: var(--bg-input); border-radius: 8px; height: 8px; overflow: hidden; margin-top: 10px; }
-    .lv-progress-fill { height: 100%; background: linear-gradient(90deg,#10b981,#06b6d4); border-radius: 8px; transition: width 0.3s; width: 0%; }
-    .lv-split-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
-    .lv-split-tab { padding: 6px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
-    .lv-split-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-    #lv-timeline { position: relative; height: 44px; background: var(--bg-input); border-radius: 8px; overflow: hidden; cursor: pointer; margin-bottom: 10px; border: 1px solid var(--border); }
-    .lv-scene-item { display:flex;flex-direction:column;gap:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px; }
-    .lv-scene-item-header { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
-    .lv-scene-badge { font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:5px;padding:2px 8px;flex-shrink:0; }
-    .lv-scene-dur { font-size:11px;color:var(--text-muted);flex-shrink:0; }
-    .lv-scene-caption { width:100%;background:var(--bg-card);color:var(--text-main);border:1px solid var(--border-mid);border-radius:7px;padding:8px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;min-height:54px; }
-    .lv-timeline-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(16,185,129,0.18); pointer-events: none; }
-    .lv-timeline-playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #10b981; pointer-events: none; transition: left 0.1s linear; }
-    .lv-marker { position: absolute; top: 0; width: 2px; height: 100%; background: #ef4444; cursor: pointer; z-index: 2; }
-    .lv-marker::before { content: '▼'; position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 9px; color: #ef4444; line-height: 1; }
-    .lv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 26px; }
-    .lv-chip { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #f87171; border-radius: 6px; padding: 2px 10px; font-size: 11px; cursor: pointer; font-family: monospace; }
-    .lv-chip:hover { background: rgba(239,68,68,0.28); }
-    /* Screen Recorder */
-    .sr-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-    .sr-timer { font-size: 26px; font-weight: 700; font-family: monospace; color: #ef4444; letter-spacing: 2px; }
-    .sr-tip { background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.18); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
-    .sr-tip strong { color: var(--text-soft); }
   </style>
 </head>
 <body>
@@ -697,181 +669,16 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('longvideo')">📹 Long Video</div>
-    <div class="tab" onclick="switchTab('create')" style="display:none!important">➕ Create</div>
-    <div class="tab" onclick="switchTab('editor')" style="display:none!important">🎞 Text to Video</div>
-    <div class="tab" onclick="switchTab('scenes')">🗂 Scenes</div>
+    <div class="tab" onclick="switchTab('create')">➕ Create</div>
+    <div class="tab" onclick="switchTab('editor')">🎞 Text to Video</div>
+    <div class="tab active" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
     <!-- Timeline tab hidden — preserved for future use -->
   </div>
 
-  <!-- LONG VIDEO TAB -->
-  <div class="panel active" id="tab-longvideo">
-    <!-- SCREEN RECORDER -->
-    <div class="lv-section">
-      <h3 data-i18n="sr_title">🎙 Screen Recorder</h3>
-      <p style="color:var(--text-muted);font-size:13px;margin:0 0 14px" data-i18n="sr_desc">Record your screen with audio directly from the browser.</p>
-
-      <!-- Option A: popup window -->
-      <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Popup window</div>
-        <button class="btn ghost" onclick="srOpenWindow()" data-i18n="sr_open_btn">⏺ Open Recorder</button>
-      </div>
-
-      <!-- Option B: inline recorder -->
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Record here</div>
-      <div class="sr-row">
-        <div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px" data-i18n="sr_quality_label">Quality:</div>
-          <select id="sr-quality" style="width:auto;padding:6px 10px">
-            <option value="low" data-i18n="sr_quality_low">Low (~300 MB / 40 min)</option>
-            <option value="med" selected data-i18n="sr_quality_med">Med (~900 MB / 40 min)</option>
-            <option value="high" data-i18n="sr_quality_high">High (~1.8 GB / 40 min)</option>
-          </select>
-        </div>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-soft)">
-          <input type="checkbox" id="sr-mic" checked>
-          <span data-i18n="sr_include_mic">Include Microphone</span>
-        </label>
-        <button id="sr-start-btn" class="btn" onclick="srStart()" data-i18n="sr_start_btn">⏺ Start Recording</button>
-        <button id="sr-stop-btn" class="btn red" onclick="srStop()" style="display:none" data-i18n="sr_stop_btn">⏹ Stop</button>
-        <div id="sr-timer" class="sr-timer" style="display:none">00:00</div>
-      </div>
-      <div id="sr-inline-status" style="font-size:13px;color:var(--text-muted);min-height:18px"></div>
-
-      <div id="sr-result" style="margin-top:6px"></div>
-      <div class="sr-tip" style="margin-top:12px" data-i18n-html="sr_audio_tip">When the screen picker appears, choose <strong>Entire Screen</strong> and tick <strong>Share system audio</strong>.</div>
-    </div>
-
-    <!-- UPLOAD -->
-    <div class="lv-section">
-      <h3 data-i18n="lv_upload_title">📁 Step 1: Upload Your Video</h3>
-      <div class="lv-drop-zone" id="lv-drop-zone">
-        <div style="font-size:32px;margin-bottom:8px">📂</div>
-        <div data-i18n="lv_drop_hint">Drag &amp; drop a video file here, or click to browse</div>
-        <input type="file" id="lv-file-input" accept="video/*" style="display:none" onchange="if(this.files[0])lvUploadFile(this.files[0])">
-      </div>
-      <div class="lv-progress-bar" id="lv-upload-progress" style="display:none">
-        <div class="lv-progress-fill" id="lv-upload-fill"></div>
-      </div>
-      <div id="lv-upload-status" style="font-size:12px;color:var(--text-muted);margin-top:6px"></div>
-    </div>
-
-    <!-- TRANSCRIPT (Step 2) -->
-    <div id="lv-step2" class="lv-section" style="display:none">
-      <h3 data-i18n="lv_transcript_title">📝 Step 2: Transcript (Optional)</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px" data-i18n="lv_transcript_hint">One line per scene. Lines are distributed proportionally across chunks.</p>
-      <textarea id="lv-transcript" style="width:100%;height:90px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:sans-serif;box-sizing:border-box" placeholder="Line 1 scene text&#10;Line 2 scene text&#10;..."></textarea>
-    </div>
-
-    <!-- SPLIT EDITOR (Step 3) -->
-    <div id="lv-step3" class="lv-section" style="display:none">
-      <h3 data-i18n="lv_split_title">✂️ Step 3: Split Video into Scenes</h3>
-      <div class="lv-split-tabs">
-        <div class="lv-split-tab active" id="lv-split-tab-editor" onclick="lvSwitchSplitTab('editor')" data-i18n="lv_split_tab_editor">✂️ Editor</div>
-        <div class="lv-split-tab" id="lv-split-tab-auto" onclick="lvSwitchSplitTab('auto')" data-i18n="lv_split_tab_auto">🤖 Auto-detect</div>
-        <div class="lv-split-tab" id="lv-split-tab-fixed" onclick="lvSwitchSplitTab('fixed')" data-i18n="lv_split_tab_fixed">⏱ Fixed Seconds</div>
-      </div>
-
-      <!-- Editor sub-tab -->
-      <div id="lv-split-panel-editor">
-        <video id="lv-editor-video" controls style="width:100%;border-radius:8px;background:#000;display:none;margin-bottom:10px;max-height:280px"></video>
-        <div id="lv-timeline" onclick="lvTimelineClick(event)" title="Click to seek">
-          <div class="lv-timeline-fill" id="lv-timeline-fill"></div>
-          <div class="lv-timeline-playhead" id="lv-timeline-playhead"></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn sm" onclick="lvMarkSplit()" data-i18n="lv_mark_btn">✂️ Mark split here</button>
-          <button class="btn sm ghost" onclick="lvClearSplits()" data-i18n="lv_clear_btn">🗑 Clear all</button>
-          <span style="font-size:11px;color:var(--text-muted)" data-i18n="lv_press_m">Press M to mark, or click the timeline</span>
-        </div>
-        <div class="lv-chips" id="lv-chips"></div>
-        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="btn blue" id="lv-split-btn" onclick="lvExecuteSplit()" data-i18n="lv_split_btn">🔪 Split at marked points</button>
-          <div id="lv-split-status" style="font-size:12px;color:var(--text-muted)"></div>
-        </div>
-      </div>
-
-      <!-- Auto-detect sub-tab -->
-      <div id="lv-split-panel-auto" style="display:none">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
-          <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_detect_threshold">Sensitivity:</label>
-          <input type="range" id="lv-detect-threshold" min="0.1" max="0.9" step="0.05" value="0.35" style="width:120px" oninput="document.getElementById('lv-detect-threshold-label').textContent=parseFloat(this.value).toFixed(2)">
-          <span id="lv-detect-threshold-label" style="font-size:12px;color:var(--text-muted);min-width:30px">0.35</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn sm" id="lv-detect-btn" onclick="lvAutoDetect()" data-i18n="lv_detect_btn">🔍 Detect scenes &amp; silences</button>
-          <button class="btn sm ghost" id="lv-use-detected-btn" onclick="lvUseDetected()" style="display:none" data-i18n="lv_use_detected">Use these split points</button>
-        </div>
-        <div id="lv-detect-status" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
-        <div id="lv-detect-preview" style="font-size:11px;color:var(--text-dim);margin-top:4px;font-family:monospace;word-break:break-all"></div>
-      </div>
-
-      <!-- Fixed seconds sub-tab -->
-      <div id="lv-split-panel-fixed" style="display:none">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-          <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_chunk_size">Chunk size:</label>
-          <select id="lv-chunk-size" style="width:auto;padding:6px 10px">
-            <option value="3">3 seconds</option>
-            <option value="5" selected>5 seconds</option>
-            <option value="8">8 seconds</option>
-            <option value="10">10 seconds</option>
-            <option value="15">15 seconds</option>
-            <option value="20">20 seconds</option>
-            <option value="30">30 seconds</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn blue" id="lv-fixed-split-btn" onclick="lvFixedSplit()" data-i18n="lv_fixed_split_btn">🔪 Split into chunks</button>
-          <div id="lv-fixed-split-status" style="font-size:12px;color:var(--text-muted)"></div>
-        </div>
-        <div id="lv-fixed-split-log" style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:monospace;max-height:70px;overflow-y:auto"></div>
-      </div>
-    </div>
-
-    <!-- SCENE EDIT (Step 4) -->
-    <div id="lv-step4" class="lv-section" style="display:none">
-      <h3>🎬 Step 4: Edit Scenes</h3>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-        <p style="font-size:13px;color:var(--text-muted);margin:0;flex:1">Edit captions for each scene. Leave blank to render without text overlay.</p>
-        <button class="btn ghost sm" onclick="switchTab('editor')" style="flex-shrink:0">🖊 Full Scene Editor</button>
-      </div>
-      <div id="lv-scenes-list" style="max-height:520px;overflow-y:auto;padding-right:4px"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn blue" onclick="lvSaveAllCaptions()">💾 Save Captions</button>
-        <div id="lv-captions-status" style="font-size:12px;color:var(--text-muted)"></div>
-        <button class="btn" onclick="document.getElementById('lv-step5').style.display='';this.closest('#lv-step4').scrollIntoView({behavior:'smooth',block:'end'})" style="margin-left:auto">Continue to Render →</button>
-      </div>
-    </div>
-
-    <!-- RENDER (Step 5) -->
-    <div id="lv-step5" class="lv-section" style="display:none">
-      <h3 data-i18n="lv_render_title">🎬 Step 5: Render Long Video</h3>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-        <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_batch_size">Scenes per batch:</label>
-        <select id="lv-batch-size" style="width:auto;padding:6px 10px">
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="30">30</option>
-          <option value="50">50</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn full" id="lv-render-btn" onclick="lvStartRender()" data-i18n="lv_render_btn">🎬 Render Full Video</button>
-        <button class="btn red" id="lv-render-stop-btn" onclick="lvStopRender()" style="display:none" data-i18n="lv_stop_btn">⏹ Stop</button>
-      </div>
-      <div class="lv-progress-bar" style="margin-top:10px">
-        <div class="lv-progress-fill" id="lv-render-fill"></div>
-      </div>
-      <div id="lv-render-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;min-height:18px"></div>
-      <div id="lv-render-log" style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:monospace;max-height:100px;overflow-y:auto;background:var(--log-bg);border-radius:6px;padding:6px 10px;display:none"></div>
-      <div id="lv-render-result"></div>
-    </div>
-  </div>
-
   <!-- CREATE TAB -->
-  <div class="panel active" id="tab-create">
+  <div class="panel" id="tab-create">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="font-size:13px;color:var(--text-muted);" data-i18n="create_desc">Start here: create scenes, arrange the flow, then render the video.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -935,7 +742,7 @@
   </div>
 
   <!-- SCENES TAB -->
-  <div class="panel" id="tab-scenes">
+  <div class="panel active" id="tab-scenes">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button class="btn sm blue" onclick="loadSegments()" data-i18n="load_scenes">🔄 Load Scenes</button>
@@ -1722,8 +1529,6 @@
       // Style preview cards
       style_preview_text: 'Text',
       style_preview_sample: 'Text sample',
-      // Long Video tab
-      tab_longvideo: '📹 Long Video',
       // Screen Recorder
       sr_title: '🎙 Screen Recorder',
       sr_desc: 'Record your screen with audio directly from the browser.',
@@ -2168,8 +1973,6 @@
       // Style preview cards
       style_preview_text: 'テキスト',
       style_preview_sample: 'テキストサンプル',
-      // Long Video tab
-      tab_longvideo: '📹 長尺動画',
       // Screen Recorder
       sr_title: '🎙 スクリーンレコーダー',
       sr_desc: 'ブラウザから直接、画面と音声を録画します。',
@@ -2236,7 +2039,7 @@
     if (sub) sub.textContent = t.subtitle;
     // Tabs
     const tabs = document.querySelectorAll('.tab');
-    const tabKeys = ['tab_longvideo','tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
+    const tabKeys = ['tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
     tabs.forEach((tab, i) => { if (tabKeys[i]) tab.textContent = t[tabKeys[i]]; });
     // Theme label
     const isLight = document.getElementById('theme-checkbox')?.checked;
@@ -2359,7 +2162,7 @@
   })();
 
   /* ── Tabs ── */
-  const TAB_NAMES = ['longvideo','create','editor','scenes','media','settings'];
+  const TAB_NAMES = ['create','editor','scenes','media','settings'];
   function switchTab(name) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
