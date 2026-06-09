@@ -1,7 +1,7 @@
 {
-  "version": "1.4.3",
+  "version": "1.4.4",
   "date": "2026-06-09",
-  "notes": "Fix update checker — was pointing at the long-video tool's GitHub repo and version-long.json; now correctly points at pc-auto-vid-updates repo and reads version.json",
+  "notes": "Rebrand title from AI Long Video Factory to PC Auto Vid in header and I18N strings",
   "files": [
     "index.html",
     "src/Caption.tsx",
