@@ -1,0 +1,8 @@
+{
+  "version": "1.3.7",
+  "date": "2026-06-09",
+  "notes": "Moved to dedicated update server — future updates will come from the new source automatically.",
+  "files": [
+    "server.js"
+  ]
+}
