@@ -4738,6 +4738,12 @@
           <div class="scene-accordion-body text-controls">
             <div class="ctrl-label" style="margin-bottom:6px" data-i18n="orig_scene_text">${(I18N[window._appLang||'en']||I18N.en).orig_scene_text}</div>
             <textarea id="maintext-${i}" class="extra-text-input" style="min-height:120px;height:120px;max-height:200px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" data-i18n-placeholder="main_text_placeholder" placeholder="${(I18N[window._appLang||'en']||I18N.en).main_text_placeholder || 'Type the original scene text here...'}">${escapeHtml(seg.text || '')}</textarea>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+              <span style="font-size:10px;color:#94a3b8">Color text:</span>
+              <input type="color" id="inline-color-pick-${i}" value="${seg.highlightColorOverride||'#ff69b4'}" style="width:26px;height:22px;padding:1px 2px;border-radius:4px;border:1px solid #475569;background:none;cursor:pointer" title="Color for selected text" />
+              <button class="btn sm" type="button" onclick="wrapSelectedTextColor(${i})" style="font-size:10px;padding:3px 8px">Color selection</button>
+              <span style="font-size:9px;color:#475569">or type [word|#ff0000]</span>
+            </div>
             <div class="ctrl-row" style="margin-top:6px;justify-content:space-between;gap:8px;flex-wrap:wrap">
               <div style="font-size:11px;color:#94a3b8" data-i18n="main_text_hint">${(I18N[window._appLang||'en']||I18N.en).main_text_hint}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -4906,6 +4912,10 @@
                 <input type="color" class="mini-color" id="glowtextco-${i}"
                        value="${seg.glowTextColorOverride||'#ffffff'}"
                        oninput="saveMainColors(${i})" title="Glow text color" />
+                <label style="font-size:9px;color:#94a3b8">Highlight</label>
+                <input type="color" class="mini-color" id="hlco-${i}"
+                       value="${seg.highlightColorOverride||'#ff69b4'}"
+                       oninput="saveMainColors(${i})" title="Default color for [word] inline spans" />
               </div>
             </div>
             <div id="main-box-radius-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='box'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:6px 10px">
@@ -8166,6 +8176,7 @@
     const glowSize = parseInt(document.getElementById(`glowsize-${i}`)?.value) || 0;
     const boxBorderRadius = parseInt(document.getElementById(`boxradius-${i}`)?.value) || 20;
     const blockBorderRadius = parseInt(document.getElementById(`blockradius-${i}`)?.value) || 10;
+    const highlightColorOverride = document.getElementById(`hlco-${i}`)?.value || null;
     const preview = document.getElementById(`tpreview-${i}`);
     const strip = document.getElementById(`tprev-strip-${i}`);
     if (preview) {
@@ -8195,8 +8206,25 @@
         glowSizeOverride:      glowSize,
         boxBorderRadius,
         blockBorderRadius,
+        highlightColorOverride,
       })
     });
+  }
+
+  function wrapSelectedTextColor(i) {
+    const ta = document.getElementById(`maintext-${i}`);
+    const colorInput = document.getElementById(`inline-color-pick-${i}`);
+    if (!ta || !colorInput) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    if (start === end) { alert('Select some text in the box first, then click "Color selection".'); return; }
+    const color = colorInput.value;
+    const selected = ta.value.slice(start, end);
+    const wrapped = `[${selected}|${color}]`;
+    ta.value = ta.value.slice(0, start) + wrapped + ta.value.slice(end);
+    ta.setSelectionRange(start, start + wrapped.length);
+    ta.dispatchEvent(new Event('input'));
+    saveMainTextContent(i);
   }
 
   /* ── Overlay shapes ── */

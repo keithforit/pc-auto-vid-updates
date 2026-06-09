@@ -1224,7 +1224,7 @@ app.post('/update-scene-texts', (req, res) => {
         const nullableFields = [
              'textX', 'textY', 'backgroundBlur',
             'rotation', 'fontSize',
-            'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride',
+            'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride', 'highlightColorOverride',
             'boxBorderRadius', 'blockBorderRadius',
             'mainTextStartAt', 'mainTextEndAt',
             'voiceSpeed', 'voicePitch', 'voiceVolume',

@@ -259,6 +259,7 @@ export const Main: React.FC = () => {
                                             noWrap={(segment as any).textNoWrap === true}
                                             textBoxWidth={(segment as any).textBoxWidth ?? undefined}
                                             textPadding={(segment as any).textPadding ?? undefined}
+                                            highlightColor={(segment as any).highlightColorOverride ?? (segment as any).highlightColor}
                                         />
                                     )}
                                     {extras.map((et: any, j: number) => {
@@ -295,6 +296,7 @@ export const Main: React.FC = () => {
                                                     glowSize={et.glowSizeOverride ?? (segment as any).glowSizeOverride ?? (segment as any).glowSize ?? 14}
                                                     boxBorderRadius={et.boxBorderRadius ?? (segment as any).boxBorderRadius ?? 20}
                                                     blockBorderRadius={et.blockBorderRadius ?? (segment as any).blockBorderRadius ?? 10}
+                                                    highlightColor={et.highlightColor ?? (segment as any).highlightColorOverride ?? (segment as any).highlightColor}
                                                 />
                                             </Sequence>
                                         );

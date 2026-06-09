@@ -1,6 +1,28 @@
 import React from 'react';
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
+// Parse [word|#hex] or [word] inline color spans within a single line of text.
+// [word] without a color uses highlightColor (if provided), otherwise renders plainly.
+function renderLine(line: string, highlightColor?: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = [];
+    const pattern = /\[([^\]|]+)(?:\|([^\]]+))?\]/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(line)) !== null) {
+        if (match.index > lastIndex) parts.push(line.slice(lastIndex, match.index));
+        const spanText = match[1];
+        const spanColor = match[2] || highlightColor;
+        if (spanColor) {
+            parts.push(<span key={match.index} style={{ color: spanColor }}>{spanText}</span>);
+        } else {
+            parts.push(spanText);
+        }
+        lastIndex = pattern.lastIndex;
+    }
+    if (lastIndex < line.length) parts.push(line.slice(lastIndex));
+    return parts.length > 0 ? parts : [line];
+}
+
 interface CaptionProps {
     text: string;
     textStyle?: string;
@@ -30,6 +52,7 @@ interface CaptionProps {
     noWrap?: boolean;
     textBoxWidth?: number; // percentage of video width, e.g. 85 = 85%
     textPadding?: number;  // padding in px for block/box styles (applied as px top/bottom and 2x px left/right)
+    highlightColor?: string; // default color for [word] spans without explicit color
 }
 
 export const Caption: React.FC<CaptionProps> = ({
@@ -61,6 +84,7 @@ export const Caption: React.FC<CaptionProps> = ({
     noWrap = false,
     textBoxWidth,
     textPadding,
+    highlightColor,
 }) => {
     const { width: videoWidth } = useVideoConfig();
     const frame = useCurrentFrame();
@@ -265,7 +289,7 @@ export const Caption: React.FC<CaptionProps> = ({
                     <div style={{ ...textContentStyle, position: 'relative', zIndex: 1, opacity: animation === 'wipe' ? textRevealOpacity : 1 }}>
                         {String(text ?? '').split('\n').map((line, idx, arr) => (
                             <React.Fragment key={idx}>
-                                {line}
+                                {renderLine(line, highlightColor)}
                                 {idx < arr.length - 1 && <br />}
                             </React.Fragment>
                         ))}

@@ -1,9 +1,12 @@
 {
-  "version": "1.3.7",
+  "version": "1.3.8",
   "date": "2026-06-09",
-  "notes": "Fix video framing X/Y controls — switch from objectPosition to translate+oversized element so panning works for all video aspect ratios",
+  "notes": "Add inline text color spans — use [word|#hex] syntax in any text field to color individual words or characters a different color; Color Selection button wraps selected text automatically",
   "files": [
     "index.html",
-    "src/Background.tsx"
+    "src/Caption.tsx",
+    "src/Main.tsx",
+    "server.js",
+    "version.json"
   ]
 }
