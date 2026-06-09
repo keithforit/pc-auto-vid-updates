@@ -5819,9 +5819,7 @@
   }
 
   function backgroundTransformStyle(scale, x, y) {
-    const objX = 50 + x / 2;
-    const objY = 50 + y / 2;
-    return `object-fit:cover;object-position:${objX}% ${objY}%;transform:scale(${scale});transform-origin:center center;`;
+    return `position:absolute;width:114%;height:114%;top:-7%;left:-7%;object-fit:cover;transform:translate(${x}%,${y}%) scale(${scale});transform-origin:center center;`;
   }
 
   function updateBackgroundTransformPreview(i) {
@@ -5834,11 +5832,13 @@
     if (xValue) xValue.textContent = `${Math.round(x)}%`;
     if (yValue) yValue.textContent = `${Math.round(y)}%`;
     if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
-      const objX = 50 + x / 2;
-      const objY = 50 + y / 2;
+      el.style.position = 'absolute';
+      el.style.width = '114%';
+      el.style.height = '114%';
+      el.style.top = '-7%';
+      el.style.left = '-7%';
       el.style.objectFit = 'cover';
-      el.style.objectPosition = `${objX}% ${objY}%`;
-      el.style.transform = `scale(${scale})`;
+      el.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
       el.style.transformOrigin = 'center center';
     }
   }
@@ -6105,8 +6105,19 @@
     if(!el)return;
     const { scale, x, y } = getBackgroundTransformValues(i);
     const style = backgroundTransformStyle(scale, x, y);
-    if(el.tagName==='VIDEO'){el.src=src;el.style.objectFit='cover';el.style.objectPosition=`${50+x/2}% ${50+y/2}%`;el.style.transform=`scale(${scale})`;el.style.transformOrigin='center center';}
-    else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
+    if(el.tagName==='VIDEO'){
+      el.src=src;
+      el.style.position='absolute';
+      el.style.width='114%';
+      el.style.height='114%';
+      el.style.top='-7%';
+      el.style.left='-7%';
+      el.style.objectFit='cover';
+      el.style.transform=`translate(${x}%,${y}%) scale(${scale})`;
+      el.style.transformOrigin='center center';
+    } else {
+      el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;
+    }
     const vid = document.getElementById(`thumb-${i}`);
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
     setBackgroundTransformPanelState(i, true);
