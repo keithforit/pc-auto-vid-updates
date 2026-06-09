@@ -29,6 +29,8 @@ const bgProps = (s: any) => ({
     backgroundBlur: s.backgroundBlur,
     videoAudioVolume: s.videoAudioVolume,
     videoFit: s.videoFit,
+    clipStart: s.clipStart,
+    clipEnd: s.clipEnd,
 });
 
 const SceneAnimationLayer: React.FC<{

@@ -22,6 +22,8 @@ interface BackgroundProps {
     backgroundBlur?: number;     // 0–100 % blur (converted to 0–20 px internally)
     videoAudioVolume?: number;   // 0–1; 0 = muted (default for stock/looping video)
     videoFit?: 'cover' | 'contain-black' | 'contain-blur'; // how a landscape video fills a portrait frame
+    clipStart?: number;          // seconds into the video to start the clip
+    clipEnd?: number;            // seconds into the video to end the clip
 }
 
 export const Background: React.FC<BackgroundProps> = ({
@@ -45,6 +47,8 @@ export const Background: React.FC<BackgroundProps> = ({
     spotlightSoftness = 25,
     backgroundBlur = 0,
     videoAudioVolume = 0,
+    clipStart,
+    clipEnd,
 }) => {
     const { fps } = useVideoConfig();
     const frame = useCurrentFrame();
@@ -175,16 +179,25 @@ export const Background: React.FC<BackgroundProps> = ({
         objectPosition: "center center" as const,
     };
 
+    // Clip boundaries (in seconds)
+    const clipStartSecs = Math.max(0, Number(clipStart) || 0);
+    const clipEndSecs = (clipEnd != null && Number(clipEnd) > clipStartSecs) ? Number(clipEnd) : null;
+    // Effective duration for one loop cycle: clip range, or full video minus start
+    const effectiveVideoDuration = clipEndSecs
+        ? clipEndSecs - clipStartSecs
+        : (videoDurationInSeconds ? videoDurationInSeconds - clipStartSecs : null);
+
     // Helper: render video sequences for manual-loop (when duration is known)
     const renderLoopSequences = (style: React.CSSProperties, muted: boolean) => {
-        const videoFrames = Math.round((videoDurationInSeconds as number) * fps);
-        const loopFrames = Math.max(1, Math.round(videoFrames / speed));
+        const startFromFrames = Math.round(clipStartSecs * fps);
+        const loopFrames = Math.max(1, Math.round((effectiveVideoDuration as number) * fps / speed));
         const numLoops = Math.ceil((sequenceDurationInFrames as number) / loopFrames) + 1;
         return Array.from({ length: numLoops }).map((_, idx) => (
             <Sequence key={idx} from={idx * loopFrames} durationInFrames={loopFrames}>
                 <OffthreadVideo
                     src={resolvedSrc}
                     style={style}
+                    startFrom={startFromFrames}
                     {...(muted ? { muted: true } : { volume: audioVol })}
                     playbackRate={speed}
                 />
@@ -203,7 +216,7 @@ export const Background: React.FC<BackgroundProps> = ({
         };
         const containLayerStyle: React.CSSProperties = { position: 'absolute', inset: 0 };
 
-        if (videoDurationInSeconds && videoDurationInSeconds > 0 && sequenceDurationInFrames) {
+        if (effectiveVideoDuration && effectiveVideoDuration > 0 && sequenceDurationInFrames) {
             return (
                 <AbsoluteFill style={{ backgroundColor: '#000' }}>
                     {/* Blurred background */}
@@ -221,7 +234,7 @@ export const Background: React.FC<BackgroundProps> = ({
         return (
             <AbsoluteFill style={{ backgroundColor: '#000' }}>
                 <div style={blurLayerStyle}>
-                    <OffthreadVideo src={resolvedSrc} style={blurBgStyle} muted loop playbackRate={speed} />
+                    <OffthreadVideo src={resolvedSrc} style={blurBgStyle} muted loop startFrom={Math.round(clipStartSecs * fps)} playbackRate={speed} />
                 </div>
                 <div style={containLayerStyle}>
                     <OffthreadVideo
@@ -229,6 +242,7 @@ export const Background: React.FC<BackgroundProps> = ({
                         style={videoStyle}
                         {...(audioVol > 0 ? { volume: audioVol } : { muted: true })}
                         loop
+                        startFrom={Math.round(clipStartSecs * fps)}
                         playbackRate={speed}
                     />
                 </div>
@@ -241,8 +255,8 @@ export const Background: React.FC<BackgroundProps> = ({
     // ── cover (default): fill frame ──
     const bgColor = videoFit === 'contain-black' ? '#000000' : undefined;
 
-    // Manual looping via stacked Sequences when video duration is known (Pexels / stock)
-    if (videoDurationInSeconds && videoDurationInSeconds > 0 && sequenceDurationInFrames) {
+    // Manual looping via stacked Sequences when video duration is known (Pexels / stock / clipped)
+    if (effectiveVideoDuration && effectiveVideoDuration > 0 && sequenceDurationInFrames) {
         return (
             <AbsoluteFill style={bgColor ? { backgroundColor: bgColor } : {}}>
                 <div style={blurWrapStyle}>
@@ -262,6 +276,7 @@ export const Background: React.FC<BackgroundProps> = ({
                     style={videoStyle}
                     {...(audioVol > 0 ? { volume: audioVol } : { muted: true })}
                     loop
+                    startFrom={Math.round(clipStartSecs * fps)}
                     playbackRate={speed}
                 />
             </div>

@@ -1,10 +1,12 @@
 {
-  "version": "1.2.98",
-  "date": "2026-06-08",
-  "notes": "Restore correct pc-auto-vid UI (reverts accidental long-vid overwrite)",
+  "version": "1.2.99",
+  "date": "2026-06-09",
+  "notes": "Add video clip start/end with looping",
   "files": [
     "index.html",
+    "long-index.html",
     "server.js",
-    "version.json"
+    "src/Background.tsx",
+    "src/Main.tsx"
   ]
 }

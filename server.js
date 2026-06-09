@@ -1230,6 +1230,7 @@ app.post('/update-scene-texts', (req, res) => {
             'voiceSpeed', 'voicePitch', 'voiceVolume',
             'backgroundScale', 'backgroundX', 'backgroundY', 'kenBurns',
             'videoSpeed', 'overlayType', 'overlayOpacity', 'spotlightRadius', 'spotlightSoftness', 'videoAudioVolume', 'videoFit',
+            'clipStart', 'clipEnd',
         ];
         nullableFields.forEach(f => {
             if (f in req.body) {
@@ -2281,11 +2282,11 @@ app.post('/apply-update', async (req, res) => {
         const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
         const filesToUpdate = remote.files || UPDATABLE_FILES;
-        const fileMap = remote.fileMap || {};  // e.g. { "long-index.html": "index.html" }
-        // Download and replace each file, applying fileMap renames
+        // Never apply fileMap here — pc-auto-vid keeps long-index.html as long-index.html
+        // (fileMap is for pc-long-vid which has no long-index.html and needs index.html)
         for (let idx = 0; idx < filesToUpdate.length; idx++) {
             const remoteFile = filesToUpdate[idx];
-            const localFile  = fileMap[remoteFile] || remoteFile;
+            const localFile  = remoteFile;
             io.emit('update-progress', { file: localFile, current: idx + 1, total: filesToUpdate.length });
             const buf = await downloadFile(`${UPDATE_REPO_RAW}/${remoteFile}?t=${Date.now()}`);
             fs.mkdirSync(path.dirname(path.join(__dirname, localFile)), { recursive: true });

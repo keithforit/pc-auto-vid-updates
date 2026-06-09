@@ -5097,6 +5097,25 @@
                   </div>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                  <span class="ctrl-row-label">Clip:</span>
+                  <div style="display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap">
+                    <span style="font-size:11px;color:#64748b">from</span>
+                    <input type="number" id="clip-start-${i}" min="0" step="0.1"
+                           value="${seg.clipStart != null ? seg.clipStart : ''}"
+                           placeholder="0"
+                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
+                           onchange="saveBgClip(${i})" />
+                    <span style="font-size:11px;color:#64748b">to</span>
+                    <input type="number" id="clip-end-${i}" min="0" step="0.1"
+                           value="${seg.clipEnd != null ? seg.clipEnd : ''}"
+                           placeholder="end"
+                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
+                           onchange="saveBgClip(${i})" />
+                    <span style="font-size:11px;color:#64748b">s</span>
+                    ${seg.video_duration ? `<span style="font-size:10px;color:#475569">(${Number(seg.video_duration).toFixed(1)}s total)</span>` : ''}
+                  </div>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
                   <span class="ctrl-row-label">Audio:</span>
                   <input type="range" id="vidaudio-${i}" min="0" max="1" step="0.05"
                          value="${Math.max(0, Math.min(1, Number(seg.videoAudioVolume) || 0))}"
@@ -5934,6 +5953,17 @@
     await fetch('/update-scene-texts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, videoSpeed: speed })
+    });
+  }
+
+  async function saveBgClip(i) {
+    const startEl = document.getElementById(`clip-start-${i}`);
+    const endEl   = document.getElementById(`clip-end-${i}`);
+    const clipStart = startEl?.value !== '' ? parseFloat(startEl.value) : null;
+    const clipEnd   = endEl?.value   !== '' ? parseFloat(endEl.value)   : null;
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, clipStart, clipEnd })
     });
   }
 

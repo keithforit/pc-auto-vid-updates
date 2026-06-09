@@ -1224,6 +1224,45 @@
         </div>
       </div>
 
+      <!-- Record Screen -->
+      <div class="settings-section" style="margin-bottom:18px;padding:20px">
+        <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:6px" data-i18n="sr_title">⏺️ Record Screen</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px" data-i18n="sr_desc">Optional — record your screen first, then upload it below. Raw video, up to 40 minutes.</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <select id="sr-quality" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:6px 10px;font-size:13px">
+            <option value="low" data-i18n="sr_quality_low">Low — ~300 MB / 40 min</option>
+            <option value="med" selected data-i18n="sr_quality_med">Medium — ~900 MB / 40 min</option>
+            <option value="high" data-i18n="sr_quality_high">High — ~1.8 GB / 40 min</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="sr-mic" checked style="width:14px;height:14px;cursor:pointer">
+            <label for="sr-mic" style="font-size:13px;cursor:pointer" data-i18n="sr_include_mic">Include mic</label>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5" data-i18n-html="sr_audio_tip">
+          💡 When the screen picker appears — select <strong style="color:var(--text-soft)">Entire Screen</strong>, then tick <strong style="color:var(--text-soft)">Share system audio</strong> before clicking Share.
+        </div>
+        <div id="sr-start-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="sr-start-btn" onclick="srStart()" style="background:#dc2626;border-color:#dc2626" data-i18n="sr_start_btn">⏺️ Start Recording</button>
+          <button onclick="srPopOut()" style="background:none;border:1px solid var(--border-mid);color:var(--text-muted);font-size:12px;padding:5px 11px;border-radius:6px;cursor:pointer" title="Open a floating controller window you can place anywhere on your desktop" data-i18n="sr_popout_btn">⤢ Pop out controller</button>
+        </div>
+        <div id="sr-no-audio-warn" style="display:none;margin-top:8px;font-size:12px;color:#f59e0b" data-i18n="sr_no_audio_warn">⚠️ No system audio detected — stop and retry, ticking "Share system audio" in the screen picker.</div>
+        <div id="sr-recording-wrap" style="display:none">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;animation:srPulse 1s infinite"></div>
+            <span style="font-size:14px;font-weight:700;color:#ef4444" data-i18n="sr_recording_label">Recording</span>
+            <span id="sr-timer" style="font-size:14px;font-weight:700;color:var(--text-main);margin-left:auto;font-variant-numeric:tabular-nums">00:00:00</span>
+            <button class="btn sm" onclick="srStop()" style="background:#374151;border-color:#4b5563;margin-left:8px" data-i18n="sr_stop_btn">⏹ Stop</button>
+          </div>
+        </div>
+        <div id="sr-finalizing-wrap" style="display:none;font-size:13px;color:var(--text-muted);margin-top:10px" data-i18n="sr_converting">⏳ Converting to MP4… (may take a moment for longer recordings)</div>
+        <div id="sr-done-box" style="display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px">
+          <div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:4px" data-i18n="sr_done_title">✅ Recording saved</div>
+          <div id="sr-done-file" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+          <a id="sr-download-link" href="#" style="display:inline-block;padding:6px 16px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none" data-i18n="sr_download_btn">⬇️ Download</a>
+        </div>
+      </div>
+
       <!-- Step 1: Upload -->
       <div class="settings-section" style="margin-bottom:18px;padding:20px">
         <div class="field-label" style="font-size:15px;font-weight:700;margin-bottom:14px">📥 Step 1 — Upload Source Video</div>
@@ -1837,424 +1876,6 @@
       sr_ffmpeg_done:  '✅ ffmpeg installed — recordings will now save as MP4',
       sr_ffmpeg_no_brew: '⚠️ Homebrew not found. Install it first at https://brew.sh, then restart the app.',
       sr_ffmpeg_failed: '❌ Install failed. Try: brew install ffmpeg in Terminal.',
-      sr_start_btn: '⏺️ Start Recording',
-      sr_popout_btn: '⤢ Pop out controller',
-      sr_no_audio_warn: '⚠️ No system audio detected — stop and retry, ticking "Share system audio" in the screen picker.',
-      sr_recording_label: 'Recording',
-      sr_stop_btn: '⏹ Stop',
-      sr_converting: '⏳ Converting to MP4… (may take a moment for longer recordings)',
-      sr_done_title: '✅ Recording saved',
-      sr_download_btn: '⬇️ Download',
-    },
-    ja: {
-      subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
-      tab_create: '➕ 作成',
-      tab_editor: '🋏 テキスト動画',
-      tab_scenes: '🗂 シーン',
-      tab_settings: '⚙️ 設定',
-      theme_dark: 'ダーク',
-      theme_light: 'ライト',
-      new_scene: '➕ 新規シーン',
-      restore_draft: '↩ ドラフトを復元',
-      no_draft: 'ドラフトはまだ保存されていません。',
-      search_pexels: '🔍 Pexels検索クエリ（英語）...',
-      url_pexels: '🔗 Pexels動画のURLを貼り付け...',
-      search_pixabay: '🔍 Pixabay検索クエリ（英語）...',
-      url_pixabay: '🔗 Pixabay動画のURLを貼り付け...',
-      btn_search: '検索',
-      btn_use_url: 'URLを使用',
-      btn_upload: '⬆ アップロード',
-      btn_stock_video: '🎬 ストック動画',
-      btn_local_videos: '📂 ローカル動画',
-      pexels_tab: 'Pexels',
-      pixabay_tab: 'Pixabay',
-      bg_video: '背景・動画',
-      text_layers: 'テキストレイヤー',
-      voice: '音声',
-      timing: 'タイミング',
-      overlays: 'シェイプ・画像・動画',
-      sfx: '効果音',
-      choose_bg: '背景を選択',
-      timeline: 'タイムライン',
-      scene_animation: 'シーンアニメーション',
-      settings_voice: '🎙️ 音声',
-      settings_voice_engine: '音声エンジン',
-      settings_text_style: '🔤 テキストスタイル',
-      settings_style: 'スタイル',
-      settings_font: '🔡 フォント',
-      settings_bgmusic: '🎵 バックグラウンドミュージック',
-      settings_random: 'ランダム',
-      settings_video_size: '📐 動画サイズ',
-      settings_output_format: '出力フォーマットを選択',
-      settings_save: '💾 設定を保存',
-      // Scenes tab
-      load_scenes: '🔄 シーンを読み込む',
-      save_project_draft: '💾 プロジェクトを保存',
-      restore_project_draft: '↩ ドラフトを復元',
-      // Scene card buttons
-      btn_scene_draft: '💾 シーンドラフト',
-      btn_restore: '↩ 復元',
-      btn_up: '↑ 上へ',
-      btn_down: '↓ 下へ',
-      btn_duplicate: '📋 複製',
-      btn_delete: '🗑 削除',
-      // Scene accordion labels
-      main_text: 'メインテキスト',
-      // Rerender
-      btn_generate: '🎬 生成',
-      btn_render: '🎬 ビデオをレンダリング',
-      modal_caption_placeholder: 'オプションの画面テキスト...',
-      modal_vo_placeholder: '読み上げられるテキスト...',
-      btn_add_new_scene: '＋ シーンを追加',
-      // Timeline
-      timeline_title: 'タイムライン',
-      scene_label: 'シーン',
-      voice_label: '音声',
-      main_text_label: 'メインテキスト',
-      main_text_placeholder: 'ここに元のシーンテキストを入力してください...',
-      no_audio_yet: '音声なし',
-      fit_to_audio: '音声に合わせる',
-      fit_to_audio_warn: '⚠ 音声に合わせる',
-      // Voice
-      delivery_title: 'デリバリー (テキスト & 強調)',
-      delivery_hint: '改行や「、」「。」を使ってタイミングを調整してください。',
-      no_mp3_notice: 'アップロードされたMP3はありません。このシーンでは生成音声を使用します。',
-      uploaded_mp3_active: (file, dur) => `アップロードされたMP3が有効です: ${file}${dur ? ` — ${dur}秒` : ''}。シーンの長さはこのファイルに従います。`,
-      sfx_active_notice: (file) => `効果音が有効です: ${file}`,
-      no_sfx_notice: 'このシーンには効果音がアップロードされていません。',
-      // Media Text
-      btn_copy_style: '📋 スタイルをコピー',
-      btn_paste_style: '📌 スタイルを貼り付け',
-      text_style_box: 'ボックス',
-      text_style_glow: 'グロー',
-      text_style_block: 'ブロック',
-      text_style_shadow: 'シャドウ',
-      text_style_plain: 'プレーン',
-      anim_static: '静的',
-      anim_pop: 'ポップ',
-      anim_fade_in: 'フェードイン',
-      anim_fade_out: 'フェードアウト',
-      anim_fade_both: '両方フェード',
-      anim_wipe: 'ワイプ',
-      label_wrap: '折り返し:',
-      btn_no_wrap_on: '折り返しなし',
-      btn_wrap_on: '折り返しなし',
-      hint_no_wrap: 'テキストは一行に収まります',
-      hint_wrap: 'テキストは次の行に折り返されます',
-      label_box_width: 'ボックス幅:',
-      label_padding: 'パディング:',
-      label_size: 'サイズ:',
-      label_rotate: '回転:',
-      label_colors: 'カラー:',
-      label_block_bg: 'ブロック背景',
-      label_text: 'テキスト',
-      label_glow: 'グロー',
-      label_glow_txt: 'グローテキスト',
-      label_extra_text_layers: '追加テキストレイヤー',
-      btn_add_text_layer: '+ テキストレイヤーを追加',
-      label_text_layer: 'テキストレイヤー',
-      btn_remove: '削除',
-      label_align_h: '横揃え',
-      label_align_v: '縦揃え',
-      label_style_overrides: 'カラー＆スタイルオーバーライド',
-      label_style_overrides_hint: '（空欄 = シーンから継承）',
-      label_box_radius: 'ボックス角丸:',
-      label_block_radius: 'ブロック角丸:',
-      label_border: '境界線:',
-      label_stroke: '境界線:',
-      label_stroke_size: '境界線の太さ:',
-      label_glow_size: 'グローサイズ:',
-      btn_upload_image: '🖼 画像をアップロード',
-      btn_upload_video_overlay: '🎬 動画オーバーレイをアップロード',
-      btn_add_shape: '+ シェイプを追加',
-      label_static: '静的',
-      label_fade_in: 'フェードイン',
-      label_fade_out: 'フェードアウト',
-      label_both: '両方',
-      // Draft status
-      tab_media: '🎨 メディアライブラリ',
-      ml_brand_colours_title: '🎨 ブランドカラー',
-      ml_brand_colours_desc: 'ブランドカラーをここに追加してください。各シーンの背景・グラデーションカラーピッカーにスウォッチとして表示されます。',
-      ml_add_colour: '+ カラーを追加',
-      ml_brand_images_title: '🖼️ ブランド画像',
-      ml_brand_images_desc: 'ロゴ、透かし、その他のブランド素材をアップロードします。プロジェクトに保存され、各シーンのオーバーレイとして使用できます。',
-      ml_upload_images: '⬆ ブランド画像をアップロード',
-      ml_no_images: 'ブランド画像がまだありません。',
-      // Settings
-      glow_colour: 'グロー色',
-      bgmusic_yes: 'はい',
-      bgmusic_no: 'いいえ',
-      // App header
-      app_title: '🎬 AI動画ファクトリー',
-      app_subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
-      // Create tab
-      create_desc: 'シーンを作成し、流れを整えてから動画をレンダリングします。',
-      create_empty: '「新規シーン」をクリックして最初のシーンを追加してください。',
-      // Text to Video tab
-      ct_title: '🎬 コンテンツの種類',
-      ct_stock_title: '🎬 ストック背景',
-      ct_stock_desc: '各シーンに適切なストック動画をPexelsから自動取得します。',
-      ct_captions_title: '🎨 キャプションのみ',
-      ct_captions_desc: 'ストック動画なし。各シーンにブランドカラー（保存済みの場合）またはランダムな単色背景を使用します。',
-      script_label: 'スクリプト',
-      script_placeholder: 'フォーマット済みスクリプトをここに貼り付けてください…',
-      btn_start_production: '▶ 制作開始',
-      status_ready: '準備完了',
-      // Scenes tab
-      thumb_size: 'サムネイルサイズ：',
-      // Media Library
-      ml_colour_name_placeholder: 'カラー名（任意）',
-      // Update system
-      update_title: '🔄 アプリの更新',
-      btn_check_update: '🔍 更新を確認',
-      btn_apply_update: '⬇️ 更新をダウンロードしてインストール',
-      update_checking: '更新を確認中...',
-      update_available: (v) => `新しいバージョンが利用可能です: v${v}`,
-      update_latest: '最新バージョンを使用しています。',
-      update_error: '更新の確認中にエラーが発生しました。',
-      update_installing: '更新をインストール中...',
-      // Modals
-      modal_scene_drafts: '💾 シーンドラフト',
-      modal_save_draft_desc: '現在のシーンの状態を名前付きドラフトとして保存します',
-      modal_draft_name_placeholder: 'ドラフト名（例：「ロゴあり」）',
-      modal_saved_drafts: '保存済みドラフト',
-      modal_close: '閉じる',
-      modal_cancel: 'キャンセル',
-      modal_create_blank: '空のシーンを作成',
-      modal_voiceover_text: 'ナレーションテキスト',
-      // New translations from user
-      voice_main_text: "音声メインテキスト",
-      voice_hint: "改行や「、」「。」を使ってタイミングを調整してください。",
-      short: "ショート",
-      pause: "一時停止",
-      emphasize: "強調",
-      audio: "オーディオ",
-      upload_mp3: "MP3をアップロード",
-      use_gen_voice: "生成音声を使用",
-      no_mp3: "アップロードされたMP3はありません。このシーンでは生成音声を使用します。",
-      character: "キャラクター",
-      voicevox_hint: "日本語のVOICEVOXシーンでは、キャラクター名を入力して声を切り替えます。",
-      speed: "速度",
-      pitch: "ピッチ",
-      volume: "音量",
-      upload_sfx: "効果音をアップロード",
-      open: "開く",
-      close: "閉じる",
-      sfx_start: "効果音開始",
-      sfx_vol: "効果音音量",
-      exact_vol: "正確な音量:",
-      full_vol_pct: "フル音量の%",
-      no_sfx: "このシーンにアップロードされた効果音はありません。",
-      upload_file: "ファイルをアップロード",
-      play: "再生",
-      clear: "クリア",
-      bgm_scene: "このシーンの背景音楽",
-      use_proj_bgm: "このシーンでプロジェクトの背景音楽を使用する",
-      bgm_status: "背景音楽は、このシーンのプロジェクト音楽を100%の音量で追従します。",
-      bgm_vol_pct: "プロジェクト背景音楽音量の%",
-      preview_voice: "音声プレビュー",
-      orig_scene_text: "オリジナルシーンテキスト",
-      main_text_hint: "これはすでにシーンに添付されているメインテキストです。",
-      show_at: "表示開始:",
-      hide_at: "表示終了:",
-      timing_hint: "（空欄 = 最初の追加テキストまたはシーン終了時に自動非表示）",
-      save_text: "テキストを保存",
-      del_orig_text: "オリジナルテキストを削除",
-      position: "位置",
-      align: "テキスト揃え",
-      align_h: "横揃え",
-      align_v: "縦揃え",
-      pos_align_left: "左揃え — 左にスナップ（縦位置は変わりません）",
-      pos_h_center: "左右中央揃え — 横方向の中央にスナップ（縦位置は変わりません）",
-      pos_align_right: "右揃え — 右にスナップ（縦位置は変わりません）",
-      pos_align_top: "上揃え — 上にスナップ（横位置は変わりません）",
-      pos_v_center: "上下中央揃え — 縦方向の中央にスナップ（横位置は変わりません）",
-      pos_align_bottom: "下揃え — 下にスナップ（横位置は変わりません）",
-      text_style: "テキストスタイル:",
-      box: "ボックス",
-      glow: "グロー",
-      block: "ブロック",
-      shadow: "シャドウ",
-      plain: "プレーン",
-      animate: "アニメーション",
-      static: "静的",
-      pop: "ポップ",
-      fade: "フェード",
-      wipe: "ワイプ",
-      wrap: "折り返し",
-      wrap_on: "折り返し（オン）",
-      wrap_off: "折り返し（オフ）",
-      wrap_hint: "テキストは次の行に折り返されます",
-      box_width: "ボックス幅",
-      padding: "パディング",
-      auto: "自動",
-      padding_hint: "px（ブロック/ボックスのみ — 空欄はデフォルト）",
-      size: "サイズ",
-      rotate: "回転",
-      colors: "カラー",
-      block_bg: "ブロック背景",
-      text: "テキスト",
-      glow_txt: "グローテキスト",
-      extra_text_layers: "追加テキストレイヤー",
-      add_text_layer: "テキストレイヤーを追加",
-      upload_image: "画像をアップロード",
-      add_shape: "シェイプを追加",
-      fade_in: "フェードイン",
-      fade_out: "フェードアウト",
-      both: "両方",
-      scene_anim_hint: "シーン全体の読み込みと終了を制御します。",
-      video_framing: "ビデオフレーミング",
-      reset: "リセット",
-      scale: "スケール",
-      solid: "単色",
-      gradient: "グラデーション",
-      image: "画像",
-      brand_colors: "ブランドカラー",
-      color: "カラー",
-      brand_grad_hint: "🎨 ブランドカラー — クリックしてグラデーションの開始または終了に設定",
-      apply_to: "適用先:",
-      top: "上",
-      bottom: "下",
-      apply_grad_bg: "グラデーション背景を適用",
-      ken_burns_on: "ケン・バーンズ オン",
-      box_dark: "ボックス（暗い背景）",
-      glow_neon: "グロー（ネオン）",
-      block_solid: "ブロック（単色）",
-      glow_size: "グローサイズ",
-      square: "正方形",
-      landscape: "横長",
-      // Video speed & overlay (buildCard labels)
-      speed_label: 'スピード:',
-      bg_overlay: '背景オーバーレイ',
-      overlay_none: 'なし',
-      overlay_dark: 'ダーク',
-      overlay_spotlight: 'スポットライト',
-      opacity_label: '不透明度:',
-      radius_label: '半径:',
-      softness_label: 'ぼかし:',
-      // Update overlay
-      update_overlay_title: '更新をインストール中…',
-      update_overlay_preparing: '準備中…',
-      update_overlay_downloading: 'ダウンロード中…',
-      update_overlay_restarting: 'サーバーを再起動しています — お待ちください…',
-      update_overlay_back_online: '✅ オンラインに戻りました！',
-      update_overlay_reloading: '再読み込み中…',
-      update_overlay_file_of: (cur, total) => `ファイル ${cur} / ${total}`,
-      // BGM global toggle
-      bgm_on: '🎵 BGM: オン',
-      bgm_off: '🎵 BGM: オフ',
-      bgm_scene_on: 'オン',
-      bgm_scene_off: 'オフ',
-      // Scene loading
-      scenes_loading: 'シーンを読み込んでいます...',
-      scenes_empty: 'セグメントが見つかりません。まず動画を生成してください。',
-      // Production
-      production_log_title: '📋 制作ログ',
-      // Settings panel
-      settings_panel_title: '⚙️ 設定',
-      settings_voice_speed: '音声スピード',
-      settings_voice_pitch: '音声ピッチ',
-      settings_voice_volume: '音声音量',
-      // BGM scene status
-      bgm_vol_status: (vol) => `このシーンでは ${vol}% 音量でプロジェクトBGMを使用します。`,
-      bgm_removed: 'このシーンではBGMを使用しません。',
-      // Misc
-      copy_style: 'スタイルをコピー',
-      paste_style: 'スタイルを貼り付け',
-      try_again: '再試行',
-      reload_now: '🔄 今すぐ再読み込み',
-      // Confirmation dialogs
-      confirm_remove_colour: (color) => `ブランドカラー ${color} を削除しますか？`,
-      confirm_delete_image:  (name)  => `ブランド画像「${name}」を削除しますか？`,
-      confirm_delete_scene:  (n)     => `シーン ${n} を削除しますか？この操作は元に戻せません。`,
-      confirm_delete_orig_text: (n)  => `シーン ${n} のオリジナルテキストを削除しますか？`,
-      confirm_apply_update: '最新のアップデートをダウンロードしてインストールし、アプリを再起動します。続行しますか？',
-      confirm_restore_draft: '保存したプロジェクトドラフトを復元しますか？現在のシーンと設定がドラフトのコピーに置き換えられます。',
-      // Overlay image / shape section
-      overlay_anim_label: 'アニメーション:',
-      overlay_no_fade: 'フェードなし',
-      overlay_fader: 'フェーダー',
-      overlay_fader_speed: 'フェーダースピード:',
-      overlay_fade_in_at: 'フェードイン開始:',
-      overlay_fade_out_at: 'フェードアウト開始:',
-      overlay_seconds: '秒',
-      overlay_scene_end: 'シーン終了',
-      overlay_fade_in_duration: 'フェードイン時間:',
-      overlay_fade_out_duration: 'フェードアウト時間:',
-      overlay_align_left: '左揃え — 縦位置は変わりません',
-      overlay_align_h_center: '左右中央揃え — 縦位置は変わりません',
-      overlay_align_right: '右揃え — 縦位置は変わりません',
-      overlay_align_top: '上揃え — 横位置は変わりません',
-      overlay_align_v_center: '上下中央揃え — 横位置は変わりません',
-      overlay_align_bottom: '下揃え — 横位置は変わりません',
-      overlay_layer: 'レイヤー:',
-      overlay_send_to_back: '最背面へ',
-      overlay_send_to_back_tip: '最背面へ (z:1)',
-      overlay_send_back: '一段後ろへ',
-      overlay_send_back_tip: '一段後ろに移動',
-      overlay_bring_forward: '一段前へ',
-      overlay_bring_forward_tip: '一段前に移動',
-      overlay_layer_tip: 'レイヤー順 — 大きい値 = 前面',
-      overlay_corner_radius: '角丸半径:',
-      overlay_crop_label: 'クロップ:',
-      overlay_crop_btn: 'クロップ',
-      overlay_hide_crop_btn: 'クロップを非表示',
-      overlay_crop_zoom: 'クロップズーム:',
-      overlay_crop_x: 'クロップ X:',
-      overlay_crop_y: 'クロップ Y:',
-      shape_anim_header: 'アニメーション',
-      shape_speed: 'スピード:',
-      shape_fade_in: 'フェードイン:',
-      shape_fade_out: 'フェードアウト:',
-      shape_align_h: '横揃え',
-      shape_align_v: '縦揃え',
-      shape_align_left: '左揃え',
-      shape_align_h_center: '左右中央揃え',
-      shape_align_right: '右揃え',
-      shape_align_top: '上揃え',
-      shape_align_v_center: '上下中央揃え',
-      shape_align_bottom: '下揃え',
-      shape_send_to_back_tip: '最背面へ',
-      shape_behind_text_tip: 'テキストの後ろ',
-      shape_front_text_tip: 'テキストの前',
-      // Background section
-      bg_blur_title: '🌀 背景ブラー',
-      bg_blur: 'ぼかし:',
-      blur_off: 'オフ',
-      apply_solid_bg: '単色背景を適用',
-      // Create tab — no scenes yet
-      scenes_none_yet: 'シーンがまだありません。「シーンを作成」をクリックして最初のシーンを追加してください。',
-      // Log / status messages
-      log_running: '処理中...',
-      log_starting_batch: 'バッチ処理を開始中...',
-      log_starting_regenerate: '🎬 再生成を開始中...',
-      log_starting_rerender: '🎬 再レンダリングを開始中...',
-      log_done_saved: (f) => `✅ 完了！${f} に保存されました`,
-      log_cancelled: '⏹ キャンセルされました',
-      // Scene card fallbacks
-      no_scene_draft: 'ドラフトなし',
-      no_orig_text: '— テキストなし',
-      no_voice_text: '— ナレーションなし',
-      // Style preview cards
-      style_preview_text: 'テキスト',
-      style_preview_sample: 'テキストサンプル',
-      // Tabs (new layout)
-      tab_longvideo: '📹 ロングビデオ',
-      // Screen recorder
-      sr_title: '⏺️ 画面録画',
-      sr_desc: '任意 — まず画面を録画し、下にアップロードしてください。生動画、最大40分。',
-      sr_quality_low: '低画質 — 約300 MB / 40分',
-      sr_quality_med: '中画質 — 約900 MB / 40分',
-      sr_quality_high: '高画質 — 約1.8 GB / 40分',
-      sr_include_mic: 'マイクを含める',
-      sr_audio_tip: '💡 画面選択ダイアログが開いたら「<strong style="color:var(--text-soft)">画面全体</strong>」を選び、「<strong style="color:var(--text-soft)">システム音声を共有</strong>」にチェックを入れてから「共有」をクリックしてください。',
-      sr_ffmpeg_title: '⚠️ ffmpegがインストールされていません',
-      sr_ffmpeg_desc:  '録画はWebMで保存されます。MP4に自動変換するにはffmpegが必要です。',
-      sr_ffmpeg_btn:   '⬇ ffmpegを自動インストール',
-      sr_ffmpeg_installing: 'インストール中… 数分かかる場合があります',
-      sr_ffmpeg_done:  '✅ ffmpegをインストールしました — 録画はMP4で保存されます',
-      sr_ffmpeg_no_brew: '⚠️ Homebrewが見つかりません。https://brew.sh でインストール後、アプリを再起動してください。',
-      sr_ffmpeg_failed: '❌ インストールに失敗しました。ターミナルで brew install ffmpeg を実行してください。',
       sr_start_btn: '⏺️ 録画開始',
       sr_popout_btn: '⤢ コントローラーを切り出す',
       sr_no_audio_warn: '⚠️ システム音声が検出されませんでした — 停止して、画面選択で「システム音声を共有」にチェックを入れて再試行してください。',
@@ -5443,6 +5064,25 @@
                   </div>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                  <span class="ctrl-row-label">Clip:</span>
+                  <div style="display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap">
+                    <span style="font-size:11px;color:#64748b">from</span>
+                    <input type="number" id="clip-start-${i}" min="0" step="0.1"
+                           value="${seg.clipStart != null ? seg.clipStart : ''}"
+                           placeholder="0"
+                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
+                           onchange="saveBgClip(${i})" />
+                    <span style="font-size:11px;color:#64748b">to</span>
+                    <input type="number" id="clip-end-${i}" min="0" step="0.1"
+                           value="${seg.clipEnd != null ? seg.clipEnd : ''}"
+                           placeholder="end"
+                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
+                           onchange="saveBgClip(${i})" />
+                    <span style="font-size:11px;color:#64748b">s</span>
+                    ${seg.video_duration ? `<span style="font-size:10px;color:#475569">(${Number(seg.video_duration).toFixed(1)}s total)</span>` : ''}
+                  </div>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
                   <span class="ctrl-row-label">Audio:</span>
                   <input type="range" id="vidaudio-${i}" min="0" max="1" step="0.05"
                          value="${Math.max(0, Math.min(1, Number(seg.videoAudioVolume) || 0))}"
@@ -6283,6 +5923,17 @@
     await fetch('/update-scene-texts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, videoSpeed: speed })
+    });
+  }
+
+  async function saveBgClip(i) {
+    const startEl = document.getElementById(`clip-start-${i}`);
+    const endEl   = document.getElementById(`clip-end-${i}`);
+    const clipStart = startEl?.value !== '' ? parseFloat(startEl.value) : null;
+    const clipEnd   = endEl?.value   !== '' ? parseFloat(endEl.value)   : null;
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, clipStart, clipEnd })
     });
   }
 
