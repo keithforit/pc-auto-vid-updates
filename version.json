@@ -1,7 +1,7 @@
 {
-  "version": "1.4.1",
+  "version": "1.4.2",
   "date": "2026-06-09",
-  "notes": "Strip [word|#hex] markup from all display labels — scene card title, collapsed view, timeline clips, and frame info bar now show clean text; only the rendered video/preview shows the colored spans",
+  "notes": "Fix video framing thumbnail preview — Fill/Black Bars/Blur BG now visually update the scene card thumbnail immediately; contain-blur shows real blurred-video background layer; initial render also respects saved videoFit",
   "files": [
     "index.html",
     "src/Caption.tsx",

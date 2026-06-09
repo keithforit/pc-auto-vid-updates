@@ -639,13 +639,36 @@
     .gt-info-bar { display: flex; align-items: center; gap: 10px; padding: 7px 14px; background: var(--bg-input); border-top: 1px solid var(--bg-card); font-size: 11px; color: var(--text-dim); min-height: 30px; }
     .gt-info-scene { color: var(--text-soft); font-weight: 700; }
     .gt-info-frame { color: var(--text-dim); font-family: monospace; }
+    /* ── Long Video Tab ── */
+    .lv-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-card); }
+    .lv-section h3 { margin: 0 0 16px; font-size: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .lv-drop-zone { border: 2px dashed var(--border-mid); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s; user-select: none; }
+    .lv-drop-zone:hover, .lv-drop-zone.dragover { border-color: var(--accent); background: rgba(16,185,129,0.05); color: var(--text-soft); }
+    .lv-progress-bar { background: var(--bg-input); border-radius: 8px; height: 8px; overflow: hidden; margin-top: 10px; }
+    .lv-progress-fill { height: 100%; background: linear-gradient(90deg,#10b981,#06b6d4); border-radius: 8px; transition: width 0.3s; width: 0%; }
+    .lv-split-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+    .lv-split-tab { padding: 6px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .lv-split-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    #lv-timeline { position: relative; height: 44px; background: var(--bg-input); border-radius: 8px; overflow: hidden; cursor: pointer; margin-bottom: 10px; border: 1px solid var(--border); }
+    .lv-timeline-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(16,185,129,0.18); pointer-events: none; }
+    .lv-timeline-playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #10b981; pointer-events: none; transition: left 0.1s linear; }
+    .lv-marker { position: absolute; top: 0; width: 2px; height: 100%; background: #ef4444; cursor: pointer; z-index: 2; }
+    .lv-marker::before { content: '▼'; position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 9px; color: #ef4444; line-height: 1; }
+    .lv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 26px; }
+    .lv-chip { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #f87171; border-radius: 6px; padding: 2px 10px; font-size: 11px; cursor: pointer; font-family: monospace; }
+    .lv-chip:hover { background: rgba(239,68,68,0.28); }
+    /* Screen Recorder */
+    .sr-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .sr-timer { font-size: 26px; font-weight: 700; font-family: monospace; color: #ef4444; letter-spacing: 2px; }
+    .sr-tip { background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.18); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+    .sr-tip strong { color: var(--text-soft); }
   </style>
 </head>
 <body>
 <div class="box">
   <div class="app-toolbar">
     <div class="app-toolbar-left">
-      <h1 id="app-title" style="margin:0;font-size:22px;display:flex;align-items:center;gap:10px">🎬 AI Video Factory <span id="app-version-badge" style="font-size:12px;font-weight:500;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:0.5px">Version …</span></h1>
+      <h1 id="app-title" style="margin:0;font-size:22px;display:flex;align-items:center;gap:10px">🎬 AI Long Video Factory <span id="app-version-badge" style="font-size:12px;font-weight:500;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:0.5px">Version …</span></h1>
       <p class="subtitle" style="margin:0;font-size:13px" id="app-subtitle" data-i18n="app_subtitle">Paste your formatted script, generate the video, then fine-tune scenes.</p>
     </div>
     <div class="app-toolbar-right">
@@ -669,12 +692,162 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('create')">➕ Create</div>
-    <div class="tab" onclick="switchTab('editor')">🎞 Text to Video</div>
+    <div class="tab active" onclick="switchTab('longvideo')">📹 Long Video</div>
+    <div class="tab" onclick="switchTab('create')" style="display:none!important">➕ Create</div>
+    <div class="tab" onclick="switchTab('editor')" style="display:none!important">🎞 Text to Video</div>
     <div class="tab" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
     <!-- Timeline tab hidden — preserved for future use -->
+  </div>
+
+  <!-- LONG VIDEO TAB -->
+  <div class="panel active" id="tab-longvideo">
+    <!-- SCREEN RECORDER -->
+    <div class="lv-section">
+      <h3 data-i18n="sr_title">🎙 Screen Recorder</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin:0 0 14px" data-i18n="sr_desc">Record your screen with audio directly from the browser.</p>
+
+      <!-- Option A: popup window -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Popup window</div>
+        <button class="btn ghost" onclick="srOpenWindow()" data-i18n="sr_open_btn">⏺ Open Recorder</button>
+      </div>
+
+      <!-- Option B: inline recorder -->
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Record here</div>
+      <div class="sr-row">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px" data-i18n="sr_quality_label">Quality:</div>
+          <select id="sr-quality" style="width:auto;padding:6px 10px">
+            <option value="low" data-i18n="sr_quality_low">Low (~300 MB / 40 min)</option>
+            <option value="med" selected data-i18n="sr_quality_med">Med (~900 MB / 40 min)</option>
+            <option value="high" data-i18n="sr_quality_high">High (~1.8 GB / 40 min)</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-soft)">
+          <input type="checkbox" id="sr-mic" checked>
+          <span data-i18n="sr_include_mic">Include Microphone</span>
+        </label>
+        <button id="sr-start-btn" class="btn" onclick="srStart()" data-i18n="sr_start_btn">⏺ Start Recording</button>
+        <button id="sr-stop-btn" class="btn red" onclick="srStop()" style="display:none" data-i18n="sr_stop_btn">⏹ Stop</button>
+        <div id="sr-timer" class="sr-timer" style="display:none">00:00</div>
+      </div>
+      <div id="sr-inline-status" style="font-size:13px;color:var(--text-muted);min-height:18px"></div>
+
+      <div id="sr-result" style="margin-top:6px"></div>
+      <div class="sr-tip" style="margin-top:12px" data-i18n-html="sr_audio_tip">When the screen picker appears, choose <strong>Entire Screen</strong> and tick <strong>Share system audio</strong>.</div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="lv-section">
+      <h3 data-i18n="lv_upload_title">📁 Step 1: Upload Your Video</h3>
+      <div class="lv-drop-zone" id="lv-drop-zone">
+        <div style="font-size:32px;margin-bottom:8px">📂</div>
+        <div data-i18n="lv_drop_hint">Drag &amp; drop a video file here, or click to browse</div>
+        <input type="file" id="lv-file-input" accept="video/*" style="display:none" onchange="if(this.files[0])lvUploadFile(this.files[0])">
+      </div>
+      <div class="lv-progress-bar" id="lv-upload-progress" style="display:none">
+        <div class="lv-progress-fill" id="lv-upload-fill"></div>
+      </div>
+      <div id="lv-upload-status" style="font-size:12px;color:var(--text-muted);margin-top:6px"></div>
+    </div>
+
+    <!-- TRANSCRIPT (Step 2) -->
+    <div id="lv-step2" class="lv-section" style="display:none">
+      <h3 data-i18n="lv_transcript_title">📝 Step 2: Transcript (Optional)</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px" data-i18n="lv_transcript_hint">One line per scene. Lines are distributed proportionally across chunks.</p>
+      <textarea id="lv-transcript" style="width:100%;height:90px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:sans-serif;box-sizing:border-box" placeholder="Line 1 scene text&#10;Line 2 scene text&#10;..."></textarea>
+    </div>
+
+    <!-- SPLIT EDITOR (Step 3) -->
+    <div id="lv-step3" class="lv-section" style="display:none">
+      <h3 data-i18n="lv_split_title">✂️ Step 3: Split Video into Scenes</h3>
+      <div class="lv-split-tabs">
+        <div class="lv-split-tab active" id="lv-split-tab-editor" onclick="lvSwitchSplitTab('editor')" data-i18n="lv_split_tab_editor">✂️ Editor</div>
+        <div class="lv-split-tab" id="lv-split-tab-auto" onclick="lvSwitchSplitTab('auto')" data-i18n="lv_split_tab_auto">🤖 Auto-detect</div>
+        <div class="lv-split-tab" id="lv-split-tab-fixed" onclick="lvSwitchSplitTab('fixed')" data-i18n="lv_split_tab_fixed">⏱ Fixed Seconds</div>
+      </div>
+
+      <!-- Editor sub-tab -->
+      <div id="lv-split-panel-editor">
+        <video id="lv-editor-video" controls style="width:100%;border-radius:8px;background:#000;display:none;margin-bottom:10px;max-height:280px"></video>
+        <div id="lv-timeline" onclick="lvTimelineClick(event)" title="Click to seek">
+          <div class="lv-timeline-fill" id="lv-timeline-fill"></div>
+          <div class="lv-timeline-playhead" id="lv-timeline-playhead"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn sm" onclick="lvMarkSplit()" data-i18n="lv_mark_btn">✂️ Mark split here</button>
+          <button class="btn sm ghost" onclick="lvClearSplits()" data-i18n="lv_clear_btn">🗑 Clear all</button>
+          <span style="font-size:11px;color:var(--text-muted)" data-i18n="lv_press_m">Press M to mark, or click the timeline</span>
+        </div>
+        <div class="lv-chips" id="lv-chips"></div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn blue" id="lv-split-btn" onclick="lvExecuteSplit()" data-i18n="lv_split_btn">🔪 Split at marked points</button>
+          <div id="lv-split-status" style="font-size:12px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- Auto-detect sub-tab -->
+      <div id="lv-split-panel-auto" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_detect_threshold">Sensitivity:</label>
+          <input type="range" id="lv-detect-threshold" min="0.1" max="0.9" step="0.05" value="0.35" style="width:120px" oninput="document.getElementById('lv-detect-threshold-label').textContent=parseFloat(this.value).toFixed(2)">
+          <span id="lv-detect-threshold-label" style="font-size:12px;color:var(--text-muted);min-width:30px">0.35</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn sm" id="lv-detect-btn" onclick="lvAutoDetect()" data-i18n="lv_detect_btn">🔍 Detect scenes &amp; silences</button>
+          <button class="btn sm ghost" id="lv-use-detected-btn" onclick="lvUseDetected()" style="display:none" data-i18n="lv_use_detected">Use these split points</button>
+        </div>
+        <div id="lv-detect-status" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
+        <div id="lv-detect-preview" style="font-size:11px;color:var(--text-dim);margin-top:4px;font-family:monospace;word-break:break-all"></div>
+      </div>
+
+      <!-- Fixed seconds sub-tab -->
+      <div id="lv-split-panel-fixed" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_chunk_size">Chunk size:</label>
+          <select id="lv-chunk-size" style="width:auto;padding:6px 10px">
+            <option value="3">3 seconds</option>
+            <option value="5" selected>5 seconds</option>
+            <option value="8">8 seconds</option>
+            <option value="10">10 seconds</option>
+            <option value="15">15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn blue" id="lv-fixed-split-btn" onclick="lvFixedSplit()" data-i18n="lv_fixed_split_btn">🔪 Split into chunks</button>
+          <div id="lv-fixed-split-status" style="font-size:12px;color:var(--text-muted)"></div>
+        </div>
+        <div id="lv-fixed-split-log" style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:monospace;max-height:70px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- RENDER (Step 4) -->
+    <div id="lv-step4" class="lv-section" style="display:none">
+      <h3 data-i18n="lv_render_title">🎬 Step 4: Render Long Video</h3>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <label style="font-size:13px;color:var(--text-soft)" data-i18n="lv_batch_size">Scenes per batch:</label>
+        <select id="lv-batch-size" style="width:auto;padding:6px 10px">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn full" id="lv-render-btn" onclick="lvStartRender()" data-i18n="lv_render_btn">🎬 Render Full Video</button>
+        <button class="btn red" id="lv-render-stop-btn" onclick="lvStopRender()" style="display:none" data-i18n="lv_stop_btn">⏹ Stop</button>
+      </div>
+      <div class="lv-progress-bar" style="margin-top:10px">
+        <div class="lv-progress-fill" id="lv-render-fill"></div>
+      </div>
+      <div id="lv-render-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;min-height:18px"></div>
+      <div id="lv-render-log" style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:monospace;max-height:100px;overflow-y:auto;background:var(--log-bg);border-radius:6px;padding:6px 10px;display:none"></div>
+      <div id="lv-render-result"></div>
+    </div>
   </div>
 
   <!-- CREATE TAB -->
@@ -882,29 +1055,6 @@
       <div id="shadow-color-row">
         <label>Text colour</label>
         <input type="color" id="shadowColorPicker" value="#ffffff" oninput="onShadowColorChange(this.value)" />
-        <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:6px">
-            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Distance</label>
-            <input type="number" id="shadow-offset" min="0" max="30" step="1" value="3"
-                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
-                   oninput="onShadowParamChange()" />
-            <span style="font-size:11px;color:var(--text-muted)">px</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Blur</label>
-            <input type="number" id="shadow-blur" min="0" max="60" step="1" value="6"
-                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
-                   oninput="onShadowParamChange()" />
-            <span style="font-size:11px;color:var(--text-muted)">px</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Opacity</label>
-            <input type="number" id="shadow-opacity" min="0" max="100" step="5" value="85"
-                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
-                   oninput="onShadowParamChange()" />
-            <span style="font-size:11px;color:var(--text-muted)">%</span>
-          </div>
-        </div>
       </div>
 
       <!-- Block colour pickers (shown only when block is selected) -->
@@ -1037,7 +1187,7 @@
       <h3 data-i18n="settings_video_size">📐 Video Size</h3>
       <div class="field-label" data-i18n="settings_output_format">Choose output format</div>
       <div class="video-size-grid">
-        <div class="video-size-card active" id="videoSizeCard-9-16" onclick="selectVideoSizePreset('9:16')">
+        <div class="video-size-card" id="videoSizeCard-9-16" onclick="selectVideoSizePreset('9:16')">
           <div class="video-size-shape-wrap"><div class="video-size-shape preset-9-16"></div></div>
           <div class="video-size-label">9:16</div>
           <div class="video-size-meta">1080px × 1920px<br>TikTok / Shorts</div>
@@ -1047,13 +1197,13 @@
           <div class="video-size-label">1:1</div>
           <div class="video-size-meta">1080px × 1080px<br><span data-i18n="square">Square</span></div>
         </div>
-        <div class="video-size-card" id="videoSizeCard-16-9" onclick="selectVideoSizePreset('16:9')">
+        <div class="video-size-card active" id="videoSizeCard-16-9" onclick="selectVideoSizePreset('16:9')">
           <div class="video-size-shape-wrap"><div class="video-size-shape preset-16-9"></div></div>
           <div class="video-size-label">16:9</div>
           <div class="video-size-meta">1920px × 1080px<br><span data-i18n="landscape">Landscape</span></div>
         </div>
       </div>
-      <div id="videoSizeSummary" style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5;">9:16 (1080px × 1920px)</div>
+      <div id="videoSizeSummary" style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5;">16:9 (1920px × 1080px)</div>
     </div>
 
     <button class="btn full" id="saveSettingsBtn" onclick="saveSettings()" data-i18n="settings_save">💾 Save Settings</button>
@@ -1299,7 +1449,7 @@
       bgmusic_yes: 'Yes',
       bgmusic_no: 'No',
       // App header
-      app_title: '🎬 AI Video Factory',
+      app_title: '🎬 AI Long Video Factory',
       app_subtitle: 'Paste your formatted script, generate the video, then fine-tune scenes.',
       // Create tab
       create_desc: 'Create scenes, arrange the flow, then render the video.',
@@ -1552,6 +1702,59 @@
       // Style preview cards
       style_preview_text: 'Text',
       style_preview_sample: 'Text sample',
+      // Long Video tab
+      tab_longvideo: '📹 Long Video',
+      // Screen Recorder
+      sr_title: '🎙 Screen Recorder',
+      sr_desc: 'Record your screen with audio directly from the browser.',
+      sr_quality_label: 'Quality:',
+      sr_quality_low: 'Low (~300 MB / 40 min)',
+      sr_quality_med: 'Med (~900 MB / 40 min)',
+      sr_quality_high: 'High (~1.8 GB / 40 min)',
+      sr_include_mic: 'Include Microphone',
+      sr_audio_tip: 'When the screen picker appears, choose <strong>Entire Screen</strong> and tick <strong>Share system audio</strong>.',
+      sr_open_btn: '⏺ Open Recorder',
+      sr_quality_label: 'Quality:',
+      sr_quality_low: 'Low (~300 MB / 40 min)',
+      sr_quality_med: 'Med (~900 MB / 40 min)',
+      sr_quality_high: 'High (~1.8 GB / 40 min)',
+      sr_include_mic: 'Include Microphone',
+      sr_start_btn: '⏺ Start Recording',
+      sr_stop_btn: '⏹ Stop',
+      sr_converting: 'Converting to MP4…',
+      sr_done_title: '✅ Recording saved!',
+      sr_download_btn: '⬇ Download Recording',
+      // Long Video pipeline
+      lv_upload_title: '📁 Step 1: Upload Your Video',
+      lv_drop_hint: 'Drag & drop a video file here, or click to browse',
+      lv_uploading: 'Uploading…',
+      lv_upload_done: 'Upload complete.',
+      lv_transcript_title: '📝 Step 2: Transcript (Optional)',
+      lv_transcript_hint: 'One line per scene. Lines are distributed proportionally across chunks.',
+      lv_split_title: '✂️ Step 3: Split Video into Scenes',
+      lv_split_tab_editor: '✂️ Editor',
+      lv_split_tab_auto: '🤖 Auto-detect',
+      lv_split_tab_fixed: '⏱ Fixed Seconds',
+      lv_mark_btn: '✂️ Mark split here',
+      lv_clear_btn: '🗑 Clear all',
+      lv_split_btn: '🔪 Split at marked points',
+      lv_detect_threshold: 'Sensitivity:',
+      lv_detect_btn: '🔍 Detect scenes & silences',
+      lv_use_detected: 'Use these split points',
+      lv_chunk_size: 'Chunk size:',
+      lv_fixed_split_btn: '🔪 Split into chunks',
+      lv_render_title: '🎬 Step 4: Render Long Video',
+      lv_batch_size: 'Scenes per batch:',
+      lv_render_btn: '🎬 Render Full Video',
+      lv_stop_btn: '⏹ Stop',
+      lv_download_btn: '⬇ Download Final Video',
+      lv_no_splits: 'No split points set. Mark splits in the Editor tab first.',
+      lv_detecting: 'Detecting…',
+      lv_detected_count: (n) => `Found ${n} split point(s).`,
+      lv_splitting: 'Splitting…',
+      lv_split_done: (n) => `Split into ${n} scenes. Proceed to Step 4.`,
+      lv_rendering: 'Rendering…',
+      lv_press_m: 'Press M to mark, or click the timeline',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -1692,7 +1895,7 @@
       bgmusic_yes: 'はい',
       bgmusic_no: 'いいえ',
       // App header
-      app_title: '🎬 AI動画ファクトリー',
+      app_title: '🎬 AI長尺動画ファクトリー',
       app_subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
       // Create tab
       create_desc: 'シーンを作成し、流れを整えてから動画をレンダリングします。',
@@ -1945,6 +2148,59 @@
       // Style preview cards
       style_preview_text: 'テキスト',
       style_preview_sample: 'テキストサンプル',
+      // Long Video tab
+      tab_longvideo: '📹 長尺動画',
+      // Screen Recorder
+      sr_title: '🎙 スクリーンレコーダー',
+      sr_desc: 'ブラウザから直接、画面と音声を録画します。',
+      sr_quality_label: '品質:',
+      sr_quality_low: '低画質 (約300MB / 40分)',
+      sr_quality_med: '中画質 (約900MB / 40分)',
+      sr_quality_high: '高画質 (約1.8GB / 40分)',
+      sr_include_mic: 'マイクを含める',
+      sr_audio_tip: '画面ピッカーが表示されたら<strong>画面全体</strong>を選択し、<strong>システム音声を共有</strong>にチェックを入れてください。',
+      sr_open_btn: '⏺ レコーダーを開く',
+      sr_quality_label: '品質:',
+      sr_quality_low: '低画質 (約300MB / 40分)',
+      sr_quality_med: '中画質 (約900MB / 40分)',
+      sr_quality_high: '高画質 (約1.8GB / 40分)',
+      sr_include_mic: 'マイクを含める',
+      sr_start_btn: '⏺ 録画開始',
+      sr_stop_btn: '⏹ 停止',
+      sr_converting: 'MP4に変換中…',
+      sr_done_title: '✅ 録画完了！',
+      sr_download_btn: '⬇ 録画ファイルをダウンロード',
+      // Long Video pipeline
+      lv_upload_title: '📁 ステップ1: 動画をアップロード',
+      lv_drop_hint: 'ここに動画ファイルをドラッグ＆ドロップ、またはクリックして選択',
+      lv_uploading: 'アップロード中…',
+      lv_upload_done: 'アップロード完了。',
+      lv_transcript_title: '📝 ステップ2: トランスクリプト（任意）',
+      lv_transcript_hint: '1行=1シーン。チャンク数に比例して配分されます。',
+      lv_split_title: '✂️ ステップ3: 動画をシーンに分割',
+      lv_split_tab_editor: '✂️ エディター',
+      lv_split_tab_auto: '🤖 自動検出',
+      lv_split_tab_fixed: '⏱ 固定秒数',
+      lv_mark_btn: '✂️ ここで分割',
+      lv_clear_btn: '🗑 すべてクリア',
+      lv_split_btn: '🔪 マーク位置で分割',
+      lv_detect_threshold: '感度:',
+      lv_detect_btn: '🔍 シーン・無音を検出',
+      lv_use_detected: 'この分割点を使用',
+      lv_chunk_size: 'チャンクサイズ:',
+      lv_fixed_split_btn: '🔪 チャンクに分割',
+      lv_render_title: '🎬 ステップ4: 長尺動画をレンダリング',
+      lv_batch_size: 'バッチあたりのシーン数:',
+      lv_render_btn: '🎬 フル動画をレンダリング',
+      lv_stop_btn: '⏹ 停止',
+      lv_download_btn: '⬇ 最終動画をダウンロード',
+      lv_no_splits: '分割点が設定されていません。まずエディタータブでマークを付けてください。',
+      lv_detecting: '検出中…',
+      lv_detected_count: (n) => `${n}件の分割点が見つかりました。`,
+      lv_splitting: '分割中…',
+      lv_split_done: (n) => `${n}シーンに分割しました。ステップ4へ進んでください。`,
+      lv_rendering: 'レンダリング中…',
+      lv_press_m: 'Mキーを押すかタイムラインをクリックしてマーク',
     }
   };
 
@@ -1960,7 +2216,7 @@
     if (sub) sub.textContent = t.subtitle;
     // Tabs
     const tabs = document.querySelectorAll('.tab');
-    const tabKeys = ['tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
+    const tabKeys = ['tab_longvideo','tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
     tabs.forEach((tab, i) => { if (tabKeys[i]) tab.textContent = t[tabKeys[i]]; });
     // Theme label
     const isLight = document.getElementById('theme-checkbox')?.checked;
@@ -1982,6 +2238,11 @@
       titleEl.textContent = t.app_title || '🎬 AI Video Factory';
       if (badge) titleEl.appendChild(badge);
     }
+    // Translate data-i18n-html elements (supports HTML like <strong>)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      if (t[key] !== undefined) el.innerHTML = t[key];
+    });
     // Translate all data-i18n-placeholder elements
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.getAttribute('data-i18n-placeholder');
@@ -2078,7 +2339,7 @@
   })();
 
   /* ── Tabs ── */
-  const TAB_NAMES = ['create','editor','scenes','media','settings'];
+  const TAB_NAMES = ['longvideo','create','editor','scenes','media','settings'];
   function switchTab(name) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
@@ -2636,9 +2897,6 @@
     document.getElementById('textStrokeSizeRange').value = textStrokeSize;
     document.getElementById('textStrokeSizeRange').title = formatBorderSizeValue(textStrokeSize);
     document.getElementById('glowSizeRange').value = glowSize;
-    document.getElementById('shadow-offset').value  = s.shadowOffset  ?? 3;
-    document.getElementById('shadow-blur').value    = s.shadowBlur    ?? 6;
-    document.getElementById('shadow-opacity').value = s.shadowOpacity ?? 85;
     updateBlockPreview(bc, tc);
     updateRadiusPreview(boxRadius, blockRadius);
     updateTextStrokePreview(textStrokeColor, textStrokeSize);
@@ -2716,17 +2974,6 @@
     document.getElementById('textColorPicker').value = color;
     document.getElementById('textColorHex').value = color;
     document.getElementById('styleShadowPreview').style.color = color;
-  }
-
-  function onShadowParamChange() {
-    const offset  = parseFloat(document.getElementById('shadow-offset')?.value)  ?? 3;
-    const blur    = parseFloat(document.getElementById('shadow-blur')?.value)    ?? 6;
-    const opacity = parseFloat(document.getElementById('shadow-opacity')?.value) ?? 85;
-    const preview = document.getElementById('styleShadowPreview');
-    if (preview) preview.style.textShadow = buildShadowCss(offset, blur, opacity, 1);
-    currentSettings.shadowOffset  = offset;
-    currentSettings.shadowBlur    = blur;
-    currentSettings.shadowOpacity = opacity;
   }
 
   // Returns a CSS calc() that scales a px value proportionally with --thumb-w
@@ -3017,12 +3264,9 @@
       textStrokeSize:  parseFloat(document.getElementById('textStrokeSizeRange').value) || 0,
       boxBorderRadius: parseInt(document.getElementById('boxRadiusRange').value) || 20,
       blockBorderRadius: parseInt(document.getElementById('blockRadiusRange').value) || 10,
-      shadowOffset:  parseFloat(document.getElementById('shadow-offset')?.value)  ?? 3,
-      shadowBlur:    parseFloat(document.getElementById('shadow-blur')?.value)    ?? 6,
-      shadowOpacity: parseFloat(document.getElementById('shadow-opacity')?.value) ?? 85,
-      videoSizePreset: currentSettings.videoSizePreset || '9:16',
-      outputWidth: currentSettings.outputWidth || 1080,
-      outputHeight: currentSettings.outputHeight || 1920,
+      videoSizePreset: currentSettings.videoSizePreset || '16:9',
+      outputWidth: currentSettings.outputWidth || 1920,
+      outputHeight: currentSettings.outputHeight || 1080,
       backgroundMusicRandom: document.getElementById('bgMusicRandom').value === 'yes',
       backgroundMusicFile: document.getElementById('bgMusicFileSelect').value,
       backgroundMusicUseCustom: document.getElementById('bgMusicUseCustom').checked,
@@ -3056,16 +3300,7 @@
     return `calc(var(--thumb-w, 96px) * ${ratio.toFixed(6)})`;
   }
 
-  function buildShadowCss(offset, blur, opacity, scale = 1) {
-    const ox = Math.round((offset ?? 3) * 0.67 * scale);
-    const oy = Math.round((offset ?? 3) * scale);
-    const bl = Math.round((blur ?? 6) * scale);
-    const al = ((opacity ?? 85) / 100).toFixed(2);
-    const al2 = (Math.round((opacity ?? 85) * 0.7) / 100).toFixed(2);
-    return `${ox}px ${oy}px ${bl}px rgba(0,0,0,${al}), 0 1px ${Math.max(1, Math.round(bl / 3))}px rgba(0,0,0,${al2})`;
-  }
-
-  function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1, shadowOffset = 3, shadowBlur = 6, shadowOpacity = 85) {
+  function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
     const jc = vPos==='top' ? 'flex-start' : vPos==='center' ? 'center' : 'flex-end';
     // hPos = horizontal screen position (where the text block sits on screen)
     // textAlign = CSS text-align within the text block
@@ -3084,7 +3319,7 @@
       const strokeBorder = (Number(textStrokeSize) || 0) > 0 ? `border:${(Number(textStrokeSize)*_sc).toFixed(1)}px solid ${textStrokeColor};box-sizing:border-box;` : '';
       inner += `background:${blockColor};color:${textColor};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(blockBorderRadius*_sc).toFixed(1)}px;${strokeBorder}`;
     } else if (style === 'shadow') {
-      inner += `color:${textColor};text-shadow:${buildShadowCss(shadowOffset, shadowBlur, shadowOpacity, _sc)};padding:0 ${(2*_sc).toFixed(1)}px;`;
+      inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else {
@@ -3094,7 +3329,7 @@
   }
 
   // Free-position mode: text placed at exact X/Y % within the thumbnail
-  function calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1, shadowOffset = 3, shadowBlur = 6, shadowOpacity = 85) {
+  function calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
     const fs  = previewFontSize(fontSize);
     const rot = rotation || 0;
     const transform = rot
@@ -3112,7 +3347,7 @@
       const strokeBorder = (Number(textStrokeSize) || 0) > 0 ? `border:${(Number(textStrokeSize)*_sc).toFixed(1)}px solid ${textStrokeColor};box-sizing:border-box;` : '';
       inner += `background:${blockColor};color:${textColor};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(blockBorderRadius*_sc).toFixed(1)}px;${strokeBorder}`;
     } else if (style === 'shadow') {
-      inner += `color:${textColor};text-shadow:${buildShadowCss(shadowOffset, shadowBlur, shadowOpacity, _sc)};padding:0 ${(2*_sc).toFixed(1)}px;`;
+      inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else {
@@ -3139,14 +3374,11 @@
     const textStrokeColor = seg.textStrokeColorOverride || seg.textStrokeColor || '#000000';
     const textStrokeSize = seg.textStrokeSizeOverride ?? seg.textStrokeSize ?? 0;
     const glowSize = seg.glowSizeOverride ?? seg.glowSize ?? 1;
-    const shadowOffset = seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3;
-    const shadowBlur   = seg.shadowBlurOverride   ?? seg.shadowBlur   ?? 6;
-    const shadowOpacity = seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85;
     const textFadeInDuration = seg.textFadeInDuration ?? 1.5;
     const textFadeOutDuration = seg.textFadeOutDuration ?? 1.5;
     const { wrap, inner } = hasFreePos
-      ? calcPreviewStyleFree(seg.textX, seg.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, shadowOffset, shadowBlur, shadowOpacity)
-      : calcPreviewStyle(vPos, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, shadowOffset, shadowBlur, shadowOpacity);
+      ? calcPreviewStyleFree(seg.textX, seg.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
+      : calcPreviewStyle(vPos, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const rawText = seg.text || '';
     const txt = rawText.length > 55 ? rawText.slice(0,55)+'…' : rawText;
     const previewDisplay = rawText.trim() ? 'flex' : 'none';
@@ -3158,9 +3390,6 @@
       data-stroke="${textStrokeColor}"
       data-strokesize="${textStrokeSize}"
       data-glowsize="${glowSize}"
-      data-shadowoffset="${shadowOffset}"
-      data-shadowblur="${shadowBlur}"
-      data-shadowopacity="${shadowOpacity}"
       data-boxradius="${boxBorderRadius}"
       data-blockradius="${blockBorderRadius}"
       data-style="${style}"
@@ -3353,21 +3582,6 @@
     }
   }
 
-  // Strip [word|#hex] / [word] markup to plain text (for titles, labels, etc.)
-  function stripColorMarkup(text) {
-    return String(text || '').replace(/\[([^\]|]+)(?:\|[^\]]+)?\]/g, '$1');
-  }
-
-  function _renderInlineColorsHtml(text, highlightColor) {
-    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return text.split('\n').map(line =>
-      esc(line).replace(/\[([^\]|]+)(?:\|([^\]]+))?\]/g, (_, word, color) => {
-        const c = (color || highlightColor || '').replace(/['"]/g, '');
-        return c ? `<span style="color:${c}">${word}</span>` : word;
-      })
-    ).join('<br>');
-  }
-
   function updateTextPreview(i) {
     const el      = document.getElementById(`tpreview-${i}`);
     const innerEl = document.getElementById(`tprev-inner-${i}`);
@@ -3378,10 +3592,9 @@
     const previewText = fullText.length > 55 ? `${fullText.slice(0,55)}…` : fullText;
     const hasText = fullText.trim().length > 0;
     el.dataset.fulltext = fullText;
-    const hlColor = document.getElementById(`hlco-${i}`)?.value || '';
-    innerEl.innerHTML = _renderInlineColorsHtml(previewText, hlColor);
+    innerEl.textContent = previewText;
     const segCaption = document.getElementById(`seg-caption-${i}`);
-    if (segCaption) segCaption.textContent = hasText ? stripColorMarkup(fullText) : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
+    if (segCaption) segCaption.textContent = hasText ? fullText : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
 
     const sBtn    = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
     const aBtn    = document.querySelector(`#alignrow-${i} .pos-btn.active`);
@@ -3397,17 +3610,13 @@
     el.dataset.fadein = String(fadeInDuration);
     el.dataset.fadeout = String(fadeOutDuration);
 
-    const _sOff = parseFloat(el.dataset.shadowoffset ?? '3') || 3;
-    const _sBlur = parseFloat(el.dataset.shadowblur ?? '6') || 6;
-    const _sOpa = parseFloat(el.dataset.shadowopacity ?? '85') || 85;
     if (el.dataset.freepos === '1') {
       const x = parseFloat(document.getElementById(`fpx-${i}`)?.value) || 50;
       const y = parseFloat(document.getElementById(`fpy-${i}`)?.value) || 50;
       const { wrap, inner } = calcPreviewStyleFree(x, y, style,
         el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', textAlign, rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
-        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'),
-        _sOff, _sBlur, _sOpa);
+        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
       el.setAttribute('style', `${wrap};display:${hasText ? 'flex' : 'none'}`);
       innerEl.setAttribute('style', inner);
     } else {
@@ -3418,8 +3627,7 @@
       const { wrap, inner } = calcPreviewStyle(vPos, hPos, textAlign, style,
         el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
-        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'),
-        _sOff, _sBlur, _sOpa);
+        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
       el.setAttribute('style', `${wrap};display:${hasText ? 'flex' : 'none'}`);
       innerEl.setAttribute('style', inner);
     }
@@ -3540,13 +3748,9 @@
     const glowSize = parseInt(el.dataset.glowsize) || 1;
     const boxBorderRadius = parseInt(el.dataset.boxradius) ?? 20;
     const blockBorderRadius = parseInt(el.dataset.blockradius) ?? 10;
-    const _sOff2 = parseFloat(el.dataset.shadowoffset ?? '3') || 3;
-    const _sBlur2 = parseFloat(el.dataset.shadowblur ?? '6') || 6;
-    const _sOpa2 = parseFloat(el.dataset.shadowopacity ?? '85') || 85;
     const { wrap, inner } = calcPreviewStyleFree(x, y, style,
       el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff',
-      textAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize,
-      _sOff2, _sBlur2, _sOpa2);
+      textAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     el.setAttribute('style', wrap);
     innerEl.setAttribute('style', inner);
     // Re-apply no-wrap and textBoxWidth after style rebuild
@@ -3601,10 +3805,7 @@
     const glowSize        = _etN(`et-glowsize-${i}-${j}`,   `glowsize-${i}`,   14);
     const boxBorderRadius    = _etN(`et-boxradius-${i}-${j}`,   `boxradius-${i}`,   20);
     const blockBorderRadius  = _etN(`et-blockradius-${i}-${j}`, `blockradius-${i}`, 10);
-    const _etShadowOff = _etN(`et-shadowoffset-${i}-${j}`, `shadowoffset-${i}`, 3);
-    const _etShadowBlur = _etN(`et-shadowblur-${i}-${j}`, `shadowblur-${i}`, 6);
-    const _etShadowOpa = _etN(`et-shadowopacity-${i}-${j}`, `shadowopacity-${i}`, 85);
-    const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _etShadowOff, _etShadowBlur, _etShadowOpa);
+    const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const noWrapBtn = document.getElementById(`et-nowrap-btn-${i}-${j}`);
     const noWrap = noWrapBtn ? !noWrapBtn.classList.contains('ghost') : false;
     const boxWidthVal = parseFloat(document.getElementById(`et-boxwidth-${i}-${j}`)?.value) || 85;
@@ -4649,7 +4850,14 @@
       const bgScale = Math.max(1, Number(seg.backgroundScale) || 1);
       const bgX = Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0));
       const bgY = Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0));
-      thumbHTML = `<video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="${backgroundTransformStyle(bgScale, bgX, bgY)}${bgBlurStyle}" autoplay muted loop playsinline></video>`;
+      const vFit = seg.videoFit || 'cover';
+      if (vFit === 'contain-black') {
+        thumbHTML = `<video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="object-fit:contain;background:#000;${backgroundTransformStyle(bgScale, bgX, bgY)}${bgBlurStyle}" autoplay muted loop playsinline></video>`;
+      } else if (vFit === 'contain-blur') {
+        thumbHTML = `<div style="position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:8px;pointer-events:none"><video src="${thumbSrc}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;filter:blur(8px);transform:scale(1.1);display:block"></video></div><video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="object-fit:contain;background:transparent;position:relative;z-index:1;${backgroundTransformStyle(bgScale, bgX, bgY)}${bgBlurStyle}" autoplay muted loop playsinline></video>`;
+      } else {
+        thumbHTML = `<video class="video-thumb" id="thumb-${i}" src="${thumbSrc}" style="${backgroundTransformStyle(bgScale, bgX, bgY)}${bgBlurStyle}" autoplay muted loop playsinline></video>`;
+      }
     } else {
       thumbHTML = `<div class="no-video" id="thumb-${i}">🎬</div>`;
     }
@@ -4673,7 +4881,7 @@
           </div>
         </div>
         <div class="scene-body-wrap" id="scene-body-${i}">
-        <div class="seg-caption" id="seg-caption-${i}">${stripColorMarkup(seg.text) || (I18N[window._appLang||'en']||I18N.en).no_orig_text}</div>
+        <div class="seg-caption" id="seg-caption-${i}">${seg.text || (I18N[window._appLang||'en']||I18N.en).no_orig_text}</div>
         <div class="seg-vo" id="voice-summary-${i}">${escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || (I18N[window._appLang||'en']||I18N.en).no_voice_text}</div>
         <input type="hidden" id="timeline-duration-${i}" value="${Number(seg.duration)||5}" />
         <input type="hidden" id="timeline-audioduration-${i}" value="${seg.audioDuration != null ? Number(seg.audioDuration) : ''}" />
@@ -4821,12 +5029,6 @@
           <div class="scene-accordion-body text-controls">
             <div class="ctrl-label" style="margin-bottom:6px" data-i18n="orig_scene_text">${(I18N[window._appLang||'en']||I18N.en).orig_scene_text}</div>
             <textarea id="maintext-${i}" class="extra-text-input" style="min-height:120px;height:120px;max-height:200px" oninput="onMainTextInput(${i})" onblur="saveMainTextContent(${i})" data-i18n-placeholder="main_text_placeholder" placeholder="${(I18N[window._appLang||'en']||I18N.en).main_text_placeholder || 'Type the original scene text here...'}">${escapeHtml(seg.text || '')}</textarea>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
-              <span style="font-size:10px;color:#94a3b8">Color text:</span>
-              <input type="color" id="inline-color-pick-${i}" value="${seg.highlightColorOverride||'#ff69b4'}" style="width:26px;height:22px;padding:1px 2px;border-radius:4px;border:1px solid #475569;background:none;cursor:pointer" title="Color for selected text" />
-              <button class="btn sm" type="button" onclick="wrapSelectedTextColor(${i})" style="font-size:10px;padding:3px 8px">Color selection</button>
-              <span style="font-size:9px;color:#475569">or type [word|#ff0000]</span>
-            </div>
             <div class="ctrl-row" style="margin-top:6px;justify-content:space-between;gap:8px;flex-wrap:wrap">
               <div style="font-size:11px;color:#94a3b8" data-i18n="main_text_hint">${(I18N[window._appLang||'en']||I18N.en).main_text_hint}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -4995,10 +5197,6 @@
                 <input type="color" class="mini-color" id="glowtextco-${i}"
                        value="${seg.glowTextColorOverride||'#ffffff'}"
                        oninput="saveMainColors(${i})" title="Glow text color" />
-                <label style="font-size:9px;color:#94a3b8">Highlight</label>
-                <input type="color" class="mini-color" id="hlco-${i}"
-                       value="${seg.highlightColorOverride||'#ff69b4'}"
-                       oninput="saveMainColors(${i})" title="Default color for [word] inline spans" />
               </div>
             </div>
             <div id="main-box-radius-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='box'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:6px 10px">
@@ -5028,23 +5226,6 @@
                 <input type="number" class="num-input" id="glowsize-${i}" min="0" max="36" step="1"
                        value="${seg.glowSizeOverride ?? seg.glowSize ?? 14}" oninput="saveMainColors(${i})" style="width:58px" />
                 <span style="font-size:10px;color:#64748b">px</span>
-              </div>
-            </div>
-            <div id="main-shadow-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='shadow'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(148,163,184,0.06);border:1px solid rgba(148,163,184,0.18);border-radius:8px;padding:6px 10px">
-              <span class="ctrl-row-label">Shadow</span>
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <label style="font-size:9px;color:#94a3b8">Distance</label>
-                <input type="number" class="num-input" id="shadowoffset-${i}" min="0" max="30" step="1"
-                       value="${seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3}" oninput="saveMainColors(${i})" style="width:50px" />
-                <span style="font-size:10px;color:#64748b">px</span>
-                <label style="font-size:9px;color:#94a3b8">Blur</label>
-                <input type="number" class="num-input" id="shadowblur-${i}" min="0" max="60" step="1"
-                       value="${seg.shadowBlurOverride ?? seg.shadowBlur ?? 6}" oninput="saveMainColors(${i})" style="width:50px" />
-                <span style="font-size:10px;color:#64748b">px</span>
-                <label style="font-size:9px;color:#94a3b8">Opacity</label>
-                <input type="number" class="num-input" id="shadowopacity-${i}" min="0" max="100" step="5"
-                       value="${seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85}" oninput="saveMainColors(${i})" style="width:50px" />
-                <span style="font-size:10px;color:#64748b">%</span>
               </div>
             </div>
 
@@ -5473,7 +5654,7 @@
     card.className = 'segment-card';
     card.style.gridTemplateColumns = '1fr';
     const durationLabel = seg.duration ? seg.duration.toFixed(1) + 's' : '—';
-    const caption = escapeHtml(stripColorMarkup(seg.text) || t.no_orig_text);
+    const caption = escapeHtml(seg.text || t.no_orig_text);
     const voiceover = escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || t.no_voice_text;
     card.innerHTML = `
       <div>
@@ -5929,7 +6110,9 @@
   }
 
   function backgroundTransformStyle(scale, x, y) {
-    return `position:absolute;width:114%;height:114%;top:-7%;left:-7%;object-fit:cover;transform:translate(${x}%,${y}%) scale(${scale});transform-origin:center center;`;
+    const objX = 50 + x / 2;
+    const objY = 50 + y / 2;
+    return `object-fit:cover;object-position:${objX}% ${objY}%;transform:scale(${scale});transform-origin:center center;`;
   }
 
   function updateBackgroundTransformPreview(i) {
@@ -5942,13 +6125,11 @@
     if (xValue) xValue.textContent = `${Math.round(x)}%`;
     if (yValue) yValue.textContent = `${Math.round(y)}%`;
     if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
-      el.style.position = 'absolute';
-      el.style.width = '114%';
-      el.style.height = '114%';
-      el.style.top = '-7%';
-      el.style.left = '-7%';
+      const objX = 50 + x / 2;
+      const objY = 50 + y / 2;
       el.style.objectFit = 'cover';
-      el.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
+      el.style.objectPosition = `${objX}% ${objY}%`;
+      el.style.transform = `scale(${scale})`;
       el.style.transformOrigin = 'center center';
     }
   }
@@ -6031,15 +6212,49 @@
         btn.classList.toggle('active', btn.dataset.vfit === fit);
       });
     }
-    // Update thumb video object-fit live
+    // Update thumb preview object-fit live (works for both <img> and <video> thumbnails)
     const thumb = document.getElementById(`thumb-${i}`);
-    if (thumb && thumb.tagName === 'VIDEO') {
+    if (thumb) {
       if (fit === 'contain-black') {
         thumb.style.objectFit = 'contain';
         thumb.style.background = '#000';
+        thumb.style.filter = '';
+      } else if (fit === 'contain-blur') {
+        thumb.style.objectFit = 'contain';
+        thumb.style.background = '#000';
+        // Fake the blur-bg look: show a blurred scaled copy behind via drop-shadow trick
+        thumb.style.filter = 'drop-shadow(0 0 0 transparent)';
+        // Actually show the blur effect via a pseudo-overlay on the scene preview wrapper
+        const preview = document.getElementById(`scene-preview-${i}`);
+        if (preview) {
+          let blurLayer = preview.querySelector('.fit-blur-hint');
+          if (!blurLayer) {
+            blurLayer = document.createElement('div');
+            blurLayer.className = 'fit-blur-hint';
+            blurLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;border-radius:8px';
+            preview.insertBefore(blurLayer, preview.firstChild);
+          }
+          const src = thumb.src || thumb.currentSrc || '';
+          blurLayer.style.background = `url("${src}") center/cover no-repeat`;
+          blurLayer.style.filter = 'blur(8px)';
+          blurLayer.style.transform = 'scale(1.1)';
+          blurLayer.style.display = 'block';
+          thumb.style.objectFit = 'contain';
+          thumb.style.background = 'transparent';
+          thumb.style.position = 'relative';
+          thumb.style.zIndex = '1';
+        }
       } else {
         thumb.style.objectFit = 'cover';
         thumb.style.background = '';
+        thumb.style.filter = '';
+        thumb.style.position = '';
+        thumb.style.zIndex = '';
+        const preview = document.getElementById(`scene-preview-${i}`);
+        if (preview) {
+          const blurLayer = preview.querySelector('.fit-blur-hint');
+          if (blurLayer) blurLayer.style.display = 'none';
+        }
       }
     }
     await fetch('/update-scene-texts', {
@@ -6215,19 +6430,8 @@
     if(!el)return;
     const { scale, x, y } = getBackgroundTransformValues(i);
     const style = backgroundTransformStyle(scale, x, y);
-    if(el.tagName==='VIDEO'){
-      el.src=src;
-      el.style.position='absolute';
-      el.style.width='114%';
-      el.style.height='114%';
-      el.style.top='-7%';
-      el.style.left='-7%';
-      el.style.objectFit='cover';
-      el.style.transform=`translate(${x}%,${y}%) scale(${scale})`;
-      el.style.transformOrigin='center center';
-    } else {
-      el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;
-    }
+    if(el.tagName==='VIDEO'){el.src=src;el.style.objectFit='cover';el.style.objectPosition=`${50+x/2}% ${50+y/2}%`;el.style.transform=`scale(${scale})`;el.style.transformOrigin='center center';}
+    else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
     const vid = document.getElementById(`thumb-${i}`);
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
     setBackgroundTransformPanelState(i, true);
@@ -6752,11 +6956,9 @@
     const borderRow = document.getElementById(`main-border-row-${i}`);
     const boxRadiusRow = document.getElementById(`main-box-radius-row-${i}`);
     const blockRadiusRow = document.getElementById(`main-block-radius-row-${i}`);
-    const shadowRow = document.getElementById(`main-shadow-row-${i}`);
     if (borderRow) borderRow.style.display = activeStyle === 'block' ? 'flex' : 'none';
     if (boxRadiusRow) boxRadiusRow.style.display = activeStyle === 'box' ? 'flex' : 'none';
     if (blockRadiusRow) blockRadiusRow.style.display = activeStyle === 'block' ? 'flex' : 'none';
-    if (shadowRow) shadowRow.style.display = activeStyle === 'shadow' ? 'flex' : 'none';
   }
 
   async function setMainTextStyle(i, style) {
@@ -7003,11 +7205,8 @@
     });
   }
 
-  const _mainTextSaveTimers = {};
   function onMainTextInput(i) {
     updateTextPreview(i);
-    clearTimeout(_mainTextSaveTimers[i]);
-    _mainTextSaveTimers[i] = setTimeout(() => saveMainTextContent(i), 600);
   }
 
   async function saveMainTextContent(i) {
@@ -7202,14 +7401,11 @@
     const glowSize = et?.glowSizeOverride ?? seg.glowSizeOverride ?? seg.glowSize ?? 1;
     const boxBorderRadius = et?.boxBorderRadius ?? seg.boxBorderRadius ?? 20;
     const blockBorderRadius = et?.blockBorderRadius ?? seg.blockBorderRadius ?? 10;
-    const _bShadowOff = et?.shadowOffsetOverride ?? et?.shadowOffset ?? seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3;
-    const _bShadowBlur = et?.shadowBlurOverride ?? et?.shadowBlur ?? seg.shadowBlurOverride ?? seg.shadowBlur ?? 6;
-    const _bShadowOpa = et?.shadowOpacityOverride ?? et?.shadowOpacity ?? seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85;
     const position = et?.position || 'center';
     const hasFreePos = et?.textX != null && et?.textY != null;
     const { wrap, inner } = hasFreePos
-      ? calcPreviewStyleFree(et.textX, et.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _bShadowOff, _bShadowBlur, _bShadowOpa)
-      : calcPreviewStyle(position, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _bShadowOff, _bShadowBlur, _bShadowOpa);
+      ? calcPreviewStyleFree(et.textX, et.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
+      : calcPreviewStyle(position, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const startAt = et?.startAt ?? null;
     const endAt = et?.endAt ?? null;
     const animation = et?.animation || 'pop';
@@ -8284,10 +8480,6 @@
     const glowSize = parseInt(document.getElementById(`glowsize-${i}`)?.value) || 0;
     const boxBorderRadius = parseInt(document.getElementById(`boxradius-${i}`)?.value) || 20;
     const blockBorderRadius = parseInt(document.getElementById(`blockradius-${i}`)?.value) || 10;
-    const highlightColorOverride = document.getElementById(`hlco-${i}`)?.value || null;
-    const shadowOffsetOverride  = parseFloat(document.getElementById(`shadowoffset-${i}`)?.value) || null;
-    const shadowBlurOverride    = parseFloat(document.getElementById(`shadowblur-${i}`)?.value) || null;
-    const shadowOpacityOverride = parseFloat(document.getElementById(`shadowopacity-${i}`)?.value) || null;
     const preview = document.getElementById(`tpreview-${i}`);
     const strip = document.getElementById(`tprev-strip-${i}`);
     if (preview) {
@@ -8300,9 +8492,6 @@
       preview.dataset.glowsize = String(glowSize);
       preview.dataset.boxradius = String(boxBorderRadius);
       preview.dataset.blockradius = String(blockBorderRadius);
-      if (shadowOffsetOverride  != null) preview.dataset.shadowoffset  = String(shadowOffsetOverride);
-      if (shadowBlurOverride    != null) preview.dataset.shadowblur    = String(shadowBlurOverride);
-      if (shadowOpacityOverride != null) preview.dataset.shadowopacity = String(shadowOpacityOverride);
     }
     if (strip) strip.style.background = glowColor || blockColor;
     updateTextPreview(i);
@@ -8320,28 +8509,8 @@
         glowSizeOverride:      glowSize,
         boxBorderRadius,
         blockBorderRadius,
-        highlightColorOverride,
-        shadowOffsetOverride,
-        shadowBlurOverride,
-        shadowOpacityOverride,
       })
     });
-  }
-
-  function wrapSelectedTextColor(i) {
-    const ta = document.getElementById(`maintext-${i}`);
-    const colorInput = document.getElementById(`inline-color-pick-${i}`);
-    if (!ta || !colorInput) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    if (start === end) { alert('Select some text in the box first, then click "Color selection".'); return; }
-    const color = colorInput.value;
-    const selected = ta.value.slice(start, end);
-    const wrapped = `[${selected}|${color}]`;
-    ta.value = ta.value.slice(0, start) + wrapped + ta.value.slice(end);
-    ta.setSelectionRange(start, start + wrapped.length);
-    ta.dispatchEvent(new Event('input'));
-    saveMainTextContent(i);
   }
 
   /* ── Overlay shapes ── */
@@ -9462,7 +9631,7 @@
       const duration = Math.max(0.5, Number(seg.duration) || 5);
       const width = duration * gtPPS;
       const color = GT_COLORS[i % GT_COLORS.length];
-      const rawLabel = stripColorMarkup(seg.text || seg.voiceover_text || '—');
+      const rawLabel = seg.text || seg.voiceover_text || '—';
       const label = rawLabel.length > 24 ? rawLabel.substring(0, 24) + '…' : rawLabel;
       clipsHTML += `<div class="gt-clip" id="gt-clip-${i}"
           style="left:${currentX + GAP}px;width:${width - GAP * 2}px;background:${color}"
@@ -9572,7 +9741,7 @@
     }
     if (sceneIndex >= 0) {
       const seg = gtSegments[sceneIndex];
-      const label = stripColorMarkup(seg.text || seg.voiceover_text || '—').substring(0, 45);
+      const label = (seg.text || seg.voiceover_text || '—').substring(0, 45);
       const sceneFrame = Math.floor(sceneTime * 30);
       bar.innerHTML = `<span class="gt-info-scene">Scene ${sceneIndex + 1}</span><span class="gt-info-frame"> — frame ${frame} global · frame ${sceneFrame} in scene</span><span style="color:#334155"> — "${label}"</span>`;
     } else {
@@ -9849,6 +10018,413 @@
       checkBtn.disabled    = false;
       applyBtn.textContent = '⬇️ Download & Install Update';
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     SCREEN RECORDER
+  ══════════════════════════════════════════════════════════════════════════ */
+  let _srWin = null;
+  let _srRecorder = null, _srSessionId = null, _srTimerInterval = null;
+  let _srStream = null, _srAllRawTracks = [], _srAudioCtx = null, _srPendingChunks = 0;
+
+  async function srStart() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    const quality    = document.getElementById('sr-quality').value;
+    const includeMic = document.getElementById('sr-mic').checked;
+    const startBtn   = document.getElementById('sr-start-btn');
+    const stopBtn    = document.getElementById('sr-stop-btn');
+    const timerEl    = document.getElementById('sr-timer');
+    const statusEl   = document.getElementById('sr-inline-status');
+    const resultEl   = document.getElementById('sr-result');
+    statusEl.textContent = '';
+    resultEl.innerHTML   = '';
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'monitor' }, audio: true
+      });
+      _srAllRawTracks = [...screenStream.getTracks()];
+      let combinedStream = screenStream;
+      if (includeMic) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          _srAllRawTracks.push(...micStream.getTracks());
+          _srAudioCtx = new AudioContext();
+          const dest = _srAudioCtx.createMediaStreamDestination();
+          const sysAudio = screenStream.getAudioTracks();
+          if (sysAudio.length) _srAudioCtx.createMediaStreamSource(new MediaStream(sysAudio)).connect(dest);
+          _srAudioCtx.createMediaStreamSource(micStream).connect(dest);
+          combinedStream = new MediaStream([...screenStream.getVideoTracks(), ...dest.stream.getTracks()]);
+        } catch(_) {}
+      }
+      const initRes = await fetch('/screen-record/start', { method: 'POST' });
+      const { sessionId } = await initRes.json();
+      _srSessionId = sessionId;
+      const videoBps = quality === 'high' ? 8_000_000 : quality === 'med' ? 2_500_000 : 800_000;
+      _srRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9,opus', videoBitsPerSecond: videoBps });
+      _srPendingChunks = 0;
+      _srRecorder.ondataavailable = async (e) => {
+        if (!e.data || e.data.size < 100) return;
+        _srPendingChunks++;
+        try {
+          await fetch(`/screen-record/chunk/${_srSessionId}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: e.data
+          });
+        } finally { _srPendingChunks--; }
+      };
+      _srRecorder.onstop = async () => {
+        statusEl.textContent = t.sr_converting;
+        let waited = 0;
+        while (_srPendingChunks > 0 && waited < 150) { await new Promise(r => setTimeout(r, 100)); waited++; }
+        try {
+          const res  = await fetch(`/screen-record/stop/${_srSessionId}`, { method: 'POST' });
+          const data = await res.json();
+          statusEl.textContent = '';
+          const mb = data.size ? ` — ${(data.size/1024/1024).toFixed(0)} MB` : '';
+          resultEl.innerHTML = `
+            <div style="font-size:13px;color:#34d399;margin-bottom:6px">${t.sr_done_title}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-family:monospace">${data.filename}${mb}</div>
+            <a href="/screen-record/download/${encodeURIComponent(data.filename)}" class="btn" style="display:inline-block" download>${t.sr_download_btn}</a>`;
+        } catch(err) { statusEl.textContent = '❌ ' + err.message; }
+        startBtn.style.display = '';
+        stopBtn.style.display  = 'none';
+        timerEl.style.display  = 'none';
+      };
+      _srRecorder.start(30000);
+      _srStream = combinedStream;
+      startBtn.style.display = 'none';
+      stopBtn.style.display  = '';
+      timerEl.style.display  = '';
+      timerEl.textContent    = '00:00';
+      statusEl.textContent   = '';
+      let elapsed = 0;
+      _srTimerInterval = setInterval(() => {
+        elapsed++;
+        timerEl.textContent = `${String(Math.floor(elapsed/60)).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')}`;
+      }, 1000);
+      screenStream.getVideoTracks()[0]?.addEventListener('ended', () => srStop());
+    } catch(err) {
+      if (err.name !== 'NotAllowedError') statusEl.textContent = '❌ ' + err.message;
+    }
+  }
+
+  function srStop() {
+    if (_srTimerInterval) { clearInterval(_srTimerInterval); _srTimerInterval = null; }
+    if (_srRecorder && _srRecorder.state !== 'inactive') _srRecorder.stop();
+    if (_srAudioCtx) { _srAudioCtx.close(); _srAudioCtx = null; }
+    _srAllRawTracks.forEach(tr => tr.stop());
+    _srAllRawTracks = [];
+    _srStream = null;
+  }
+
+  function srOpenWindow() {
+    const lang = window._appLang || 'en';
+    const w = 480, h = 300;
+    const left = screen.width - w - 20, top = 20;
+    if (_srWin && !_srWin.closed) { _srWin.focus(); return; }
+    _srWin = window.open(
+      `/recorder-controller.html?lang=${lang}`,
+      'ScreenRecorder',
+      `width=${w},height=${h},left=${left},top=${top},resizable=no,menubar=no,toolbar=no,location=no`
+    );
+  }
+
+  // Listen for recording-done messages from the popup via BroadcastChannel
+  (function initSrChannel() {
+    const bc = new BroadcastChannel('sr-controller');
+    bc.onmessage = (e) => {
+      if (e.data?.type !== 'recording-done') return;
+      const t = (I18N[window._appLang||'en']||I18N.en);
+      const resultEl = document.getElementById('sr-result');
+      if (!resultEl) return;
+      const { filename, size } = e.data;
+      const mb = size ? ` — ${(size / 1024 / 1024).toFixed(0)} MB` : '';
+      resultEl.innerHTML = `
+        <div style="font-size:13px;color:#34d399;margin-bottom:6px">${t.sr_done_title}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-family:monospace">${filename}${mb}</div>
+        <a href="/screen-record/download/${encodeURIComponent(filename)}" class="btn" style="display:inline-block" download>${t.sr_download_btn}</a>`;
+    };
+  })();
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LONG VIDEO PIPELINE
+  ══════════════════════════════════════════════════════════════════════════ */
+  let _lvFilename = null, _lvEditorDuration = 0;
+  let _lvSplitPoints = [], _lvDetectedTimestamps = [];
+  let _lvKeydownBound = false;
+
+  // ── Drop zone init (called on first load) ──
+  (function lvInitDropZone() {
+    window.addEventListener('load', () => {
+      const zone = document.getElementById('lv-drop-zone');
+      if (!zone) return;
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) lvUploadFile(f); });
+      zone.addEventListener('click', () => document.getElementById('lv-file-input').click());
+    });
+  })();
+
+  async function lvUploadFile(file) {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    const progressWrap = document.getElementById('lv-upload-progress');
+    const progressFill = document.getElementById('lv-upload-fill');
+    const statusEl     = document.getElementById('lv-upload-status');
+    progressWrap.style.display = '';
+    progressFill.style.width   = '0%';
+    statusEl.textContent       = t.lv_uploading;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const fd  = new FormData();
+      fd.append('video', file);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round(e.loaded / e.total * 100);
+          progressFill.style.width = pct + '%';
+          statusEl.textContent = `${t.lv_uploading} ${pct}%`;
+        }
+      };
+      xhr.onload = async () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          _lvFilename = data.filename;
+          statusEl.textContent = t.lv_upload_done + ' — ' + _lvFilename;
+          document.getElementById('lv-step2').style.display = '';
+          document.getElementById('lv-step3').style.display = '';
+          try {
+            const info = await fetch(`/lv-video-info?filename=${encodeURIComponent(_lvFilename)}`).then(r => r.json());
+            lvEditorInit(_lvFilename, info.duration || 0);
+          } catch(e) { console.warn('lv-video-info:', e); }
+          resolve(data);
+        } else { reject(new Error('Upload failed: ' + xhr.status)); }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.open('POST', '/upload-long-video');
+      xhr.send(fd);
+    });
+  }
+
+  function lvEditorInit(filename, duration) {
+    _lvFilename = filename;
+    _lvEditorDuration = duration;
+    _lvSplitPoints = [];
+    _lvDetectedTimestamps = [];
+    const vid = document.getElementById('lv-editor-video');
+    if (vid) {
+      vid.src = `/public/long-video-input/${encodeURIComponent(filename)}`;
+      vid.style.display = '';
+      vid.ontimeupdate = () => lvUpdatePlayhead(vid.currentTime, duration);
+    }
+    lvRenderMarkers();
+    if (!_lvKeydownBound) {
+      document.addEventListener('keydown', (e) => {
+        if ((e.key === 'm' || e.key === 'M') && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) lvMarkSplit();
+      });
+      _lvKeydownBound = true;
+    }
+  }
+
+  function lvUpdatePlayhead(current, duration) {
+    const pct = duration > 0 ? (current / duration * 100) : 0;
+    const fill = document.getElementById('lv-timeline-fill');
+    const head  = document.getElementById('lv-timeline-playhead');
+    if (fill) fill.style.width = pct + '%';
+    if (head) head.style.left  = pct + '%';
+  }
+
+  function lvTimelineClick(e) {
+    if (!_lvEditorDuration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct  = (e.clientX - rect.left) / rect.width;
+    const vid  = document.getElementById('lv-editor-video');
+    if (vid) vid.currentTime = pct * _lvEditorDuration;
+  }
+
+  function lvMarkSplit() {
+    const vid = document.getElementById('lv-editor-video');
+    if (!vid || !_lvEditorDuration) return;
+    const t = parseFloat(vid.currentTime.toFixed(2));
+    if (!_lvSplitPoints.includes(t)) {
+      _lvSplitPoints.push(t);
+      _lvSplitPoints.sort((a, b) => a - b);
+      lvRenderMarkers();
+    }
+  }
+
+  function lvRemoveSplit(t) {
+    _lvSplitPoints = _lvSplitPoints.filter(x => x !== t);
+    lvRenderMarkers();
+  }
+
+  function lvRenderMarkers() {
+    const timeline = document.getElementById('lv-timeline');
+    const chips    = document.getElementById('lv-chips');
+    if (!timeline) return;
+    timeline.querySelectorAll('.lv-marker').forEach(m => m.remove());
+    _lvSplitPoints.forEach(pt => {
+      const pct = _lvEditorDuration > 0 ? (pt / _lvEditorDuration * 100) : 0;
+      const m   = document.createElement('div');
+      m.className = 'lv-marker';
+      m.style.left = pct + '%';
+      m.title = lvFmtSec(pt) + ' — click to remove';
+      m.onclick = (e) => { e.stopPropagation(); lvRemoveSplit(pt); };
+      timeline.appendChild(m);
+    });
+    if (chips) chips.innerHTML = _lvSplitPoints.map(pt =>
+      `<span class="lv-chip" onclick="lvRemoveSplit(${pt})" title="Click to remove">${lvFmtSec(pt)}</span>`
+    ).join('');
+  }
+
+  function lvFmtSec(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    const dec = Math.round((s % 1) * 10);
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${dec}`;
+  }
+
+  function lvClearSplits() {
+    _lvSplitPoints = [];
+    lvRenderMarkers();
+  }
+
+  function lvSwitchSplitTab(name) {
+    ['editor','auto','fixed'].forEach(n => {
+      document.getElementById(`lv-split-tab-${n}`)?.classList.toggle('active', n === name);
+      const p = document.getElementById(`lv-split-panel-${n}`);
+      if (p) p.style.display = n === name ? '' : 'none';
+    });
+  }
+
+  async function lvAutoDetect() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    if (!_lvFilename) return;
+    const threshold = parseFloat(document.getElementById('lv-detect-threshold')?.value || 0.35);
+    const statusEl  = document.getElementById('lv-detect-status');
+    const useBtn    = document.getElementById('lv-use-detected-btn');
+    const detectBtn = document.getElementById('lv-detect-btn');
+    statusEl.textContent = t.lv_detecting;
+    useBtn.style.display  = 'none';
+    detectBtn.disabled    = true;
+    try {
+      const res  = await fetch('/lv-detect-scenes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: _lvFilename, threshold })
+      });
+      const data = await res.json();
+      _lvDetectedTimestamps = data.timestamps || [];
+      const countMsg = typeof t.lv_detected_count === 'function'
+        ? t.lv_detected_count(_lvDetectedTimestamps.length)
+        : `Found ${_lvDetectedTimestamps.length} split point(s).`;
+      statusEl.textContent = countMsg;
+      const preview = document.getElementById('lv-detect-preview');
+      if (preview) preview.textContent = _lvDetectedTimestamps.map(lvFmtSec).join('  ') || '—';
+      if (_lvDetectedTimestamps.length > 0) useBtn.style.display = '';
+    } catch(err) {
+      statusEl.textContent = '❌ ' + err.message;
+    } finally {
+      detectBtn.disabled = false;
+    }
+  }
+
+  function lvUseDetected() {
+    _lvSplitPoints = [..._lvDetectedTimestamps].sort((a, b) => a - b);
+    lvRenderMarkers();
+    lvSwitchSplitTab('editor');
+  }
+
+  async function lvExecuteSplit() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    if (!_lvFilename) return;
+    if (_lvSplitPoints.length === 0) { alert(t.lv_no_splits); return; }
+    const transcript = document.getElementById('lv-transcript')?.value || '';
+    const statusEl  = document.getElementById('lv-split-status');
+    const splitBtn  = document.getElementById('lv-split-btn');
+    statusEl.textContent = t.lv_splitting;
+    splitBtn.disabled    = true;
+    try {
+      const res  = await fetch('/lv-split-at-timestamps', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: _lvFilename, timestamps: _lvSplitPoints, transcriptText: transcript })
+      });
+      const data = await res.json();
+      const doneMsg = typeof t.lv_split_done === 'function' ? t.lv_split_done(data.chunkCount) : `Split into ${data.chunkCount} scenes.`;
+      statusEl.textContent = doneMsg;
+      document.getElementById('lv-step4').style.display = '';
+    } catch(err) {
+      statusEl.textContent = '❌ ' + err.message;
+    } finally {
+      splitBtn.disabled = false;
+    }
+  }
+
+  function lvFixedSplit() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    if (!_lvFilename) return;
+    const chunkSec  = parseInt(document.getElementById('lv-chunk-size')?.value || 5);
+    const transcript = document.getElementById('lv-transcript')?.value || '';
+    const statusEl  = document.getElementById('lv-fixed-split-status');
+    const logEl     = document.getElementById('lv-fixed-split-log');
+    const splitBtn  = document.getElementById('lv-fixed-split-btn');
+    statusEl.textContent = t.lv_splitting;
+    logEl.textContent    = '';
+    splitBtn.disabled    = true;
+    socket.emit('split-long-video', { filename: _lvFilename, chunkDuration: chunkSec, transcriptText: transcript });
+    socket.on('lv-split-log', (msg) => { logEl.textContent += msg + '\n'; logEl.scrollTop = logEl.scrollHeight; });
+    socket.on('lv-split-progress', ({ pct }) => { statusEl.textContent = `${t.lv_splitting} ${pct}%`; });
+    socket.once('lv-split-done', (data) => {
+      socket.off('lv-split-log'); socket.off('lv-split-progress');
+      const doneMsg = typeof t.lv_split_done === 'function' ? t.lv_split_done(data.chunkCount) : `Split into ${data.chunkCount} scenes.`;
+      statusEl.textContent = doneMsg;
+      splitBtn.disabled    = false;
+      document.getElementById('lv-step4').style.display = '';
+    });
+    socket.once('lv-split-error', (err) => {
+      socket.off('lv-split-log'); socket.off('lv-split-progress');
+      statusEl.textContent = '❌ ' + (err.message || err);
+      splitBtn.disabled    = false;
+    });
+  }
+
+  function lvStartRender() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    const batchSize  = parseInt(document.getElementById('lv-batch-size')?.value || 20);
+    const statusEl   = document.getElementById('lv-render-status');
+    const renderBtn  = document.getElementById('lv-render-btn');
+    const stopBtn    = document.getElementById('lv-render-stop-btn');
+    const logEl      = document.getElementById('lv-render-log');
+    const fillEl     = document.getElementById('lv-render-fill');
+    const resultEl   = document.getElementById('lv-render-result');
+    renderBtn.style.display = 'none';
+    stopBtn.style.display   = '';
+    stopBtn.disabled        = false;
+    logEl.style.display     = '';
+    logEl.textContent       = '';
+    fillEl.style.width      = '0%';
+    statusEl.textContent    = t.lv_rendering;
+    resultEl.innerHTML      = '';
+    socket.emit('long-video-render', { batchSize });
+    socket.on('lv-log', (msg) => { logEl.textContent += msg + '\n'; logEl.scrollTop = logEl.scrollHeight; });
+    socket.on('lv-render-progress', ({ pct }) => { if (fillEl) fillEl.style.width = (pct || 0) + '%'; });
+    socket.once('lv-done', (data) => {
+      socket.off('lv-log'); socket.off('lv-render-progress');
+      renderBtn.style.display = ''; stopBtn.style.display = 'none';
+      statusEl.textContent = '✅ Done!';
+      fillEl.style.width = '100%';
+      const fname = (data.file || '').split('/').pop();
+      if (fname) resultEl.innerHTML = `<a href="/renders/${encodeURIComponent(fname)}" class="btn full" style="margin-top:10px" download>${t.lv_download_btn}</a>`;
+    });
+    socket.once('lv-render-error', (err) => {
+      socket.off('lv-log'); socket.off('lv-render-progress');
+      renderBtn.style.display = ''; stopBtn.style.display = 'none';
+      statusEl.textContent = '❌ ' + (err.message || err);
+    });
+  }
+
+  function lvStopRender() {
+    socket.emit('lv-render-stop');
+    const stopBtn  = document.getElementById('lv-render-stop-btn');
+    const statusEl = document.getElementById('lv-render-status');
+    if (stopBtn)  stopBtn.disabled    = true;
+    if (statusEl) statusEl.textContent = (I18N[window._appLang||'en']||I18N.en).log_cancelled || 'Stopping…';
   }
 </script>
 
