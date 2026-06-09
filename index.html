@@ -882,6 +882,29 @@
       <div id="shadow-color-row">
         <label>Text colour</label>
         <input type="color" id="shadowColorPicker" value="#ffffff" oninput="onShadowColorChange(this.value)" />
+        <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Distance</label>
+            <input type="number" id="shadow-offset" min="0" max="30" step="1" value="3"
+                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
+                   oninput="onShadowParamChange()" />
+            <span style="font-size:11px;color:var(--text-muted)">px</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Blur</label>
+            <input type="number" id="shadow-blur" min="0" max="60" step="1" value="6"
+                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
+                   oninput="onShadowParamChange()" />
+            <span style="font-size:11px;color:var(--text-muted)">px</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Opacity</label>
+            <input type="number" id="shadow-opacity" min="0" max="100" step="5" value="85"
+                   style="width:52px;background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-mid);border-radius:6px;padding:4px 6px;font-size:13px"
+                   oninput="onShadowParamChange()" />
+            <span style="font-size:11px;color:var(--text-muted)">%</span>
+          </div>
+        </div>
       </div>
 
       <!-- Block colour pickers (shown only when block is selected) -->
@@ -2613,6 +2636,9 @@
     document.getElementById('textStrokeSizeRange').value = textStrokeSize;
     document.getElementById('textStrokeSizeRange').title = formatBorderSizeValue(textStrokeSize);
     document.getElementById('glowSizeRange').value = glowSize;
+    document.getElementById('shadow-offset').value  = s.shadowOffset  ?? 3;
+    document.getElementById('shadow-blur').value    = s.shadowBlur    ?? 6;
+    document.getElementById('shadow-opacity').value = s.shadowOpacity ?? 85;
     updateBlockPreview(bc, tc);
     updateRadiusPreview(boxRadius, blockRadius);
     updateTextStrokePreview(textStrokeColor, textStrokeSize);
@@ -2690,6 +2716,17 @@
     document.getElementById('textColorPicker').value = color;
     document.getElementById('textColorHex').value = color;
     document.getElementById('styleShadowPreview').style.color = color;
+  }
+
+  function onShadowParamChange() {
+    const offset  = parseFloat(document.getElementById('shadow-offset')?.value)  ?? 3;
+    const blur    = parseFloat(document.getElementById('shadow-blur')?.value)    ?? 6;
+    const opacity = parseFloat(document.getElementById('shadow-opacity')?.value) ?? 85;
+    const preview = document.getElementById('styleShadowPreview');
+    if (preview) preview.style.textShadow = buildShadowCss(offset, blur, opacity, 1);
+    currentSettings.shadowOffset  = offset;
+    currentSettings.shadowBlur    = blur;
+    currentSettings.shadowOpacity = opacity;
   }
 
   // Returns a CSS calc() that scales a px value proportionally with --thumb-w
@@ -2980,6 +3017,9 @@
       textStrokeSize:  parseFloat(document.getElementById('textStrokeSizeRange').value) || 0,
       boxBorderRadius: parseInt(document.getElementById('boxRadiusRange').value) || 20,
       blockBorderRadius: parseInt(document.getElementById('blockRadiusRange').value) || 10,
+      shadowOffset:  parseFloat(document.getElementById('shadow-offset')?.value)  ?? 3,
+      shadowBlur:    parseFloat(document.getElementById('shadow-blur')?.value)    ?? 6,
+      shadowOpacity: parseFloat(document.getElementById('shadow-opacity')?.value) ?? 85,
       videoSizePreset: currentSettings.videoSizePreset || '9:16',
       outputWidth: currentSettings.outputWidth || 1080,
       outputHeight: currentSettings.outputHeight || 1920,
@@ -3016,7 +3056,16 @@
     return `calc(var(--thumb-w, 96px) * ${ratio.toFixed(6)})`;
   }
 
-  function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
+  function buildShadowCss(offset, blur, opacity, scale = 1) {
+    const ox = Math.round((offset ?? 3) * 0.67 * scale);
+    const oy = Math.round((offset ?? 3) * scale);
+    const bl = Math.round((blur ?? 6) * scale);
+    const al = ((opacity ?? 85) / 100).toFixed(2);
+    const al2 = (Math.round((opacity ?? 85) * 0.7) / 100).toFixed(2);
+    return `${ox}px ${oy}px ${bl}px rgba(0,0,0,${al}), 0 1px ${Math.max(1, Math.round(bl / 3))}px rgba(0,0,0,${al2})`;
+  }
+
+  function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1, shadowOffset = 3, shadowBlur = 6, shadowOpacity = 85) {
     const jc = vPos==='top' ? 'flex-start' : vPos==='center' ? 'center' : 'flex-end';
     // hPos = horizontal screen position (where the text block sits on screen)
     // textAlign = CSS text-align within the text block
@@ -3035,7 +3084,7 @@
       const strokeBorder = (Number(textStrokeSize) || 0) > 0 ? `border:${(Number(textStrokeSize)*_sc).toFixed(1)}px solid ${textStrokeColor};box-sizing:border-box;` : '';
       inner += `background:${blockColor};color:${textColor};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(blockBorderRadius*_sc).toFixed(1)}px;${strokeBorder}`;
     } else if (style === 'shadow') {
-      inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
+      inner += `color:${textColor};text-shadow:${buildShadowCss(shadowOffset, shadowBlur, shadowOpacity, _sc)};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else {
@@ -3045,7 +3094,7 @@
   }
 
   // Free-position mode: text placed at exact X/Y % within the thumbnail
-  function calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
+  function calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1, shadowOffset = 3, shadowBlur = 6, shadowOpacity = 85) {
     const fs  = previewFontSize(fontSize);
     const rot = rotation || 0;
     const transform = rot
@@ -3063,7 +3112,7 @@
       const strokeBorder = (Number(textStrokeSize) || 0) > 0 ? `border:${(Number(textStrokeSize)*_sc).toFixed(1)}px solid ${textStrokeColor};box-sizing:border-box;` : '';
       inner += `background:${blockColor};color:${textColor};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(blockBorderRadius*_sc).toFixed(1)}px;${strokeBorder}`;
     } else if (style === 'shadow') {
-      inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
+      inner += `color:${textColor};text-shadow:${buildShadowCss(shadowOffset, shadowBlur, shadowOpacity, _sc)};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else {
@@ -3090,11 +3139,14 @@
     const textStrokeColor = seg.textStrokeColorOverride || seg.textStrokeColor || '#000000';
     const textStrokeSize = seg.textStrokeSizeOverride ?? seg.textStrokeSize ?? 0;
     const glowSize = seg.glowSizeOverride ?? seg.glowSize ?? 1;
+    const shadowOffset = seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3;
+    const shadowBlur   = seg.shadowBlurOverride   ?? seg.shadowBlur   ?? 6;
+    const shadowOpacity = seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85;
     const textFadeInDuration = seg.textFadeInDuration ?? 1.5;
     const textFadeOutDuration = seg.textFadeOutDuration ?? 1.5;
     const { wrap, inner } = hasFreePos
-      ? calcPreviewStyleFree(seg.textX, seg.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
-      : calcPreviewStyle(vPos, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      ? calcPreviewStyleFree(seg.textX, seg.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, shadowOffset, shadowBlur, shadowOpacity)
+      : calcPreviewStyle(vPos, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, shadowOffset, shadowBlur, shadowOpacity);
     const rawText = seg.text || '';
     const txt = rawText.length > 55 ? rawText.slice(0,55)+'…' : rawText;
     const previewDisplay = rawText.trim() ? 'flex' : 'none';
@@ -3106,6 +3158,9 @@
       data-stroke="${textStrokeColor}"
       data-strokesize="${textStrokeSize}"
       data-glowsize="${glowSize}"
+      data-shadowoffset="${shadowOffset}"
+      data-shadowblur="${shadowBlur}"
+      data-shadowopacity="${shadowOpacity}"
       data-boxradius="${boxBorderRadius}"
       data-blockradius="${blockBorderRadius}"
       data-style="${style}"
@@ -3337,13 +3392,17 @@
     el.dataset.fadein = String(fadeInDuration);
     el.dataset.fadeout = String(fadeOutDuration);
 
+    const _sOff = parseFloat(el.dataset.shadowoffset ?? '3') || 3;
+    const _sBlur = parseFloat(el.dataset.shadowblur ?? '6') || 6;
+    const _sOpa = parseFloat(el.dataset.shadowopacity ?? '85') || 85;
     if (el.dataset.freepos === '1') {
       const x = parseFloat(document.getElementById(`fpx-${i}`)?.value) || 50;
       const y = parseFloat(document.getElementById(`fpy-${i}`)?.value) || 50;
       const { wrap, inner } = calcPreviewStyleFree(x, y, style,
         el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', textAlign, rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
-        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
+        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'),
+        _sOff, _sBlur, _sOpa);
       el.setAttribute('style', `${wrap};display:${hasText ? 'flex' : 'none'}`);
       innerEl.setAttribute('style', inner);
     } else {
@@ -3354,7 +3413,8 @@
       const { wrap, inner } = calcPreviewStyle(vPos, hPos, textAlign, style,
         el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff', rotation, fontSize,
         parseInt(el.dataset.boxradius || '20'), parseInt(el.dataset.blockradius || '10'),
-        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'));
+        el.dataset.stroke || '#000000', parseFloat(el.dataset.strokesize || '0'), parseInt(el.dataset.glowsize || '14'),
+        _sOff, _sBlur, _sOpa);
       el.setAttribute('style', `${wrap};display:${hasText ? 'flex' : 'none'}`);
       innerEl.setAttribute('style', inner);
     }
@@ -3475,9 +3535,13 @@
     const glowSize = parseInt(el.dataset.glowsize) || 1;
     const boxBorderRadius = parseInt(el.dataset.boxradius) ?? 20;
     const blockBorderRadius = parseInt(el.dataset.blockradius) ?? 10;
+    const _sOff2 = parseFloat(el.dataset.shadowoffset ?? '3') || 3;
+    const _sBlur2 = parseFloat(el.dataset.shadowblur ?? '6') || 6;
+    const _sOpa2 = parseFloat(el.dataset.shadowopacity ?? '85') || 85;
     const { wrap, inner } = calcPreviewStyleFree(x, y, style,
       el.dataset.glow, el.dataset.block, el.dataset.tcolor, el.dataset.glowtext || '#ffffff',
-      textAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      textAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize,
+      _sOff2, _sBlur2, _sOpa2);
     el.setAttribute('style', wrap);
     innerEl.setAttribute('style', inner);
     // Re-apply no-wrap and textBoxWidth after style rebuild
@@ -3532,7 +3596,10 @@
     const glowSize        = _etN(`et-glowsize-${i}-${j}`,   `glowsize-${i}`,   14);
     const boxBorderRadius    = _etN(`et-boxradius-${i}-${j}`,   `boxradius-${i}`,   20);
     const blockBorderRadius  = _etN(`et-blockradius-${i}-${j}`, `blockradius-${i}`, 10);
-    const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+    const _etShadowOff = _etN(`et-shadowoffset-${i}-${j}`, `shadowoffset-${i}`, 3);
+    const _etShadowBlur = _etN(`et-shadowblur-${i}-${j}`, `shadowblur-${i}`, 6);
+    const _etShadowOpa = _etN(`et-shadowopacity-${i}-${j}`, `shadowopacity-${i}`, 85);
+    const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _etShadowOff, _etShadowBlur, _etShadowOpa);
     const noWrapBtn = document.getElementById(`et-nowrap-btn-${i}-${j}`);
     const noWrap = noWrapBtn ? !noWrapBtn.classList.contains('ghost') : false;
     const boxWidthVal = parseFloat(document.getElementById(`et-boxwidth-${i}-${j}`)?.value) || 85;
@@ -4956,6 +5023,23 @@
                 <input type="number" class="num-input" id="glowsize-${i}" min="0" max="36" step="1"
                        value="${seg.glowSizeOverride ?? seg.glowSize ?? 14}" oninput="saveMainColors(${i})" style="width:58px" />
                 <span style="font-size:10px;color:#64748b">px</span>
+              </div>
+            </div>
+            <div id="main-shadow-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='shadow'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(148,163,184,0.06);border:1px solid rgba(148,163,184,0.18);border-radius:8px;padding:6px 10px">
+              <span class="ctrl-row-label">Shadow</span>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <label style="font-size:9px;color:#94a3b8">Distance</label>
+                <input type="number" class="num-input" id="shadowoffset-${i}" min="0" max="30" step="1"
+                       value="${seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3}" oninput="saveMainColors(${i})" style="width:50px" />
+                <span style="font-size:10px;color:#64748b">px</span>
+                <label style="font-size:9px;color:#94a3b8">Blur</label>
+                <input type="number" class="num-input" id="shadowblur-${i}" min="0" max="60" step="1"
+                       value="${seg.shadowBlurOverride ?? seg.shadowBlur ?? 6}" oninput="saveMainColors(${i})" style="width:50px" />
+                <span style="font-size:10px;color:#64748b">px</span>
+                <label style="font-size:9px;color:#94a3b8">Opacity</label>
+                <input type="number" class="num-input" id="shadowopacity-${i}" min="0" max="100" step="5"
+                       value="${seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85}" oninput="saveMainColors(${i})" style="width:50px" />
+                <span style="font-size:10px;color:#64748b">%</span>
               </div>
             </div>
 
@@ -6663,9 +6747,11 @@
     const borderRow = document.getElementById(`main-border-row-${i}`);
     const boxRadiusRow = document.getElementById(`main-box-radius-row-${i}`);
     const blockRadiusRow = document.getElementById(`main-block-radius-row-${i}`);
+    const shadowRow = document.getElementById(`main-shadow-row-${i}`);
     if (borderRow) borderRow.style.display = activeStyle === 'block' ? 'flex' : 'none';
     if (boxRadiusRow) boxRadiusRow.style.display = activeStyle === 'box' ? 'flex' : 'none';
     if (blockRadiusRow) blockRadiusRow.style.display = activeStyle === 'block' ? 'flex' : 'none';
+    if (shadowRow) shadowRow.style.display = activeStyle === 'shadow' ? 'flex' : 'none';
   }
 
   async function setMainTextStyle(i, style) {
@@ -7111,11 +7197,14 @@
     const glowSize = et?.glowSizeOverride ?? seg.glowSizeOverride ?? seg.glowSize ?? 1;
     const boxBorderRadius = et?.boxBorderRadius ?? seg.boxBorderRadius ?? 20;
     const blockBorderRadius = et?.blockBorderRadius ?? seg.blockBorderRadius ?? 10;
+    const _bShadowOff = et?.shadowOffsetOverride ?? et?.shadowOffset ?? seg.shadowOffsetOverride ?? seg.shadowOffset ?? 3;
+    const _bShadowBlur = et?.shadowBlurOverride ?? et?.shadowBlur ?? seg.shadowBlurOverride ?? seg.shadowBlur ?? 6;
+    const _bShadowOpa = et?.shadowOpacityOverride ?? et?.shadowOpacity ?? seg.shadowOpacityOverride ?? seg.shadowOpacity ?? 85;
     const position = et?.position || 'center';
     const hasFreePos = et?.textX != null && et?.textY != null;
     const { wrap, inner } = hasFreePos
-      ? calcPreviewStyleFree(et.textX, et.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize)
-      : calcPreviewStyle(position, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
+      ? calcPreviewStyleFree(et.textX, et.textY, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _bShadowOff, _bShadowBlur, _bShadowOpa)
+      : calcPreviewStyle(position, hPos, hAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize, _bShadowOff, _bShadowBlur, _bShadowOpa);
     const startAt = et?.startAt ?? null;
     const endAt = et?.endAt ?? null;
     const animation = et?.animation || 'pop';
@@ -8191,6 +8280,9 @@
     const boxBorderRadius = parseInt(document.getElementById(`boxradius-${i}`)?.value) || 20;
     const blockBorderRadius = parseInt(document.getElementById(`blockradius-${i}`)?.value) || 10;
     const highlightColorOverride = document.getElementById(`hlco-${i}`)?.value || null;
+    const shadowOffsetOverride  = parseFloat(document.getElementById(`shadowoffset-${i}`)?.value) || null;
+    const shadowBlurOverride    = parseFloat(document.getElementById(`shadowblur-${i}`)?.value) || null;
+    const shadowOpacityOverride = parseFloat(document.getElementById(`shadowopacity-${i}`)?.value) || null;
     const preview = document.getElementById(`tpreview-${i}`);
     const strip = document.getElementById(`tprev-strip-${i}`);
     if (preview) {
@@ -8203,6 +8295,9 @@
       preview.dataset.glowsize = String(glowSize);
       preview.dataset.boxradius = String(boxBorderRadius);
       preview.dataset.blockradius = String(blockBorderRadius);
+      if (shadowOffsetOverride  != null) preview.dataset.shadowoffset  = String(shadowOffsetOverride);
+      if (shadowBlurOverride    != null) preview.dataset.shadowblur    = String(shadowBlurOverride);
+      if (shadowOpacityOverride != null) preview.dataset.shadowopacity = String(shadowOpacityOverride);
     }
     if (strip) strip.style.background = glowColor || blockColor;
     updateTextPreview(i);
@@ -8221,6 +8316,9 @@
         boxBorderRadius,
         blockBorderRadius,
         highlightColorOverride,
+        shadowOffsetOverride,
+        shadowBlurOverride,
+        shadowOpacityOverride,
       })
     });
   }

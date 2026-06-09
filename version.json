@@ -1,7 +1,7 @@
 {
-  "version": "1.3.9",
+  "version": "1.4.0",
   "date": "2026-06-09",
-  "notes": "Fix inline color preview — parse [word|#hex] markup in HTML preview so it displays colored spans instead of raw brackets; debounced auto-save on text input so Remotion player refreshes while typing (600ms delay)",
+  "notes": "Add shadow controls — Distance (offset), Blur, and Opacity sliders for the Shadow text style, both globally in Settings and as per-scene overrides; shadow preview updates live in scene cards",
   "files": [
     "index.html",
     "src/Caption.tsx",

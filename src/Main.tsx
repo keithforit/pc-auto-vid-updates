@@ -260,6 +260,9 @@ export const Main: React.FC = () => {
                                             textBoxWidth={(segment as any).textBoxWidth ?? undefined}
                                             textPadding={(segment as any).textPadding ?? undefined}
                                             highlightColor={(segment as any).highlightColorOverride ?? (segment as any).highlightColor}
+                                            shadowOffset={(segment as any).shadowOffsetOverride ?? (segment as any).shadowOffset}
+                                            shadowBlur={(segment as any).shadowBlurOverride ?? (segment as any).shadowBlur}
+                                            shadowOpacity={(segment as any).shadowOpacityOverride ?? (segment as any).shadowOpacity}
                                         />
                                     )}
                                     {extras.map((et: any, j: number) => {
@@ -297,6 +300,9 @@ export const Main: React.FC = () => {
                                                     boxBorderRadius={et.boxBorderRadius ?? (segment as any).boxBorderRadius ?? 20}
                                                     blockBorderRadius={et.blockBorderRadius ?? (segment as any).blockBorderRadius ?? 10}
                                                     highlightColor={et.highlightColor ?? (segment as any).highlightColorOverride ?? (segment as any).highlightColor}
+                                                    shadowOffset={et.shadowOffsetOverride ?? et.shadowOffset ?? (segment as any).shadowOffsetOverride ?? (segment as any).shadowOffset}
+                                                    shadowBlur={et.shadowBlurOverride ?? et.shadowBlur ?? (segment as any).shadowBlurOverride ?? (segment as any).shadowBlur}
+                                                    shadowOpacity={et.shadowOpacityOverride ?? et.shadowOpacity ?? (segment as any).shadowOpacityOverride ?? (segment as any).shadowOpacity}
                                                 />
                                             </Sequence>
                                         );

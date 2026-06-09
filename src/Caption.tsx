@@ -53,6 +53,9 @@ interface CaptionProps {
     textBoxWidth?: number; // percentage of video width, e.g. 85 = 85%
     textPadding?: number;  // padding in px for block/box styles (applied as px top/bottom and 2x px left/right)
     highlightColor?: string; // default color for [word] spans without explicit color
+    shadowOffset?: number;  // Y-offset in px (X = offset * 0.67), default 3
+    shadowBlur?: number;    // blur radius in px, default 6
+    shadowOpacity?: number; // 0-100 percentage, default 85
 }
 
 export const Caption: React.FC<CaptionProps> = ({
@@ -85,6 +88,9 @@ export const Caption: React.FC<CaptionProps> = ({
     textBoxWidth,
     textPadding,
     highlightColor,
+    shadowOffset = 3,
+    shadowBlur = 6,
+    shadowOpacity = 85,
 }) => {
     const { width: videoWidth } = useVideoConfig();
     const frame = useCurrentFrame();
@@ -255,7 +261,12 @@ export const Caption: React.FC<CaptionProps> = ({
     } else if (textStyle === 'glow') {
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: glowTextColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, WebkitTextStroke: `${Math.max(1, Math.round(glowAmount * 0.2))}px ${glowColor}`, textShadow: glowShadow, ...widthStyle };
     } else if (textStyle === 'shadow') {
-        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: '2px 3px 6px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.6)', ...widthStyle };
+        const sOff = Math.max(0, Number(shadowOffset) || 3);
+        const sBlur = Math.max(0, Number(shadowBlur) || 6);
+        const sAlpha = Math.min(1, Math.max(0, (Number(shadowOpacity) || 85) / 100));
+        const sAlpha2 = Math.round(sAlpha * 70) / 100;
+        const shadowCss = `${Math.round(sOff * 0.67)}px ${sOff}px ${sBlur}px rgba(0,0,0,${sAlpha.toFixed(2)}), 0 1px ${Math.max(1, Math.round(sBlur / 3))}px rgba(0,0,0,${sAlpha2.toFixed(2)})`;
+        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: shadowCss, ...widthStyle };
     } else if (textStyle === 'plain') {
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || 'white', fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...widthStyle };
     } else {

@@ -898,6 +898,9 @@ function readSettings() {
             textStrokeSize: 0,
             boxBorderRadius: 20,
             blockBorderRadius: 10,
+            shadowOffset: 3,
+            shadowBlur: 6,
+            shadowOpacity: 85,
             videoSizePreset: '9:16',
             outputWidth: 1080,
             outputHeight: 1920,
@@ -922,7 +925,13 @@ function applyStylesToContent(settings) {
             seg.textStrokeSize  = settings.textStrokeSize  ?? 0;
             seg.boxBorderRadius = settings.boxBorderRadius ?? 20;
             seg.blockBorderRadius = settings.blockBorderRadius ?? 10;
+            seg.shadowOffset  = settings.shadowOffset  ?? 3;
+            seg.shadowBlur    = settings.shadowBlur    ?? 6;
+            seg.shadowOpacity = settings.shadowOpacity ?? 85;
             delete seg.textStrokeColorOverride;
+            delete seg.shadowOffsetOverride;
+            delete seg.shadowBlurOverride;
+            delete seg.shadowOpacityOverride;
             delete seg.textStrokeSizeOverride;
             if (!seg.textAnimation) seg.textAnimation = 'pop';
         });
@@ -1070,9 +1079,12 @@ app.post('/add-scene', (req, res) => {
             blockColor: settings.blockColor || '#ffdd00',
             textColor:  settings.textColor  || '#000000',
             textStrokeColor: settings.textStrokeColor || '#000000',
-            textStrokeSize:  settings.textStrokeSize  ?? 0,
-            boxBorderRadius: settings.boxBorderRadius ?? 20,
+            textStrokeSize:   settings.textStrokeSize  ?? 0,
+            boxBorderRadius:  settings.boxBorderRadius  ?? 20,
             blockBorderRadius: settings.blockBorderRadius ?? 10,
+            shadowOffset:  settings.shadowOffset  ?? 3,
+            shadowBlur:    settings.shadowBlur    ?? 6,
+            shadowOpacity: settings.shadowOpacity ?? 85,
             sceneFadeInDuration: 1.5,
             sceneFadeOutDuration: 1.5,
             textNoWrap: true,
@@ -1225,6 +1237,7 @@ app.post('/update-scene-texts', (req, res) => {
              'textX', 'textY', 'backgroundBlur',
             'rotation', 'fontSize',
             'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride', 'highlightColorOverride',
+            'shadowOffsetOverride', 'shadowBlurOverride', 'shadowOpacityOverride',
             'boxBorderRadius', 'blockBorderRadius',
             'mainTextStartAt', 'mainTextEndAt',
             'voiceSpeed', 'voicePitch', 'voiceVolume',
