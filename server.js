@@ -2282,11 +2282,10 @@ app.post('/apply-update', async (req, res) => {
         const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
         const filesToUpdate = remote.files || UPDATABLE_FILES;
-        // Never apply fileMap here — pc-auto-vid keeps long-index.html as long-index.html
-        // (fileMap is for pc-long-vid which has no long-index.html and needs index.html)
+        const fileMap = remote.fileMap || {};
         for (let idx = 0; idx < filesToUpdate.length; idx++) {
             const remoteFile = filesToUpdate[idx];
-            const localFile  = remoteFile;
+            const localFile  = fileMap[remoteFile] || remoteFile;
             io.emit('update-progress', { file: localFile, current: idx + 1, total: filesToUpdate.length });
             const buf = await downloadFile(`${UPDATE_REPO_RAW}/${remoteFile}?t=${Date.now()}`);
             fs.mkdirSync(path.dirname(path.join(__dirname, localFile)), { recursive: true });

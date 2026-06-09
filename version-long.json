@@ -4,7 +4,6 @@
   "notes": "Add video clip start/end with looping",
   "files": [
     "long-index.html",
-    "index.html",
     "server.js",
     "src/Background.tsx",
     "src/Main.tsx"
