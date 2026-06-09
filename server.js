@@ -898,12 +898,9 @@ function readSettings() {
             textStrokeSize: 0,
             boxBorderRadius: 20,
             blockBorderRadius: 10,
-            shadowOffset: 3,
-            shadowBlur: 6,
-            shadowOpacity: 85,
-            videoSizePreset: '9:16',
-            outputWidth: 1080,
-            outputHeight: 1920,
+            videoSizePreset: '16:9',
+            outputWidth: 1920,
+            outputHeight: 1080,
             backgroundMusicRandom: true,
             backgroundMusicFile: '',
             backgroundMusicUseCustom: false,
@@ -925,13 +922,7 @@ function applyStylesToContent(settings) {
             seg.textStrokeSize  = settings.textStrokeSize  ?? 0;
             seg.boxBorderRadius = settings.boxBorderRadius ?? 20;
             seg.blockBorderRadius = settings.blockBorderRadius ?? 10;
-            seg.shadowOffset  = settings.shadowOffset  ?? 3;
-            seg.shadowBlur    = settings.shadowBlur    ?? 6;
-            seg.shadowOpacity = settings.shadowOpacity ?? 85;
             delete seg.textStrokeColorOverride;
-            delete seg.shadowOffsetOverride;
-            delete seg.shadowBlurOverride;
-            delete seg.shadowOpacityOverride;
             delete seg.textStrokeSizeOverride;
             if (!seg.textAnimation) seg.textAnimation = 'pop';
         });
@@ -1079,12 +1070,9 @@ app.post('/add-scene', (req, res) => {
             blockColor: settings.blockColor || '#ffdd00',
             textColor:  settings.textColor  || '#000000',
             textStrokeColor: settings.textStrokeColor || '#000000',
-            textStrokeSize:   settings.textStrokeSize  ?? 0,
-            boxBorderRadius:  settings.boxBorderRadius  ?? 20,
+            textStrokeSize:  settings.textStrokeSize  ?? 0,
+            boxBorderRadius: settings.boxBorderRadius ?? 20,
             blockBorderRadius: settings.blockBorderRadius ?? 10,
-            shadowOffset:  settings.shadowOffset  ?? 3,
-            shadowBlur:    settings.shadowBlur    ?? 6,
-            shadowOpacity: settings.shadowOpacity ?? 85,
             sceneFadeInDuration: 1.5,
             sceneFadeOutDuration: 1.5,
             textNoWrap: true,
@@ -1236,8 +1224,7 @@ app.post('/update-scene-texts', (req, res) => {
         const nullableFields = [
              'textX', 'textY', 'backgroundBlur',
             'rotation', 'fontSize',
-            'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride', 'highlightColorOverride',
-            'shadowOffsetOverride', 'shadowBlurOverride', 'shadowOpacityOverride',
+            'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride',
             'boxBorderRadius', 'blockBorderRadius',
             'mainTextStartAt', 'mainTextEndAt',
             'voiceSpeed', 'voicePitch', 'voiceVolume',
@@ -2234,12 +2221,12 @@ app.post('/ffmpeg-install', (req, res) => {
 // ─────────────────────────────────────────
 // AUTO-UPDATE ROUTES
 // ─────────────────────────────────────────
-const UPDATE_REPO_RAW = 'https://raw.githubusercontent.com/keithforit/pc-long-vid-updates/main';
-const UPDATABLE_FILES = ['index.html', 'server.js', 'parser-captions.js', 'parser.js'];
+const UPDATE_REPO_RAW = 'https://raw.githubusercontent.com/keithforit/pc-auto-vid-updates/main';
+const UPDATABLE_FILES = ['index.html', 'server.js'];
 
 function getLocalVersion() {
-    // pc-long-vid tracks its own version in version-long.json
-    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'version-long.json'), 'utf8')).version || '0.0.0'; }
+    // pc-auto-vid tracks its version in version.json
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'version.json'), 'utf8')).version || '0.0.0'; }
     catch { return '0.0.0'; }
 }
 
@@ -2263,7 +2250,7 @@ app.get('/check-update', async (req, res) => {
     try {
         const https = require('https');
         const data = await new Promise((resolve, reject) => {
-            https.get(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`, r => {
+            https.get(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`, r => {
                 let body = '';
                 r.on('data', c => body += c);
                 r.on('end', () => resolve(body));
@@ -2296,8 +2283,8 @@ app.post('/apply-update', async (req, res) => {
                 }).on('error', reject);
             });
         }
-        // Fetch remote version-long.json (pc-long-vid's own update track)
-        const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version-long.json?t=${Date.now()}`);
+        // Fetch remote version.json (pc-auto-vid update track)
+        const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
         const filesToUpdate = remote.files || UPDATABLE_FILES;
         for (let idx = 0; idx < filesToUpdate.length; idx++) {
@@ -2308,8 +2295,8 @@ app.post('/apply-update', async (req, res) => {
             fs.mkdirSync(path.dirname(path.join(__dirname, localFile)), { recursive: true });
             fs.writeFileSync(path.join(__dirname, localFile), buf);
         }
-        // Update local version-long.json
-        fs.writeFileSync(path.join(__dirname, 'version-long.json'), JSON.stringify({ version: remote.version }, null, 2));
+        // Update local version.json
+        fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ version: remote.version }, null, 2));
         res.json({ ok: true, version: remote.version, notes: remote.notes });
         // Restart the server after a short delay so the response can be sent
         setTimeout(() => {

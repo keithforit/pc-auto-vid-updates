@@ -1,7 +1,7 @@
 {
-  "version": "1.4.2",
+  "version": "1.4.3",
   "date": "2026-06-09",
-  "notes": "Fix video framing thumbnail preview — Fill/Black Bars/Blur BG now visually update the scene card thumbnail immediately; contain-blur shows real blurred-video background layer; initial render also respects saved videoFit",
+  "notes": "Fix update checker — was pointing at the long-video tool's GitHub repo and version-long.json; now correctly points at pc-auto-vid-updates repo and reads version.json",
   "files": [
     "index.html",
     "src/Caption.tsx",
