@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.7",
   "date": "2026-06-09",
   "notes": "Fix video framing X/Y controls — switch from objectPosition to translate+oversized element so panning works for all video aspect ratios",
   "files": [
