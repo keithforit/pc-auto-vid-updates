@@ -3353,6 +3353,11 @@
     }
   }
 
+  // Strip [word|#hex] / [word] markup to plain text (for titles, labels, etc.)
+  function stripColorMarkup(text) {
+    return String(text || '').replace(/\[([^\]|]+)(?:\|[^\]]+)?\]/g, '$1');
+  }
+
   function _renderInlineColorsHtml(text, highlightColor) {
     const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     return text.split('\n').map(line =>
@@ -3376,7 +3381,7 @@
     const hlColor = document.getElementById(`hlco-${i}`)?.value || '';
     innerEl.innerHTML = _renderInlineColorsHtml(previewText, hlColor);
     const segCaption = document.getElementById(`seg-caption-${i}`);
-    if (segCaption) segCaption.textContent = hasText ? fullText : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
+    if (segCaption) segCaption.textContent = hasText ? stripColorMarkup(fullText) : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
 
     const sBtn    = document.querySelector(`#mainstylerow-${i} .pos-btn.active`);
     const aBtn    = document.querySelector(`#alignrow-${i} .pos-btn.active`);
@@ -4668,7 +4673,7 @@
           </div>
         </div>
         <div class="scene-body-wrap" id="scene-body-${i}">
-        <div class="seg-caption" id="seg-caption-${i}">${seg.text || (I18N[window._appLang||'en']||I18N.en).no_orig_text}</div>
+        <div class="seg-caption" id="seg-caption-${i}">${stripColorMarkup(seg.text) || (I18N[window._appLang||'en']||I18N.en).no_orig_text}</div>
         <div class="seg-vo" id="voice-summary-${i}">${escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || (I18N[window._appLang||'en']||I18N.en).no_voice_text}</div>
         <input type="hidden" id="timeline-duration-${i}" value="${Number(seg.duration)||5}" />
         <input type="hidden" id="timeline-audioduration-${i}" value="${seg.audioDuration != null ? Number(seg.audioDuration) : ''}" />
@@ -5468,7 +5473,7 @@
     card.className = 'segment-card';
     card.style.gridTemplateColumns = '1fr';
     const durationLabel = seg.duration ? seg.duration.toFixed(1) + 's' : '—';
-    const caption = escapeHtml(seg.text || t.no_orig_text);
+    const caption = escapeHtml(stripColorMarkup(seg.text) || t.no_orig_text);
     const voiceover = escapeHtml(seg.voiceover_text || '').replace(/\n/g,'<br>') || t.no_voice_text;
     card.innerHTML = `
       <div>
@@ -9457,7 +9462,7 @@
       const duration = Math.max(0.5, Number(seg.duration) || 5);
       const width = duration * gtPPS;
       const color = GT_COLORS[i % GT_COLORS.length];
-      const rawLabel = seg.text || seg.voiceover_text || '—';
+      const rawLabel = stripColorMarkup(seg.text || seg.voiceover_text || '—');
       const label = rawLabel.length > 24 ? rawLabel.substring(0, 24) + '…' : rawLabel;
       clipsHTML += `<div class="gt-clip" id="gt-clip-${i}"
           style="left:${currentX + GAP}px;width:${width - GAP * 2}px;background:${color}"
@@ -9567,7 +9572,7 @@
     }
     if (sceneIndex >= 0) {
       const seg = gtSegments[sceneIndex];
-      const label = (seg.text || seg.voiceover_text || '—').substring(0, 45);
+      const label = stripColorMarkup(seg.text || seg.voiceover_text || '—').substring(0, 45);
       const sceneFrame = Math.floor(sceneTime * 30);
       bar.innerHTML = `<span class="gt-info-scene">Scene ${sceneIndex + 1}</span><span class="gt-info-frame"> — frame ${frame} global · frame ${sceneFrame} in scene</span><span style="color:#334155"> — "${label}"</span>`;
     } else {

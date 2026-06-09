@@ -1,7 +1,7 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "date": "2026-06-09",
-  "notes": "Add shadow controls — Distance (offset), Blur, and Opacity sliders for the Shadow text style, both globally in Settings and as per-scene overrides; shadow preview updates live in scene cards",
+  "notes": "Strip [word|#hex] markup from all display labels — scene card title, collapsed view, timeline clips, and frame info bar now show clean text; only the rendered video/preview shows the colored spans",
   "files": [
     "index.html",
     "src/Caption.tsx",
