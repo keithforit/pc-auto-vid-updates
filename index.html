@@ -3298,6 +3298,16 @@
     }
   }
 
+  function _renderInlineColorsHtml(text, highlightColor) {
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return text.split('\n').map(line =>
+      esc(line).replace(/\[([^\]|]+)(?:\|([^\]]+))?\]/g, (_, word, color) => {
+        const c = (color || highlightColor || '').replace(/['"]/g, '');
+        return c ? `<span style="color:${c}">${word}</span>` : word;
+      })
+    ).join('<br>');
+  }
+
   function updateTextPreview(i) {
     const el      = document.getElementById(`tpreview-${i}`);
     const innerEl = document.getElementById(`tprev-inner-${i}`);
@@ -3308,7 +3318,8 @@
     const previewText = fullText.length > 55 ? `${fullText.slice(0,55)}…` : fullText;
     const hasText = fullText.trim().length > 0;
     el.dataset.fulltext = fullText;
-    innerEl.textContent = previewText;
+    const hlColor = document.getElementById(`hlco-${i}`)?.value || '';
+    innerEl.innerHTML = _renderInlineColorsHtml(previewText, hlColor);
     const segCaption = document.getElementById(`seg-caption-${i}`);
     if (segCaption) segCaption.textContent = hasText ? fullText : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
 
@@ -6901,8 +6912,11 @@
     });
   }
 
+  const _mainTextSaveTimers = {};
   function onMainTextInput(i) {
     updateTextPreview(i);
+    clearTimeout(_mainTextSaveTimers[i]);
+    _mainTextSaveTimers[i] = setTimeout(() => saveMainTextContent(i), 600);
   }
 
   async function saveMainTextContent(i) {
