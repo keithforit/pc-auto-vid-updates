@@ -307,7 +307,7 @@
     .pos-btn.active { border-color: #10b981; background: rgba(16,185,129,0.1); color: #10b981; }
 
     /* Clip timeline */
-    .clip-timeline { padding: 2px 0 0; user-select: none; }
+    .clip-timeline { padding: 2px 0 0; user-select: none; isolation: isolate; }
     .clip-track { position: relative; height: 18px; background: #1e293b; border-radius: 9px; border: 1px solid #334155; }
     .clip-fill { position: absolute; top: 0; bottom: 0; background: rgba(59,130,246,0.4); pointer-events: none; }
     .clip-handle { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 10px; height: 24px; background: #60a5fa; border-radius: 3px; cursor: ew-resize; border: 2px solid #93c5fd; box-shadow: 0 1px 4px rgba(0,0,0,0.4); z-index: 2; transition: background 0.1s; }
@@ -5435,11 +5435,11 @@
       segs.forEach((seg,i) => {
         try {
           list.appendChild(buildCard(seg,i));
-          initClipTimeline(i, seg);
           applyClipToThumb(i, seg.clipStart, seg.clipEnd);
           updateSceneBgmControlsState(i);
           initThumbDrag(i, seg);
           updateBackgroundTransformPreview(i);
+          try { initClipTimeline(i, seg); } catch(e) { console.warn('clip timeline init:', e); }
           updateTextPreview(i);
           applyTextPreviewAnimation(i, false);
           applyScenePreviewAnimation(i, seg.sceneAnimation || 'static', false);

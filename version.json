@@ -1,7 +1,7 @@
 {
-  "version": "1.4.7",
+  "version": "1.4.8",
   "date": "2026-06-11",
-  "notes": "Replace clip number inputs with visual dual-handle timeline scrubber; dragging live-seeks the thumbnail",
+  "notes": "Fix framing controls broken by clip timeline z-index leaking into root stacking context",
   "files": [
     "index.html",
     "version.json"
