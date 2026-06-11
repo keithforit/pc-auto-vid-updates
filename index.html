@@ -6070,13 +6070,19 @@
     const start = clipStart != null ? clipStart : 0;
     video._clipStart = start;
     video._clipEnd   = clipEnd != null ? clipEnd : null;
-    const seekToStart = () => { video.currentTime = start; };
-    if (video.readyState >= 1) seekToStart();
-    else video.addEventListener('loadedmetadata', seekToStart, { once: true });
+    const doSeek = () => { video.currentTime = start; };
+    // Try immediately (works if readyState >= 1) and on loadedmetadata as fallback
+    try { video.currentTime = start; } catch(e) {}
+    if (video.readyState < 1)
+      video.addEventListener('loadedmetadata', doSeek, { once: true });
     if (!video._clipHandler) {
       video._clipHandler = () => {
-        if (video._clipEnd != null && video.currentTime >= video._clipEnd)
-          video.currentTime = video._clipStart;
+        const cs = video._clipStart, ce = video._clipEnd;
+        if (ce != null && video.currentTime >= ce) {
+          video.currentTime = cs; // hit clip end — loop to clip start
+        } else if (cs > 0.5 && video.currentTime < cs - 0.5) {
+          video.currentTime = cs; // video's natural loop reset past clip start
+        }
       };
       video.addEventListener('timeupdate', video._clipHandler);
     }
