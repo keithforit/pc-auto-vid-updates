@@ -306,6 +306,13 @@
     .pos-btn:hover { border-color: var(--border-mid); color: var(--text-soft); }
     .pos-btn.active { border-color: #10b981; background: rgba(16,185,129,0.1); color: #10b981; }
 
+    /* Clip timeline */
+    .clip-timeline { padding: 2px 0 0; user-select: none; }
+    .clip-track { position: relative; height: 18px; background: #1e293b; border-radius: 9px; border: 1px solid #334155; }
+    .clip-fill { position: absolute; top: 0; bottom: 0; background: rgba(59,130,246,0.4); pointer-events: none; }
+    .clip-handle { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 10px; height: 24px; background: #60a5fa; border-radius: 3px; cursor: ew-resize; border: 2px solid #93c5fd; box-shadow: 0 1px 4px rgba(0,0,0,0.4); z-index: 2; transition: background 0.1s; }
+    .clip-handle:hover, .clip-handle.dragging { background: #93c5fd; }
+
     /* Position icon buttons (Font Awesome, fixed 30px) */
     .icon-btn {
       width: 30px; height: 30px; display: inline-flex;
@@ -5203,23 +5210,23 @@
                     }).join('')}
                   </div>
                 </div>
-                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
-                  <span class="ctrl-row-label">Clip:</span>
-                  <div style="display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap">
-                    <span style="font-size:11px;color:#64748b">from</span>
-                    <input type="number" id="clip-start-${i}" min="0" step="0.1"
-                           value="${seg.clipStart != null ? seg.clipStart : ''}"
-                           placeholder="0"
-                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
-                           onchange="saveBgClip(${i})" />
-                    <span style="font-size:11px;color:#64748b">to</span>
-                    <input type="number" id="clip-end-${i}" min="0" step="0.1"
-                           value="${seg.clipEnd != null ? seg.clipEnd : ''}"
-                           placeholder="end"
-                           style="width:58px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px;padding:2px 5px;font-size:11px"
-                           onchange="saveBgClip(${i})" />
-                    <span style="font-size:11px;color:#64748b">s</span>
-                    ${seg.video_duration ? `<span style="font-size:10px;color:#475569">(${Number(seg.video_duration).toFixed(1)}s total)</span>` : ''}
+                <div class="ctrl-row" style="align-items:flex-start;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                  <span class="ctrl-row-label" style="margin-top:5px">Clip:</span>
+                  <div style="flex:1;min-width:0">
+                    <input type="hidden" id="clip-start-${i}" value="${seg.clipStart != null ? seg.clipStart : ''}" />
+                    <input type="hidden" id="clip-end-${i}" value="${seg.clipEnd != null ? seg.clipEnd : ''}" />
+                    <div class="clip-timeline" id="clip-timeline-${i}" data-duration="${Number(seg.video_duration)||0}">
+                      <div class="clip-track" id="clip-track-${i}">
+                        <div class="clip-fill" id="clip-fill-${i}"></div>
+                        <div class="clip-handle" id="clip-hs-${i}" title="Drag to set clip start"></div>
+                        <div class="clip-handle" id="clip-he-${i}" title="Drag to set clip end"></div>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#64748b">
+                        <span id="clip-start-lbl-${i}">0.0s</span>
+                        <span style="color:#475569">${seg.video_duration ? Number(seg.video_duration).toFixed(1)+'s total' : 'No duration'}</span>
+                        <span id="clip-end-lbl-${i}">${seg.video_duration ? Number(seg.video_duration).toFixed(1)+'s' : '—'}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
@@ -5428,6 +5435,7 @@
       segs.forEach((seg,i) => {
         try {
           list.appendChild(buildCard(seg,i));
+          initClipTimeline(i, seg);
           applyClipToThumb(i, seg.clipStart, seg.clipEnd);
           updateSceneBgmControlsState(i);
           initThumbDrag(i, seg);
@@ -6062,6 +6070,92 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, videoSpeed: speed })
     });
+  }
+
+  function initClipTimeline(i, seg) {
+    const container = document.getElementById(`clip-timeline-${i}`);
+    if (!container) return;
+    let dur = parseFloat(container.dataset.duration) || 0;
+    if (!dur) {
+      const vid = document.getElementById(`thumb-${i}`);
+      if (vid && vid.tagName === 'VIDEO' && isFinite(vid.duration) && vid.duration > 0) dur = vid.duration;
+    }
+
+    const track  = document.getElementById(`clip-track-${i}`);
+    const fill   = document.getElementById(`clip-fill-${i}`);
+    const hs     = document.getElementById(`clip-hs-${i}`);
+    const he     = document.getElementById(`clip-he-${i}`);
+    const slbl   = document.getElementById(`clip-start-lbl-${i}`);
+    const elbl   = document.getElementById(`clip-end-lbl-${i}`);
+    const sinput = document.getElementById(`clip-start-${i}`);
+    const einput = document.getElementById(`clip-end-${i}`);
+    if (!track || !fill || !hs || !he) return;
+
+    if (!dur) {
+      // Duration unknown — retry once video metadata loads
+      const vid = document.getElementById(`thumb-${i}`);
+      if (vid && vid.tagName === 'VIDEO') {
+        vid.addEventListener('loadedmetadata', () => initClipTimeline(i, seg), { once: true });
+      }
+      return;
+    }
+
+    let cs = seg.clipStart != null ? Number(seg.clipStart) : 0;
+    let ce = seg.clipEnd   != null ? Number(seg.clipEnd)   : dur;
+    cs = Math.max(0, Math.min(cs, dur));
+    ce = Math.max(cs + 0.1, Math.min(ce, dur));
+
+    function pct(t) { return Math.max(0, Math.min(100, (t / dur) * 100)); }
+    function fromPct(p, rect) { return Math.max(0, Math.min(dur, (p / rect.width) * dur)); }
+
+    function render() {
+      hs.style.left = pct(cs) + '%';
+      he.style.left = pct(ce) + '%';
+      fill.style.left  = pct(cs) + '%';
+      fill.style.width = (pct(ce) - pct(cs)) + '%';
+      if (slbl) slbl.textContent = cs.toFixed(1) + 's';
+      if (elbl) elbl.textContent = ce.toFixed(1) + 's';
+      sinput.value = cs > 0.05       ? cs  : '';
+      einput.value = ce < dur - 0.05 ? ce  : '';
+    }
+    render();
+
+    function makeDragger(handle, type) {
+      function onDown(e) {
+        e.preventDefault();
+        handle.classList.add('dragging');
+        const rect = track.getBoundingClientRect();
+        function onMove(ev) {
+          const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          const raw = parseFloat(fromPct(x - rect.left, rect).toFixed(2));
+          if (type === 'start') {
+            cs = Math.max(0, Math.min(raw, ce - 0.1));
+            const vid = document.getElementById(`thumb-${i}`);
+            if (vid && vid.tagName === 'VIDEO') try { vid.currentTime = cs; } catch(_) {}
+          } else {
+            ce = Math.max(cs + 0.1, Math.min(raw, dur));
+          }
+          render();
+        }
+        function onUp() {
+          handle.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onUp);
+          saveBgClip(i);
+          applyClipToThumb(i, cs > 0.05 ? cs : null, ce < dur - 0.05 ? ce : null);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onUp);
+      }
+      handle.addEventListener('mousedown', onDown);
+      handle.addEventListener('touchstart', onDown, { passive: false });
+    }
+    makeDragger(hs, 'start');
+    makeDragger(he, 'end');
   }
 
   function applyClipToThumb(i, clipStart, clipEnd) {

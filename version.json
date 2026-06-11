@@ -1,7 +1,7 @@
 {
-  "version": "1.4.6",
+  "version": "1.4.7",
   "date": "2026-06-11",
-  "notes": "Clip start/end changes now immediately reflected in the scene thumbnail preview",
+  "notes": "Replace clip number inputs with visual dual-handle timeline scrubber; dragging live-seeks the thumbnail",
   "files": [
     "index.html",
     "version.json"
