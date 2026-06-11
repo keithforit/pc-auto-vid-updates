@@ -5428,6 +5428,7 @@
       segs.forEach((seg,i) => {
         try {
           list.appendChild(buildCard(seg,i));
+          applyClipToThumb(i, seg.clipStart, seg.clipEnd);
           updateSceneBgmControlsState(i);
           initThumbDrag(i, seg);
           updateBackgroundTransformPreview(i);
@@ -6063,6 +6064,24 @@
     });
   }
 
+  function applyClipToThumb(i, clipStart, clipEnd) {
+    const video = document.getElementById(`thumb-${i}`);
+    if (!video || video.tagName !== 'VIDEO') return;
+    const start = clipStart != null ? clipStart : 0;
+    video._clipStart = start;
+    video._clipEnd   = clipEnd != null ? clipEnd : null;
+    const seekToStart = () => { video.currentTime = start; };
+    if (video.readyState >= 1) seekToStart();
+    else video.addEventListener('loadedmetadata', seekToStart, { once: true });
+    if (!video._clipHandler) {
+      video._clipHandler = () => {
+        if (video._clipEnd != null && video.currentTime >= video._clipEnd)
+          video.currentTime = video._clipStart;
+      };
+      video.addEventListener('timeupdate', video._clipHandler);
+    }
+  }
+
   async function saveBgClip(i) {
     const startEl = document.getElementById(`clip-start-${i}`);
     const endEl   = document.getElementById(`clip-end-${i}`);
@@ -6072,6 +6091,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, clipStart, clipEnd })
     });
+    applyClipToThumb(i, clipStart, clipEnd);
   }
 
   async function saveVideoAudioVolume(i, value) {

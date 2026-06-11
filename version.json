@@ -1,7 +1,7 @@
 {
-  "version": "1.4.5",
-  "date": "2026-06-09",
-  "notes": "Remove Long Video tab and panel; Scenes tab is now the default; restore Create and Text to Video tabs",
+  "version": "1.4.6",
+  "date": "2026-06-11",
+  "notes": "Clip start/end changes now immediately reflected in the scene thumbnail preview",
   "files": [
     "index.html",
     "version.json"
