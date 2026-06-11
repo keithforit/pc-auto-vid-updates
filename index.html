@@ -5937,7 +5937,8 @@
   function backgroundTransformStyle(scale, x, y) {
     const objX = 50 + x / 2;
     const objY = 50 + y / 2;
-    return `object-fit:cover;object-position:${objX}% ${objY}%;transform:scale(${scale});transform-origin:center center;`;
+    const expand = (scale - 1) / 2;
+    return `position:absolute;width:${scale*100}%;height:${scale*100}%;left:-${expand*100}%;top:-${expand*100}%;object-fit:cover;object-position:${objX}% ${objY}%;`;
   }
 
   function updateBackgroundTransformPreview(i) {
@@ -5952,10 +5953,18 @@
     if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
       const objX = 50 + x / 2;
       const objY = 50 + y / 2;
+      const expand = (scale - 1) / 2;
+      const blur = el.style.filter;
+      el.style.position = 'absolute';
+      el.style.width = `${scale * 100}%`;
+      el.style.height = `${scale * 100}%`;
+      el.style.left = `-${expand * 100}%`;
+      el.style.top = `-${expand * 100}%`;
       el.style.objectFit = 'cover';
       el.style.objectPosition = `${objX}% ${objY}%`;
-      el.style.transform = `scale(${scale})`;
-      el.style.transformOrigin = 'center center';
+      el.style.transform = '';
+      el.style.transformOrigin = '';
+      if (blur) el.style.filter = blur;
     }
   }
 
@@ -6332,7 +6341,7 @@
     if(!el)return;
     const { scale, x, y } = getBackgroundTransformValues(i);
     const style = backgroundTransformStyle(scale, x, y);
-    if(el.tagName==='VIDEO'){el.src=src;el.style.objectFit='cover';el.style.objectPosition=`${50+x/2}% ${50+y/2}%`;el.style.transform=`scale(${scale})`;el.style.transformOrigin='center center';}
+    if(el.tagName==='VIDEO'){el.src=src;const _exp=(scale-1)/2;el.style.position='absolute';el.style.width=`${scale*100}%`;el.style.height=`${scale*100}%`;el.style.left=`-${_exp*100}%`;el.style.top=`-${_exp*100}%`;el.style.objectFit='cover';el.style.objectPosition=`${50+x/2}% ${50+y/2}%`;el.style.transform='';}
     else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
     const vid = document.getElementById(`thumb-${i}`);
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
