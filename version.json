@@ -1,7 +1,7 @@
 {
-  "version": "1.4.11",
+  "version": "1.4.12",
   "date": "2026-06-12",
-  "notes": "New: Storyboard view for the Scenes tab (now default, with List toggle) — the timeline strip becomes the primary navigation: click a block to edit that scene in a single large-preview inspector card, drag blocks to reorder scenes, ＋ tile to add a scene",
+  "notes": "Fix: default tab is now Text to Video on fresh load; Scenes tab pre-loads existing scenes without needing a manual refresh",
   "files": [
     "index.html",
     "version.json"

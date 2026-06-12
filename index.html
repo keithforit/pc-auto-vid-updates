@@ -713,8 +713,8 @@
 
   <div class="tabs">
     <div class="tab" onclick="switchTab('create')">➕ Create</div>
-    <div class="tab" onclick="switchTab('editor')">🎞 Text to Video</div>
-    <div class="tab active" onclick="switchTab('scenes')">🗂 Scenes</div>
+    <div class="tab active" onclick="switchTab('editor')">🎞 Text to Video</div>
+    <div class="tab" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
     <!-- Timeline tab hidden — preserved for future use -->
@@ -747,7 +747,7 @@
   </div>
 
   <!-- TEXT TO VIDEO TAB -->
-  <div class="panel" id="tab-editor">
+  <div class="panel active" id="tab-editor">
 
     <!-- Content Type Selector -->
     <div class="settings-section" style="margin-bottom:18px;padding:16px 18px">
@@ -785,7 +785,7 @@
   </div>
 
   <!-- SCENES TAB -->
-  <div class="panel active" id="tab-scenes">
+  <div class="panel" id="tab-scenes">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button class="btn sm blue" onclick="loadSegments()" data-i18n="load_scenes">🔄 Load Scenes</button>
@@ -2213,8 +2213,12 @@
     autoCheckForUpdates();
     setInterval(autoCheckForUpdates, 30 * 60 * 1000); // Check every 30 minutes
     // Initialize createDraftStarted so "New Scene" doesn't wipe existing scenes
+    // Also pre-load scenes so the Scenes tab shows content immediately without a manual refresh
     fetch('/segments').then(r => r.json()).then(segs => {
-      if (Array.isArray(segs) && segs.length > 0) createDraftStarted = true;
+      if (Array.isArray(segs) && segs.length > 0) {
+        createDraftStarted = true;
+        loadSegments();
+      }
     }).catch(() => {});
   });
 
