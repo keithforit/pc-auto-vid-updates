@@ -888,9 +888,9 @@
         <span style="flex:1"></span>
         <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video">⬇</button>
         <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share">📤</button>
-        <button class="sd-zoom-btn" onclick="sdZoom(-1)" title="Zoom out">−</button>
+        <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
         <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
-        <button class="sd-zoom-btn" onclick="sdZoom(1)" title="Zoom in">＋</button>
+        <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
         <button class="sd-zoom-btn" id="sd-expand-btn" onclick="sdToggleExpand()" data-i18n="sd_channels" data-i18n-attr="title" title="Expand into channels">🎚</button>
         <button class="sd-zoom-btn" id="sd-collapse-btn" onclick="sdToggleCollapse()" title="Collapse">▾</button>
       </div>
@@ -1313,6 +1313,10 @@
       setup_done_title: 'Welcome to the video generator',
       setup_done_sub: 'Everything is installed and saved. Have fun creating!',
       setup_done_btn: 'Start creating →',
+      setup_net_err: 'Could not reach the key check service — check your internet connection and try again',
+      sd_zoom_in: 'Zoom in',
+      sd_zoom_out: 'Zoom out',
+      ptb_rotate_tip: 'Drag to rotate (Shift = 15° steps)',
       view_storyboard: '🎬 Storyboard',
       view_list: '📋 List',
       new_scene: '➕ New Scene',
@@ -1797,6 +1801,10 @@
       setup_done_title: '動画ジェネレーターへようこそ',
       setup_done_sub: 'インストールと保存が完了しました。楽しく作りましょう！',
       setup_done_btn: '作成を始める →',
+      setup_net_err: 'キー確認サービスに接続できませんでした — インターネット接続を確認してもう一度お試しください',
+      sd_zoom_in: 'ズームイン',
+      sd_zoom_out: 'ズームアウト',
+      ptb_rotate_tip: 'ドラッグして回転（Shift = 15°刻み）',
       view_storyboard: '🎬 ストーリーボード',
       view_list: '📋 リスト',
       new_scene: '➕ 新規シーン',
@@ -2335,6 +2343,8 @@
     // Re-render scene draft status counts with translated strings
     if (typeof renderSceneDraftStatuses === 'function') renderSceneDraftStatuses();
     if (typeof renderProjectDraftStatus === 'function') renderProjectDraftStatus();
+    // Re-render the docked timeline so its JS-built labels (channels, meta, tooltips) re-localize
+    try { if (typeof renderSceneDock === 'function' && sdSegments.length) renderSceneDock(); } catch {}
   }
 
   /* ── Load media library on startup so brand swatches are ready ── */
@@ -2456,7 +2466,7 @@
         return;
       }
     } catch (err) {
-      note('pexels', false, err.message || 'Network error');
+      note('pexels', false, t.setup_net_err || err.message || 'Network error');
     }
     btn.disabled = false;
     btn.textContent = t.setup_verify_btn;
@@ -4164,7 +4174,7 @@
     box.id = 'ptb-box';
     box.innerHTML = `
       <div class="ptb-rot-line"></div>
-      <div class="ptb-rot" data-ptb="rot" title="Drag to rotate (Shift = 15° steps)">⟳</div>
+      <div class="ptb-rot" data-ptb="rot" title="${(I18N[window._appLang || 'en'] || I18N.en).ptb_rotate_tip || 'Drag to rotate (Shift = 15° steps)'}">⟳</div>
       <div class="ptb-h ptb-nw" data-ptb="nw"></div>
       <div class="ptb-h ptb-ne" data-ptb="ne"></div>
       <div class="ptb-h ptb-sw" data-ptb="sw"></div>

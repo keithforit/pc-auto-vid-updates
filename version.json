@@ -1,12 +1,11 @@
 {
-  "version": "1.4.16",
+  "version": "1.4.17",
   "date": "2026-06-12",
-  "notes": "New: first-run setup wizard — welcome screen, asks your name, validates your Pexels/Pixabay API keys against the live APIs, saves everything to UserConfig.json and celebrates with confetti. Plus npm run package / package:lite scripts to build a distributable zip",
+  "notes": "Localization sweep for all new UI (timeline bar, channels, player, popovers, transform box, setup wizard — EN/JA); security: dashboard now binds to localhost only (set HOST=0.0.0.0 to opt out); browser auto-open now works on Windows/Linux too; new bilingual INSTALL.md ships with the package",
   "files": [
     "index.html",
     "server.js",
-    "package.json",
-    ".gitignore",
+    "INSTALL.md",
     "version.json"
   ]
 }

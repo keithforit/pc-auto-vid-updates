@@ -2385,7 +2385,7 @@ app.post('/apply-update', async (req, res) => {
             console.log(`\n🔄 Restarting after update to v${remote.version}...`);
             server.close(() => {
                 console.log('Server closed, restarting...');
-                server.listen(activePort, () => {
+                server.listen(activePort, BIND_HOST, () => {
                     console.log(`🚀 Dashboard at http://localhost:${activePort}`);
                 });
             });
@@ -2399,6 +2399,10 @@ app.post('/apply-update', async (req, res) => {
 app.get('/ping', (req, res) => res.json({ ok: true }));
 
 let activePort = 3000;
+// Bind to localhost only — the dashboard has no login, so it must not be reachable
+// from other machines on the network. Set HOST=0.0.0.0 to opt out deliberately.
+const BIND_HOST = process.env.HOST || '127.0.0.1';
+const OPEN_CMD = process.platform === 'win32' ? 'start ""' : process.platform === 'darwin' ? 'open' : 'xdg-open';
 (function tryListen(port) {
     server.once('error', (err) => {
         if (err.code === 'EADDRINUSE') {
@@ -2406,11 +2410,11 @@ let activePort = 3000;
             tryListen(port + 1);
         } else throw err;
     });
-    server.listen(port, () => {
+    server.listen(port, BIND_HOST, () => {
         activePort = port;
         if (port !== 3000) console.log(`⚠️  Port 3000 in use — running on http://localhost:${port}`);
         console.log(`🚀 Dashboard at http://localhost:${port}`);
-        exec(`open http://localhost:${port}`);
+        exec(`${OPEN_CMD} http://localhost:${port}`);
     // Backfill video_duration for any existing segments that are missing it.
     // Runs once at startup so scenes already in the project loop correctly.
     (async () => {
