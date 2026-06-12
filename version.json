@@ -1,7 +1,7 @@
 {
-  "version": "1.4.10",
+  "version": "1.4.11",
   "date": "2026-06-12",
-  "notes": "New: docked scene timeline strip at the bottom of the Scenes tab — whole-video overview with proportional blocks, click a block to jump to its scene card, scroll-spy highlight, zoom/fit controls, collapsible, EN/JA",
+  "notes": "New: Storyboard view for the Scenes tab (now default, with List toggle) — the timeline strip becomes the primary navigation: click a block to edit that scene in a single large-preview inspector card, drag blocks to reorder scenes, ＋ tile to add a scene",
   "files": [
     "index.html",
     "version.json"

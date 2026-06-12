@@ -670,6 +670,18 @@
     .sd-clip-num { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.75); flex-shrink: 0; }
     .sd-clip-label { font-size: 10px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
     .sd-clip-dur { font-size: 9px; color: rgba(255,255,255,0.8); font-family: monospace; flex-shrink: 0; }
+    .sd-clip.sd-dragging { opacity: 0.45; }
+    .sd-clip.sd-drop-before { box-shadow: -3px 0 0 0 #38bdf8; }
+    .sd-clip.sd-drop-after { box-shadow: 3px 0 0 0 #38bdf8; }
+    .sd-add-tile { position: absolute; top: 2px; bottom: 2px; width: 26px; border: 2px dashed var(--border-mid); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; font-size: 14px; box-sizing: border-box; }
+    .sd-add-tile:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Storyboard mode: single-card inspector + strip as primary nav ── */
+    .view-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .view-toggle button { background: var(--bg-input); border: none; color: var(--text-dim); padding: 5px 12px; font-size: 12px; cursor: pointer; }
+    .view-toggle button.active { background: var(--accent); color: #fff; }
+    .storyboard-mode #segments-list .segment-card { display: none; }
+    .storyboard-mode #segments-list .segment-card.sb-selected { display: grid; }
   </style>
 </head>
 <body>
@@ -780,6 +792,10 @@
         <button class="btn sm ghost" type="button" onclick="saveProjectDraft()" data-i18n="save_project_draft">💾 Save Project Draft</button>
         <button class="btn sm ghost" type="button" onclick="restoreProjectDraft()" data-i18n="restore_project_draft">↩ Restore Project Draft</button>
         <button class="btn sm" type="button" id="global-bgm-btn" onclick="toggleAllScenesBgm()" title="Toggle background music on/off for all scenes" style="background:#1e293b;border:1px solid #334155;">🎵 BGM: ON</button>
+        <span class="view-toggle" id="scene-view-toggle">
+          <button type="button" id="view-btn-storyboard" onclick="setSceneViewMode('storyboard')" data-i18n="view_storyboard">🎬 Storyboard</button>
+          <button type="button" id="view-btn-list" onclick="setSceneViewMode('list')" data-i18n="view_list">📋 List</button>
+        </span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--text-dim);white-space:nowrap;" data-i18n="thumb_size">Thumbnail size:</span>
@@ -1198,6 +1214,8 @@
       sd_fit: 'Fit to width',
       sd_collapse: 'Collapse',
       sd_expand: 'Expand',
+      view_storyboard: '🎬 Storyboard',
+      view_list: '📋 List',
       new_scene: '➕ New Scene',
       restore_draft: '↩ Restore Draft',
       no_draft: 'No draft saved yet.',
@@ -1646,6 +1664,8 @@
       sd_fit: '全体表示',
       sd_collapse: '折りたたむ',
       sd_expand: '展開',
+      view_storyboard: '🎬 ストーリーボード',
+      view_list: '📋 リスト',
       new_scene: '➕ 新規シーン',
       restore_draft: '↩ ドラフトを復元',
       no_draft: 'ドラフトはまだ保存されていません。',
@@ -5480,7 +5500,7 @@
         empty.innerHTML = `<p style="color:#475569;margin:0">No segments found. Generate a video first.</p><button class="btn sm" onclick="openModal(-1)" data-i18n-btn="btn_add_new_scene">${(I18N[window._appLang||'en']||I18N.en).btn_add_new_scene}</button>`;
         list.appendChild(empty);
         sdSegments = [];
-        try { renderSceneDock(); } catch {}
+        try { renderSceneDock(); applySceneViewMode(); } catch {}
         await refreshDraftStatus();
         return;
       }
@@ -5516,9 +5536,10 @@
       setAppLang(window._appLang || 'en');
       // Update global BGM button to reflect current scenes state
       refreshGlobalBgmBtn(segs);
-      // Update the docked scene strip
+      // Update the docked scene strip and re-apply the active view mode
       sdSegments = segs;
       try { renderSceneDock(); } catch (e) { console.warn('scene dock:', e); }
+      try { applySceneViewMode(); } catch (e) { console.warn('view mode:', e); }
       // Show the regenerate section now that scenes are loaded
       const scenesRerenderSection = document.getElementById('scenes-rerender-section');
       if (scenesRerenderSection) scenesRerenderSection.style.display = 'block';
@@ -9855,9 +9876,10 @@
     if (cBtn) { cBtn.textContent = collapsed ? '▴' : '▾'; cBtn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
 
     const total = sdSegments.reduce((s, seg) => s + Math.max(0.5, Number(seg.duration) || 5), 0);
+    const ADD_W = 34;  // room for the trailing add-scene tile
     const avail = Math.max(200, scroll.clientWidth - 4);
-    const pps = sdPPS || Math.max(2, Math.min(200, avail / total));
-    const totalWidth = Math.max(avail, Math.ceil(total * pps));
+    const pps = sdPPS || Math.max(2, Math.min(200, (avail - ADD_W) / total));
+    const totalWidth = Math.max(avail, Math.ceil(total * pps) + ADD_W);
 
     // Ruler: pick a label interval that keeps labels ~70px apart
     const intervals = [1, 2, 5, 10, 15, 30, 60, 120];
@@ -9877,9 +9899,10 @@
       const showNum = w >= 64;
       const showDur = w >= 96;
       const showLabel = w >= 34;
-      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div></div>`;
+      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div></div>`;
       curX += w;
     });
+    clipsHTML += `<div class="sd-add-tile" style="left:${curX + 4}px" onclick="openModal(-1)" title="${sdEsc(sdT().btn_add_new_scene || '+ Add scene')}">＋</div>`;
 
     canvas.style.width = totalWidth + 'px';
     canvas.innerHTML = `<div class="sd-ruler" style="width:${totalWidth}px">${rulerHTML}</div><div class="sd-clips" style="width:${totalWidth}px">${clipsHTML}</div>`;
@@ -9891,6 +9914,7 @@
   }
 
   function sdJump(i) {
+    if (getSceneViewMode() === 'storyboard') { sbSelect(i); return; }
     sdSetCurrent(i);
     const card = document.getElementById(`card-${i}`);
     if (!card) return;
@@ -9917,6 +9941,7 @@
 
   function sdSetupObserver() {
     sdObserver?.disconnect();
+    if (getSceneViewMode() === 'storyboard') return;  // selection drives the highlight, not scroll
     const cards = sdSegments.map((_, i) => document.getElementById(`card-${i}`)).filter(Boolean);
     if (!cards.length) return;
     const ratios = new Map();
@@ -9964,8 +9989,141 @@
 
   window.addEventListener('resize', () => {
     clearTimeout(sdResizeTimer);
-    sdResizeTimer = setTimeout(() => { if (sdSegments.length && !sdPPS) renderSceneDock(); }, 200);
+    sdResizeTimer = setTimeout(() => {
+      if (!sdSegments.length) return;
+      if (!sdPPS) renderSceneDock();
+      if (getSceneViewMode() === 'storyboard') sbApplySelection();
+    }, 200);
   });
+
+  /* ── Storyboard mode: selection model, view toggle, strip drag-reorder ── */
+  let sbSelectedIndex = 0;
+  let sdDragFrom = null;
+  let sdDropTarget = null;
+
+  function getSceneViewMode() {
+    return localStorage.getItem('scene-view-mode') || 'storyboard';
+  }
+
+  function setSceneViewMode(mode) {
+    localStorage.setItem('scene-view-mode', mode);
+    applySceneViewMode();
+  }
+
+  function applySceneViewMode() {
+    const panel = document.getElementById('tab-scenes');
+    if (!panel) return;
+    const storyboard = getSceneViewMode() === 'storyboard';
+    panel.classList.toggle('storyboard-mode', storyboard);
+    document.getElementById('view-btn-storyboard')?.classList.toggle('active', storyboard);
+    document.getElementById('view-btn-list')?.classList.toggle('active', !storyboard);
+    if (!sdSegments.length) return;
+    if (storyboard) {
+      sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
+      sbApplySelection();
+    } else {
+      document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
+      try { refreshGlowShadows(); } catch {}
+      sdSetupObserver();
+    }
+  }
+
+  function sbClearCardOverrides(card) {
+    card.classList.remove('sb-selected');
+    card.style.removeProperty('--thumb-w');
+    card.style.removeProperty('--thumb-h');
+  }
+
+  function sbApplySelection() {
+    document.querySelectorAll('#segments-list .segment-card').forEach(c => sbClearCardOverrides(c));
+    const card = document.getElementById(`card-${sbSelectedIndex}`);
+    if (!card) return;
+    card.classList.add('sb-selected');
+    // Enlarged preview: re-declare the thumb CSS vars on the selected card (preset-aware,
+    // all inner preview layers and font scaling follow automatically)
+    try {
+      const preset = getActiveVideoPreset();
+      const w = Math.max(200, Math.min(340, Math.round(window.innerWidth * 0.26)));
+      const h = Math.max(54, Math.round(w * preset.height / preset.width));
+      card.style.setProperty('--thumb-w', `${w}px`);
+      card.style.setProperty('--thumb-h', `${h}px`);
+    } catch {}
+    try { refreshGlowShadows(); } catch {}
+    sdObserver?.disconnect();
+    sdSetCurrent(sbSelectedIndex);
+  }
+
+  function sbSelect(i) {
+    if (i < 0 || i >= sdSegments.length) return;
+    sbSelectedIndex = i;
+    sbApplySelection();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function sdReorderScene(from, to) {
+    try {
+      const res = await fetch('/reorder-scene', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromIndex: from, toIndex: to })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        addEditorLog(`❌ ${data.error || 'Could not reorder scenes.'}`);
+        return;
+      }
+      addEditorLog(`🔄 Scene ${from + 1} → position ${to + 1}`);
+      sbSelectedIndex = to;
+      await loadSegments();
+    } catch (err) {
+      console.error('strip reorder:', err);
+    }
+  }
+
+  function sdStripDragCleanup() {
+    document.querySelectorAll('.sd-clip').forEach(c => c.classList.remove('sd-dragging', 'sd-drop-before', 'sd-drop-after'));
+    sdDragFrom = null;
+    sdDropTarget = null;
+  }
+
+  (function initStripDragDrop() {
+    document.addEventListener('dragstart', (e) => {
+      const clip = e.target.closest?.('.sd-clip');
+      if (!clip) return;
+      sdDragFrom = parseInt(clip.dataset.index, 10);
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', String(sdDragFrom)); } catch {}
+      requestAnimationFrame(() => clip.classList.add('sd-dragging'));
+    });
+    document.addEventListener('dragover', (e) => {
+      if (sdDragFrom === null) return;
+      const clip = e.target.closest?.('.sd-clip');
+      if (!clip) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const idx = parseInt(clip.dataset.index, 10);
+      const rect = clip.getBoundingClientRect();
+      const before = (e.clientX - rect.left) < rect.width / 2;
+      sdDropTarget = { index: idx, before };
+      document.querySelectorAll('.sd-clip').forEach(c => c.classList.remove('sd-drop-before', 'sd-drop-after'));
+      if (idx !== sdDragFrom) clip.classList.add(before ? 'sd-drop-before' : 'sd-drop-after');
+    });
+    document.addEventListener('drop', (e) => {
+      if (sdDragFrom === null || !e.target.closest?.('.sd-clip')) return;
+      e.preventDefault();
+      const from = sdDragFrom;
+      const target = sdDropTarget;
+      sdStripDragCleanup();
+      if (!target || target.index === from) return;
+      let to = target.before
+        ? (from < target.index ? target.index - 1 : target.index)
+        : (from < target.index ? target.index : target.index + 1);
+      to = Math.max(0, Math.min(to, sdSegments.length - 1));
+      if (to !== from) sdReorderScene(from, to);
+    });
+    document.addEventListener('dragend', sdStripDragCleanup);
+  })();
+
+  applySceneViewMode();
 
   // ──────────────────────────────────────────────────
   // VERSION BADGE
