@@ -11,6 +11,9 @@ public/voice-previews
 renders
 
 # User data — never back these up
+UserConfig.json
+recordings
+.server.pid
 src/Content.json
 src/ProjectDraft.json
 src/SceneDraftLibrary.json

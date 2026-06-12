@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "remotion studio",
     "factory": "node server.js",
-    "render": "node generate-audio.js && npx remotion render src/index.ts 1 --force --concurrency=1"
+    "render": "node generate-audio.js && npx remotion render src/index.ts 1 --force --concurrency=1",
+    "package": "zip -r ../video-generator.zip . -x '.git/*' -x 'renders/*' -x 'recordings/*' -x 'out/*' -x 'UserConfig.json' -x '.server.pid' -x '.DS_Store' -x '*/.DS_Store' -x 'public/voiceovers/*' -x 'public/voice-previews/*'",
+    "package:lite": "zip -r ../video-generator-lite.zip . -x '.git/*' -x 'node_modules/*' -x 'renders/*' -x 'recordings/*' -x 'out/*' -x 'UserConfig.json' -x '.server.pid' -x '.DS_Store' -x '*/.DS_Store' -x 'public/voiceovers/*' -x 'public/voice-previews/*'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

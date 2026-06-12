@@ -713,6 +713,26 @@
     .ptb-rot:active { cursor: grabbing; }
     .ptb-rot-line { position: absolute; left: 50%; top: -13px; width: 1.5px; height: 13px; background: #38bdf8; transform: translateX(-50%); }
     .ptb-dim { position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); font: 600 10px monospace; background: #0f172a; color: #7dd3fc; border: 1px solid #1e3a5f; border-radius: 4px; padding: 1px 7px; white-space: nowrap; pointer-events: none; }
+    /* ── First-run setup wizard ── */
+    .setup-overlay { position: fixed; inset: 0; z-index: 5000; background: rgba(2,6,23,0.88); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; }
+    .setup-confetti { position: absolute; inset: 0; pointer-events: none; }
+    .setup-card { position: relative; width: min(440px, calc(100vw - 48px)); background: var(--bg-card); border: 1px solid var(--border-mid); border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,0.55); padding: 36px 34px 30px; text-align: center; }
+    .setup-icon { font-size: 44px; line-height: 1; margin-bottom: 14px; }
+    .setup-title { font-size: 19px; font-weight: 800; color: var(--text); margin: 0 0 10px; line-height: 1.35; }
+    .setup-sub { font-size: 13px; color: var(--text-dim); line-height: 1.55; margin: 0 0 22px; }
+    .setup-input { width: 100%; box-sizing: border-box; background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: 10px; color: var(--text); font-size: 15px; padding: 11px 14px; margin-bottom: 14px; text-align: center; }
+    .setup-input:focus { outline: none; border-color: #38bdf8; }
+    .setup-input.bad { border-color: #ef4444; }
+    .setup-input.good { border-color: #22c55e; }
+    .setup-field-note { font-size: 11px; margin: -8px 0 12px; min-height: 14px; }
+    .setup-field-note.bad { color: #f87171; }
+    .setup-field-note.good { color: #4ade80; }
+    .setup-label { display: block; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-soft); margin: 0 2px 5px; }
+    .setup-btn { display: inline-block; background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 12px 30px; cursor: pointer; min-width: 200px; }
+    .setup-btn:hover { filter: brightness(1.1); }
+    .setup-btn:disabled { opacity: 0.45; cursor: default; filter: none; }
+    .setup-skip { display: block; margin-top: 16px; font-size: 11px; color: var(--text-dim); cursor: pointer; text-decoration: underline; background: none; border: none; }
+    .setup-skip:hover { color: var(--text-soft); }
     .sd-add-tile { position: absolute; top: 2px; bottom: 2px; width: 26px; border: 2px dashed var(--border-mid); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; font-size: 14px; box-sizing: border-box; }
     .sd-add-tile:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -1274,6 +1294,25 @@
       sd_share_note: 'Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.',
       sd_chan_text: 'Text',
       sd_chan_media: 'Media',
+      setup_welcome_title: 'Welcome. Ready to install the video generator?',
+      setup_welcome_sub: 'This takes about a minute. You will need the API keys your administrator gave you.',
+      setup_welcome_btn: "Yes, let's get started",
+      setup_skip: 'Skip for now',
+      setup_name_title: 'To get started, what is your name?',
+      setup_name_ph: 'Your name',
+      setup_continue: 'Continue',
+      setup_keys_title: 'Enter your API keys',
+      setup_keys_sub: 'Paste the two keys you were given. We will check they work before continuing.',
+      setup_pexels_label: 'Pexels API key',
+      setup_pixabay_label: 'Pixabay API key',
+      setup_verify_btn: 'Verify & continue',
+      setup_verifying: 'Checking keys…',
+      setup_key_ok: '✓ Key works',
+      setup_key_bad: "✗ This key doesn't work — check it and try again",
+      setup_key_missing: 'Please paste a key',
+      setup_done_title: 'Welcome to the video generator',
+      setup_done_sub: 'Everything is installed and saved. Have fun creating!',
+      setup_done_btn: 'Start creating →',
       view_storyboard: '🎬 Storyboard',
       view_list: '📋 List',
       new_scene: '➕ New Scene',
@@ -1739,6 +1778,25 @@
       sd_share_note: 'アプリ内から直接投稿するには TikTok / Instagram の開発者アプリ連携が必要です（未設定）。現在は動画をダウンロードして、開いたページにアップロードしてください。',
       sd_chan_text: 'テキスト',
       sd_chan_media: 'メディア',
+      setup_welcome_title: 'ようこそ。動画ジェネレーターをインストールしますか？',
+      setup_welcome_sub: '約1分で完了します。管理者から受け取ったAPIキーをご用意ください。',
+      setup_welcome_btn: 'はい、始めましょう',
+      setup_skip: '今はスキップ',
+      setup_name_title: 'はじめに、お名前を教えてください',
+      setup_name_ph: 'お名前',
+      setup_continue: '続ける',
+      setup_keys_title: 'APIキーを入力してください',
+      setup_keys_sub: '受け取った2つのキーを貼り付けてください。続行する前に動作を確認します。',
+      setup_pexels_label: 'Pexels APIキー',
+      setup_pixabay_label: 'Pixabay APIキー',
+      setup_verify_btn: '確認して続ける',
+      setup_verifying: 'キーを確認中…',
+      setup_key_ok: '✓ キーは有効です',
+      setup_key_bad: '✗ このキーは使えません — 確認してもう一度お試しください',
+      setup_key_missing: 'キーを貼り付けてください',
+      setup_done_title: '動画ジェネレーターへようこそ',
+      setup_done_sub: 'インストールと保存が完了しました。楽しく作りましょう！',
+      setup_done_btn: '作成を始める →',
       view_storyboard: '🎬 ストーリーボード',
       view_list: '📋 リスト',
       new_scene: '➕ 新規シーン',
@@ -2295,7 +2353,171 @@
         loadSegments();
       }
     }).catch(() => {});
+    checkFirstRunSetup();
   });
+
+  /* ── First-run setup wizard (name → API keys → confetti) ── */
+  let _setupConfettiStop = null;
+  let _setupName = '';
+
+  function setupT() { return (I18N[window._appLang || 'en'] || I18N.en); }
+
+  async function checkFirstRunSetup() {
+    try {
+      const st = await fetch('/setup-status').then(r => r.json());
+      if (st.needsSetup) showSetupWizard();
+    } catch {}
+  }
+
+  function showSetupWizard() {
+    if (document.getElementById('setup-overlay')) return;
+    const ov = document.createElement('div');
+    ov.className = 'setup-overlay';
+    ov.id = 'setup-overlay';
+    ov.innerHTML = `<canvas class="setup-confetti" id="setup-confetti"></canvas><div class="setup-card" id="setup-card"></div>`;
+    document.body.appendChild(ov);
+    setupStep1();
+  }
+
+  function setupStep1() {
+    const t = setupT();
+    document.getElementById('setup-card').innerHTML = `
+      <div class="setup-icon">🎬</div>
+      <h2 class="setup-title">${t.setup_welcome_title}</h2>
+      <p class="setup-sub">${t.setup_welcome_sub}</p>
+      <button class="setup-btn" onclick="setupStep2()">${t.setup_welcome_btn}</button>
+      <button class="setup-skip" onclick="closeSetupWizard()">${t.setup_skip}</button>`;
+  }
+
+  function setupStep2() {
+    const t = setupT();
+    document.getElementById('setup-card').innerHTML = `
+      <div class="setup-icon">👋</div>
+      <h2 class="setup-title">${t.setup_name_title}</h2>
+      <input class="setup-input" id="setup-name" maxlength="60" placeholder="${t.setup_name_ph}" autocomplete="off" />
+      <button class="setup-btn" id="setup-name-btn" onclick="setupStep3()" disabled>${t.setup_continue}</button>`;
+    const inp = document.getElementById('setup-name');
+    inp.addEventListener('input', () => { document.getElementById('setup-name-btn').disabled = !inp.value.trim(); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.trim()) setupStep3(); });
+    inp.focus();
+  }
+
+  function setupStep3() {
+    _setupName = document.getElementById('setup-name')?.value.trim() || _setupName;
+    const t = setupT();
+    document.getElementById('setup-card').innerHTML = `
+      <div class="setup-icon">🔑</div>
+      <h2 class="setup-title">${t.setup_keys_title}</h2>
+      <p class="setup-sub">${t.setup_keys_sub}</p>
+      <label class="setup-label">${t.setup_pexels_label}</label>
+      <input class="setup-input" id="setup-pexels" autocomplete="off" spellcheck="false" />
+      <div class="setup-field-note" id="setup-pexels-note"></div>
+      <label class="setup-label">${t.setup_pixabay_label}</label>
+      <input class="setup-input" id="setup-pixabay" autocomplete="off" spellcheck="false" />
+      <div class="setup-field-note" id="setup-pixabay-note"></div>
+      <button class="setup-btn" id="setup-verify-btn" onclick="setupVerifyKeys()">${t.setup_verify_btn}</button>`;
+    document.getElementById('setup-pexels').focus();
+  }
+
+  async function setupVerifyKeys() {
+    const t = setupT();
+    const pexelsKey = document.getElementById('setup-pexels').value.trim();
+    const pixabayKey = document.getElementById('setup-pixabay').value.trim();
+    const note = (id, ok, msg) => {
+      const inp = document.getElementById(`setup-${id}`);
+      const n = document.getElementById(`setup-${id}-note`);
+      if (!inp || !n) return;
+      inp.classList.toggle('good', ok === true);
+      inp.classList.toggle('bad', ok === false);
+      n.className = 'setup-field-note ' + (ok ? 'good' : 'bad');
+      n.textContent = msg;
+    };
+    if (!pexelsKey || !pixabayKey) {
+      if (!pexelsKey) note('pexels', false, t.setup_key_missing);
+      if (!pixabayKey) note('pixabay', false, t.setup_key_missing);
+      return;
+    }
+    const btn = document.getElementById('setup-verify-btn');
+    btn.disabled = true;
+    btn.textContent = t.setup_verifying;
+    try {
+      const r = await fetch('/setup-validate-keys', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pexelsKey, pixabayKey })
+      }).then(res => res.json());
+      note('pexels', r.pexels, r.pexels ? t.setup_key_ok : t.setup_key_bad);
+      note('pixabay', r.pixabay, r.pixabay ? t.setup_key_ok : t.setup_key_bad);
+      if (r.pexels && r.pixabay) {
+        await fetch('/setup-complete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userName: _setupName, pexelsKey, pixabayKey })
+        });
+        setupStep4();
+        return;
+      }
+    } catch (err) {
+      note('pexels', false, err.message || 'Network error');
+    }
+    btn.disabled = false;
+    btn.textContent = t.setup_verify_btn;
+  }
+
+  function setupStep4() {
+    const t = setupT();
+    document.getElementById('setup-card').innerHTML = `
+      <div class="setup-icon">🎉</div>
+      <h2 class="setup-title">${t.setup_done_title}${_setupName ? ', ' + escapeHtml(_setupName) : ''}!</h2>
+      <p class="setup-sub">${t.setup_done_sub}</p>
+      <button class="setup-btn" onclick="closeSetupWizard()">${t.setup_done_btn}</button>`;
+    const canvas = document.getElementById('setup-confetti');
+    if (canvas) _setupConfettiStop = startSetupConfetti(canvas);
+  }
+
+  function closeSetupWizard() {
+    if (_setupConfettiStop) { _setupConfettiStop(); _setupConfettiStop = null; }
+    document.getElementById('setup-overlay')?.remove();
+  }
+
+  // Lightweight confetti (confetti-js style): fluttering paper pieces falling continuously
+  function startSetupConfetti(canvas) {
+    const ctx = canvas.getContext('2d');
+    const colors = ['#38bdf8', '#f472b6', '#facc15', '#4ade80', '#a78bfa', '#fb923c'];
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const parts = [];
+    for (let n = 0; n < 150; n++) {
+      parts.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height,
+        w: 6 + Math.random() * 6,
+        h: 9 + Math.random() * 8,
+        vy: 1.2 + Math.random() * 2.4,
+        vx: -0.8 + Math.random() * 1.6,
+        rot: Math.random() * Math.PI,
+        vr: -0.08 + Math.random() * 0.16,
+        color: colors[n % colors.length],
+      });
+    }
+    let raf;
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of parts) {
+        p.y += p.vy;
+        p.x += p.vx + Math.sin(p.y / 28);
+        p.rot += p.vr;
+        if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }
 
   /* ── Restore theme + lang on load ── */
   (function initPrefs() {

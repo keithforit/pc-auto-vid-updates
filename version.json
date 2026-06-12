@@ -1,9 +1,12 @@
 {
-  "version": "1.4.15",
+  "version": "1.4.16",
   "date": "2026-06-12",
-  "notes": "New: transform box in the scene preview — click the caption, an extra text, an image overlay or a shape to get corner handles for resizing and a rotate handle (Shift = 15° steps). Shows when the preview is 250px or wider; changes save automatically and flow into the final render",
+  "notes": "New: first-run setup wizard — welcome screen, asks your name, validates your Pexels/Pixabay API keys against the live APIs, saves everything to UserConfig.json and celebrates with confetti. Plus npm run package / package:lite scripts to build a distributable zip",
   "files": [
     "index.html",
+    "server.js",
+    "package.json",
+    ".gitignore",
     "version.json"
   ]
 }

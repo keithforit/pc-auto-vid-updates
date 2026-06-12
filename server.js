@@ -98,6 +98,17 @@ function writeJsonFile(filePath, value) {
     fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
+// ── First-run user config (name + API keys, written by the setup wizard) ──
+const USER_CONFIG_PATH = './UserConfig.json';
+function readUserConfig() {
+    return readJsonFile(USER_CONFIG_PATH, {});
+}
+// Wizard-entered keys win; environment variables remain as a fallback for dev setups
+function getUserApiKey(field, envName) {
+    const cfg = readUserConfig();
+    return String(cfg[field] || '').trim() || process.env[envName] || '';
+}
+
 function mapSceneDraftIndices(mapper) {
     const current = readJsonFile(SCENE_DRAFTS_PATH, {});
     const next = {};
@@ -476,7 +487,7 @@ async function downloadVideo(url) {
 // Replace the video for one segment by searching Pexels with a new query
 app.post('/replace-video', async (req, res) => {
     const { index, query } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    const PEXELS_API_KEY = getUserApiKey('pexelsApiKey', 'PEXELS_API_KEY');
     try {
         const axios = require('axios');
         const result = await axios.get(
@@ -504,7 +515,7 @@ app.post('/replace-video', async (req, res) => {
 // Replace the background for one segment by fetching a specific Pexels video OR photo page URL
 app.post('/replace-video-by-url', async (req, res) => {
     const { index, url } = req.body;
-    const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+    const PEXELS_API_KEY = getUserApiKey('pexelsApiKey', 'PEXELS_API_KEY');
     try {
         const axios = require('axios');
         const videoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
@@ -572,7 +583,7 @@ app.post('/replace-video-by-url', async (req, res) => {
 // Search Pixabay for a video and download it
 app.post('/replace-video-pixabay', async (req, res) => {
     const { index, query } = req.body;
-    const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+    const PIXABAY_API_KEY = getUserApiKey('pixabayApiKey', 'PIXABAY_API_KEY');
     try {
         const axios = require('axios');
         const result = await axios.get(
@@ -603,7 +614,7 @@ app.post('/replace-video-pixabay', async (req, res) => {
 // Supports URLs like: https://pixabay.com/videos/radio-tower-night-view-211067/
 app.post('/replace-video-pixabay-url', async (req, res) => {
     const { index, url } = req.body;
-    const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+    const PIXABAY_API_KEY = getUserApiKey('pixabayApiKey', 'PIXABAY_API_KEY');
     try {
         const axios = require('axios');
         // Extract the numeric ID from the end of the URL slug, e.g. "211067"
@@ -1276,6 +1287,56 @@ app.get('/renders-list', (req, res) => {
             .sort((a, b) => b.mtime - a.mtime);
         res.json(files);
     } catch (e) { res.json([]); }
+});
+
+// ── First-run setup wizard ──
+app.get('/setup-status', (req, res) => {
+    const cfg = readUserConfig();
+    const envKeys = !!(process.env.PEXELS_API_KEY && process.env.PIXABAY_API_KEY);
+    res.json({
+        needsSetup: !cfg.setupCompletedAt && !envKeys,
+        userName: cfg.userName || '',
+    });
+});
+
+// Test the entered keys against the real APIs so the wizard only accepts working ones
+app.post('/setup-validate-keys', async (req, res) => {
+    const axios = require('axios');
+    const pexelsKey = String(req.body.pexelsKey || '').trim();
+    const pixabayKey = String(req.body.pixabayKey || '').trim();
+    const result = { pexels: false, pixabay: false };
+    // Unique query each time: Pexels sits behind a CDN that serves cached 200s for repeated
+    // URLs regardless of the Authorization header — only a cache miss reaches the auth check.
+    const bust = Date.now();
+    if (pexelsKey) {
+        try {
+            const r = await axios.get(`https://api.pexels.com/videos/search?query=nature%20${bust}&per_page=1`, {
+                headers: { Authorization: pexelsKey }, timeout: 12000, validateStatus: () => true,
+            });
+            result.pexels = r.status === 200;
+        } catch {}
+    }
+    if (pixabayKey) {
+        try {
+            const r = await axios.get(`https://pixabay.com/api/?key=${encodeURIComponent(pixabayKey)}&q=nature%20${bust}&per_page=3`, {
+                timeout: 12000, validateStatus: () => true,
+            });
+            result.pixabay = r.status === 200;
+        } catch {}
+    }
+    res.json(result);
+});
+
+app.post('/setup-complete', (req, res) => {
+    try {
+        const cfg = readUserConfig();
+        cfg.userName = String(req.body.userName || '').trim().slice(0, 60);
+        cfg.pexelsApiKey = String(req.body.pexelsKey || '').trim();
+        cfg.pixabayApiKey = String(req.body.pixabayKey || '').trim();
+        cfg.setupCompletedAt = new Date().toISOString();
+        writeJsonFile(USER_CONFIG_PATH, cfg);
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Set a static colour or gradient background on a segment
