@@ -1,7 +1,7 @@
 {
-  "version": "1.4.9",
-  "date": "2026-06-11",
-  "notes": "Fix framing Scale/X/Y not visually updating thumbnail — switch from CSS transform to absolute positioning",
+  "version": "1.4.10",
+  "date": "2026-06-12",
+  "notes": "New: docked scene timeline strip at the bottom of the Scenes tab — whole-video overview with proportional blocks, click a block to jump to its scene card, scroll-spy highlight, zoom/fit controls, collapsible, EN/JA",
   "files": [
     "index.html",
     "version.json"
