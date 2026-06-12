@@ -1,7 +1,7 @@
 {
-  "version": "1.4.12",
+  "version": "1.4.13",
   "date": "2026-06-12",
-  "notes": "Fix: default tab is now Text to Video on fresh load; Scenes tab pre-loads existing scenes without needing a manual refresh",
+  "notes": "New: drag the right edge of a block in the bottom timeline to change scene length — live ripple preview, duration readout at the cursor, and a lock at the narration floor so voice audio is never cut off",
   "files": [
     "index.html",
     "version.json"
