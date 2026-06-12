@@ -1257,6 +1257,27 @@ app.post('/update-scene-duration', (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// List rendered videos (newest first) for the download/share popovers
+app.get('/renders-list', (req, res) => {
+    try {
+        const dir = path.join(__dirname, 'renders');
+        if (!fs.existsSync(dir)) return res.json([]);
+        const files = fs.readdirSync(dir)
+            .filter(f => f.toLowerCase().endsWith('.mp4'))
+            .map(f => {
+                const st = fs.statSync(path.join(dir, f));
+                return {
+                    name: f,
+                    mtime: st.mtimeMs,
+                    sizeMB: (st.size / 1048576).toFixed(1),
+                    date: new Date(st.mtimeMs).toISOString().slice(0, 10),
+                };
+            })
+            .sort((a, b) => b.mtime - a.mtime);
+        res.json(files);
+    } catch (e) { res.json([]); }
+});
+
 // Set a static colour or gradient background on a segment
 app.post('/set-background-style', (req, res) => {
     try {

@@ -681,6 +681,27 @@
     .sd-clip.sd-resizing.sd-at-floor { border-color: #f59e0b; }
     #sd-resize-tip { position: fixed; z-index: 2000; background: #0f172a; color: #e2e8f0; border: 1px solid #38bdf8; border-radius: 6px; padding: 3px 9px; font-size: 12px; font-weight: 600; font-family: monospace; pointer-events: none; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.45); }
     #sd-resize-tip.at-floor { border-color: #f59e0b; color: #fbbf24; }
+    /* ── Expanded channel view + player ── */
+    .scene-dock.expanded .sd-scroll { overflow-y: auto; max-height: min(46vh, 380px); }
+    .sd-chan { position: relative; height: 24px; margin-top: 3px; background: rgba(148,163,184,0.06); border-radius: 5px; }
+    .sd-chan-label { position: sticky; left: 2px; display: inline-block; font-size: 9px; font-weight: 700; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-top: 3px; z-index: 5; pointer-events: none; white-space: nowrap; }
+    .sd-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: 0.88; }
+    .sd-bar:hover { opacity: 1; box-shadow: 0 0 0 1px rgba(255,255,255,0.5) inset; }
+    .sd-bar-lbl { font-size: 9px; color: #fff; padding: 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-family: monospace; }
+    .sd-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #f87171; z-index: 30; pointer-events: none; }
+    .sd-playhead-head { position: absolute; top: 0; left: -5px; width: 12px; height: 11px; background: #f87171; border-radius: 2px 2px 6px 6px; }
+    .sd-play-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 3px 14px; font-size: 14px; cursor: pointer; line-height: 1.3; font-weight: 700; }
+    .sd-play-btn:hover { border-color: #38bdf8; color: #38bdf8; }
+    .sd-play-btn.playing { background: #38bdf8; color: #04121f; border-color: #38bdf8; }
+    .sd-timecode { font-size: 12px; font-family: monospace; color: var(--text-soft); min-width: 96px; text-align: center; white-space: nowrap; }
+    /* ── Download / Share popovers ── */
+    .sd-pop { position: absolute; bottom: calc(100% + 8px); right: 8px; z-index: 950; width: 320px; max-height: 340px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-mid); border-radius: 12px; box-shadow: 0 10px 34px rgba(0,0,0,0.5); padding: 12px; }
+    .sd-pop h4 { margin: 0 0 8px; font-size: 13px; color: var(--text); }
+    .sd-pop .sd-pop-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin: 6px 0; }
+    .sd-pop-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; text-decoration: none; color: var(--text-soft); font-size: 12px; cursor: pointer; background: var(--bg-input); }
+    .sd-pop-item:hover { border-color: var(--accent); color: var(--text); }
+    .sd-pop-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sd-pop-item .dim { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
     .sd-add-tile { position: absolute; top: 2px; bottom: 2px; width: 26px; border: 2px dashed var(--border-mid); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; font-size: 14px; box-sizing: border-box; }
     .sd-add-tile:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -829,12 +850,17 @@
     <!-- Docked scene strip: whole-video overview, click a block to jump to its card -->
     <div id="scene-dock" class="scene-dock" style="display:none">
       <div class="sd-header">
+        <button class="sd-play-btn" id="sd-play-btn" onclick="sdPlayToggle()" data-i18n="sd_play" data-i18n-attr="title" title="Play the whole video">▶</button>
+        <span class="sd-timecode" id="sd-timecode">0.0s / 0.0s</span>
         <span class="sd-title" data-i18n="sd_timeline">🎞 Timeline</span>
         <span class="sd-meta" id="sd-meta"></span>
         <span style="flex:1"></span>
+        <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video">⬇</button>
+        <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share">📤</button>
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" title="Zoom out">−</button>
         <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
         <button class="sd-zoom-btn" onclick="sdZoom(1)" title="Zoom in">＋</button>
+        <button class="sd-zoom-btn" id="sd-expand-btn" onclick="sdToggleExpand()" data-i18n="sd_channels" data-i18n-attr="title" title="Expand into channels">🎚</button>
         <button class="sd-zoom-btn" id="sd-collapse-btn" onclick="sdToggleCollapse()" title="Collapse">▾</button>
       </div>
       <div class="sd-body">
@@ -1223,6 +1249,20 @@
       sd_collapse: 'Collapse',
       sd_expand: 'Expand',
       sd_resize_tip: 'Drag to change scene length',
+      sd_play: 'Play the whole video',
+      sd_channels: 'Expand into channels',
+      sd_download: 'Download rendered video',
+      sd_share: 'Share',
+      sd_download_title: 'Download rendered videos',
+      sd_no_renders: 'No rendered videos yet. Render from the Text to Video tab first.',
+      sd_render_hint: 'New renders are created from the Text to Video tab.',
+      sd_share_title: 'Share',
+      sd_share_latest: 'Download latest render',
+      sd_share_tiktok: 'Open TikTok Studio upload',
+      sd_share_instagram: 'Open Instagram',
+      sd_share_note: 'Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.',
+      sd_chan_text: 'Text',
+      sd_chan_media: 'Media',
       view_storyboard: '🎬 Storyboard',
       view_list: '📋 List',
       new_scene: '➕ New Scene',
@@ -1674,6 +1714,20 @@
       sd_collapse: '折りたたむ',
       sd_expand: '展開',
       sd_resize_tip: 'ドラッグしてシーンの長さを変更',
+      sd_play: '動画全体を再生',
+      sd_channels: 'チャンネル表示に拡大',
+      sd_download: 'レンダリング済み動画をダウンロード',
+      sd_share: '共有',
+      sd_download_title: 'レンダリング済み動画をダウンロード',
+      sd_no_renders: 'レンダリング済みの動画がまだありません。先に「テキストから動画」タブでレンダリングしてください。',
+      sd_render_hint: '新しいレンダリングは「テキストから動画」タブから作成します。',
+      sd_share_title: '共有',
+      sd_share_latest: '最新レンダリングをダウンロード',
+      sd_share_tiktok: 'TikTok Studio アップロードを開く',
+      sd_share_instagram: 'Instagram を開く',
+      sd_share_note: 'アプリ内から直接投稿するには TikTok / Instagram の開発者アプリ連携が必要です（未設定）。現在は動画をダウンロードして、開いたページにアップロードしてください。',
+      sd_chan_text: 'テキスト',
+      sd_chan_media: 'メディア',
       view_storyboard: '🎬 ストーリーボード',
       view_list: '📋 リスト',
       new_scene: '➕ 新規シーン',
@@ -9847,6 +9901,9 @@
   let sdCurrentIndex = -1;
   let sdResizeState = null;    // active right-edge drag-resize gesture
   let sdResizeClickGuard = false; // swallow the click that fires right after a resize drag
+  let sdExpanded = localStorage.getItem('sd-expanded-channels') === '1';
+  let sdPlayheadTime = 0;
+  const sdPlay = { playing: false, raf: null, lastTs: 0, voice: null, bgm: null, scene: -1 };
   let sdResizeTimer = null;
 
   function sdT() { return I18N[window._appLang || 'en'] || I18N.en; }
@@ -9886,9 +9943,11 @@
       return;
     }
     dock.style.display = 'block';
-    if (panel) panel.style.paddingBottom = '130px';
     const collapsed = localStorage.getItem('sd-collapsed') === '1';
     dock.classList.toggle('collapsed', collapsed);
+    dock.classList.toggle('expanded', sdExpanded);
+    const xBtn = document.getElementById('sd-expand-btn');
+    if (xBtn) xBtn.style.background = sdExpanded ? '#38bdf8' : '';
     const cBtn = document.getElementById('sd-collapse-btn');
     if (cBtn) { cBtn.textContent = collapsed ? '▴' : '▾'; cBtn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
 
@@ -9923,16 +9982,75 @@
     clipsHTML += `<div class="sd-add-tile" style="left:${curX + 4}px" onclick="openModal(-1)" title="${sdEsc(sdT().btn_add_new_scene || '+ Add scene')}">＋</div>`;
 
     canvas.style.width = totalWidth + 'px';
-    canvas.innerHTML = `<div class="sd-ruler" style="width:${totalWidth}px">${rulerHTML}</div><div class="sd-clips" style="width:${totalWidth}px">${clipsHTML}</div>`;
+    const channelsHTML = sdExpanded ? sdChannelsHTML(totalWidth, pps) : '';
+    const phX = Math.round(Math.max(0, Math.min(total, sdPlayheadTime)) * pps);
+    canvas.innerHTML = `<div class="sd-ruler" style="width:${totalWidth}px">${rulerHTML}</div><div class="sd-clips" style="width:${totalWidth}px">${clipsHTML}</div>${channelsHTML}<div class="sd-playhead" id="sd-playhead" style="left:${phX}px"><div class="sd-playhead-head"></div></div>`;
 
     const meta = document.getElementById('sd-meta');
     if (meta) meta.textContent = `${total.toFixed(1)}s · ${sdSegments.length} ${sdT().sd_scenes || 'scenes'}`;
+    sdUpdatePlayheadDOM();
+
+    // Reserve exactly the dock's height below the scene cards
+    if (panel) panel.style.paddingBottom = (dock.offsetHeight + 24) + 'px';
 
     sdSetupObserver();
   }
 
+  // Channel rows for the expanded view — every scene's layers at their global offsets
+  function sdChannelsHTML(totalWidth, pps) {
+    const t = sdT();
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    let voice = '', text = '', media = '', sfx = '';
+    let hasMedia = false, hasSfx = false;
+    let x = 0;
+    sdSegments.forEach((seg, i) => {
+      const dur = Math.max(0.5, Number(seg.duration) || 5);
+      const px = s => s * pps;
+      const jump = `onclick="sdJump(${i})"`;
+      const aDur = Number(seg.audioDuration);
+      if (Number.isFinite(aDur) && aDur > 0) {
+        const clipped = aDur > dur + 0.01;
+        voice += `<div class="sd-bar" style="left:${x + 1}px;width:${Math.max(4, px(Math.min(aDur, dur)) - 2)}px;background:${clipped ? '#dc2626' : '#2563eb'}" ${jump} title="#${i + 1} ${t.voice_label || 'Voice'} ${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}"><span class="sd-bar-lbl">${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}</span></div>`;
+      }
+      if ((seg.text || '').trim()) {
+        const s = clamp(Number(seg.mainTextStartAt) || 0, 0, dur);
+        const e = (seg.mainTextEndAt != null && seg.mainTextEndAt !== '' && !isNaN(Number(seg.mainTextEndAt))) ? clamp(Number(seg.mainTextEndAt), s, dur) : dur;
+        text += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#10b981" ${jump} title="#${i + 1} ${sdEsc(seg.text)}"><span class="sd-bar-lbl">${sdEsc(seg.text)}</span></div>`;
+      }
+      (seg.extraTexts || []).forEach(et => {
+        const s = clamp(Number(et?.startAt) || 0, 0, dur);
+        const e = (et?.endAt != null && et.endAt !== '' && !isNaN(Number(et.endAt))) ? clamp(Number(et.endAt), s, dur) : dur;
+        text += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#14b8a6;top:14px;height:7px;bottom:auto" ${jump} title="#${i + 1} ${sdEsc(et?.text || '')}"></div>`;
+      });
+      const mediaItems = [
+        ...(seg.overlayImages || []).map(o => ({ ...o, color: '#a855f7', icon: '🖼' })),
+        ...(seg.overlayVideos || []).map(o => ({ ...o, color: '#7c3aed', icon: '🎞' })),
+        ...(seg.overlayShapes || []).map(o => ({ ...o, color: '#f59e0b', icon: '⬛' })),
+      ];
+      mediaItems.forEach(o => {
+        hasMedia = true;
+        const s = clamp(Number(o?.startAt) || 0, 0, dur);
+        const e = (o?.endAt != null && o.endAt !== '' && !isNaN(Number(o.endAt))) ? clamp(Number(o.endAt), s, dur) : dur;
+        media += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:${o.color}" ${jump} title="#${i + 1} ${o.icon}"><span class="sd-bar-lbl">${o.icon}</span></div>`;
+      });
+      if (seg.soundEffect && (seg.soundEffect.file || seg.soundEffect.src)) {
+        hasSfx = true;
+        const s = clamp(Number(seg.soundEffect.startAt) || 0, 0, dur);
+        const e = (seg.soundEffect.endAt != null && !isNaN(Number(seg.soundEffect.endAt))) ? clamp(Number(seg.soundEffect.endAt), s, dur) : dur;
+        sfx += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#ec4899" ${jump} title="#${i + 1} SFX"><span class="sd-bar-lbl">SFX</span></div>`;
+      }
+      x += px(dur);
+    });
+    const row = (label, bars) => `<div class="sd-chan" style="width:${totalWidth}px"><span class="sd-chan-label">${label}</span>${bars}</div>`;
+    let html = row(`🎙 ${t.voice_label || 'Voice'}`, voice) + row(`💬 ${t.sd_chan_text || 'Text'}`, text);
+    if (hasMedia) html += row(`🎨 ${t.sd_chan_media || 'Media'}`, media);
+    if (hasSfx) html += row(`🔊 SFX`, sfx);
+    return html;
+  }
+
   function sdJump(i) {
     if (sdResizeClickGuard) return;  // click generated by a resize drag, not a real selection
+    if (sdPlay.playing) sdPause();   // clicking a scene means "let me edit it"
     if (getSceneViewMode() === 'storyboard') { sbSelect(i); return; }
     sdSetCurrent(i);
     const card = document.getElementById(`card-${i}`);
@@ -10109,7 +10227,245 @@
     if (!collapsed) renderSceneDock();
     const btn = document.getElementById('sd-collapse-btn');
     if (btn) { btn.textContent = collapsed ? '▴' : '▾'; btn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
+    const panel = document.getElementById('tab-scenes');
+    if (panel) panel.style.paddingBottom = (dock.offsetHeight + 24) + 'px';
   }
+
+  function sdToggleExpand() {
+    sdExpanded = !sdExpanded;
+    localStorage.setItem('sd-expanded-channels', sdExpanded ? '1' : '0');
+    if (sdExpanded) localStorage.setItem('sd-collapsed', '0');  // expanding implies open
+    renderSceneDock();
+  }
+
+  /* ──────────────── DOCK PLAYER: watch the whole video ──────────────── */
+  function sdTotalDur() {
+    return sdSegments.reduce((s, seg) => s + Math.max(0.5, Number(seg.duration) || 5), 0);
+  }
+
+  function sdSceneAtTime(time) {
+    let acc = 0;
+    for (let i = 0; i < sdSegments.length; i++) {
+      const d = Math.max(0.5, Number(sdSegments[i].duration) || 5);
+      if (time < acc + d) return { index: i, offset: time - acc };
+      acc += d;
+    }
+    const last = Math.max(0, sdSegments.length - 1);
+    return { index: last, offset: Math.max(0.5, Number(sdSegments[last]?.duration) || 5) };
+  }
+
+  function sdUpdatePlayheadDOM() {
+    const ph = document.getElementById('sd-playhead');
+    if (ph) ph.style.left = Math.round(Math.max(0, sdPlayheadTime) * sdEffPPS) + 'px';
+    const tc = document.getElementById('sd-timecode');
+    if (tc) tc.textContent = `${sdPlayheadTime.toFixed(1)}s / ${sdTotalDur().toFixed(1)}s`;
+    const scroll = document.getElementById('sd-scroll');
+    if (sdPlay.playing && scroll && scroll.scrollWidth > scroll.clientWidth) {
+      const x = sdPlayheadTime * sdEffPPS;
+      if (x < scroll.scrollLeft + 30 || x > scroll.scrollLeft + scroll.clientWidth - 40) {
+        scroll.scrollLeft = Math.max(0, x - 60);
+      }
+    }
+  }
+
+  function sdPause() {
+    if (!sdPlay.playing) return;
+    sdPlay.playing = false;
+    if (sdPlay.raf) cancelAnimationFrame(sdPlay.raf);
+    sdPlay.raf = null;
+    try { sdPlay.voice?.pause(); } catch {}
+    try { sdPlay.bgm?.pause(); } catch {}
+    const btn = document.getElementById('sd-play-btn');
+    if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+  }
+
+  async function sdPlayToggle() {
+    if (sdPlay.playing) { sdPause(); return; }
+    if (!sdSegments.length) return;
+    if (getSceneViewMode() !== 'storyboard') setSceneViewMode('storyboard');  // watching uses the big preview
+    stopThumbnailAudioPreview();
+    stopSceneSfxPreview();
+    stopAudioElement(currentVoicePreviewAudio); currentVoicePreviewAudio = null; _restoreVoicePreviewButton();
+    if (sdPlayheadTime >= sdTotalDur() - 0.05) sdPlayheadTime = 0;
+    const btn = document.getElementById('sd-play-btn');
+    if (btn) { btn.textContent = '⏸'; btn.classList.add('playing'); }
+    sdPlay.playing = true;
+    // One continuous background-music bed across scenes, like the final render
+    if (!sdPlay.bgm) {
+      try {
+        await ensureCurrentSettingsLoaded();
+        const bgs = getBackgroundMusicSettingsSnapshot();
+        if (bgs.backgroundMusicRandom !== false) await ensureMusicFilesLoaded();
+        const bgmFile = getSelectedBackgroundMusicFilenameFromSettings(bgs);
+        if (bgmFile) {
+          const bgm = new Audio(`/public/music/${encodeURIComponent(bgmFile)}`);
+          bgm.loop = true;
+          bgm.preload = 'auto';
+          sdPlay.bgm = bgm;
+        }
+      } catch {}
+    }
+    const { index, offset } = sdSceneAtTime(sdPlayheadTime);
+    await sdEnterScene(index, offset);
+    if (sdPlay.bgm) { try { await sdPlay.bgm.play(); } catch {} }
+    sdPlay.lastTs = performance.now();
+    sdPlay.raf = requestAnimationFrame(sdTick);
+  }
+
+  async function sdEnterScene(i, offset = 0) {
+    sdPlay.scene = i;
+    const seg = sdSegments[i] || {};
+    if (getSceneViewMode() === 'storyboard') sbSelect(i); else sdSetCurrent(i);
+    // Restart the scene's preview animations so text/overlays replay like the render
+    try {
+      const sceneEl = document.getElementById(`scene-preview-${i}`);
+      applyScenePreviewAnimation(i, sceneEl?.dataset.sceneAnimation || 'static', true, true);
+      applyTextPreviewAnimation(i, true, true);
+      updateExtraTextPreviewAll(i);
+      refreshOverlayPreview(i, true, true);
+      updateShapePreviewAll(i, null, true);
+    } catch {}
+    // Background video: jump to clip start + scene offset
+    const v = document.getElementById(`thumb-${i}`);
+    if (v && v.tagName === 'VIDEO') {
+      try {
+        v.currentTime = (v._clipStart || 0) + offset;
+        if (sdPlay.playing) v.play().catch(() => {});
+      } catch {}
+    }
+    // Voice track for this scene
+    if (sdPlay.voice) { stopAudioElement(sdPlay.voice); sdPlay.voice = null; }
+    const aDur = Number(seg.audioDuration);
+    if (seg.audioFile && Number.isFinite(aDur) && aDur > 0 && offset < aDur) {
+      const voice = new Audio(`/public/voiceovers/${encodeURIComponent(seg.audioFile)}`);
+      voice.preload = 'auto';
+      try { voice.volume = getVoicePreviewVolume(i, false); } catch { voice.volume = 1; }
+      if (offset > 0.05) {
+        voice.addEventListener('loadedmetadata', () => { try { voice.currentTime = offset; } catch {} }, { once: true });
+        try { voice.currentTime = offset; } catch {}
+      }
+      sdPlay.voice = voice;
+      if (sdPlay.playing) { try { await voice.play(); } catch {} }
+    }
+    // Per-scene music on/off and level
+    if (sdPlay.bgm) {
+      let vol = 0;
+      try { vol = getSceneBgmEnabled(i) ? getSceneBgmPreviewVolume(i, false) : 0; } catch { vol = 0.3; }
+      sdPlay.bgm.volume = vol;
+    }
+  }
+
+  function sdTick(ts) {
+    if (!sdPlay.playing) return;
+    const dt = Math.min(0.25, (ts - sdPlay.lastTs) / 1000);
+    sdPlay.lastTs = ts;
+    sdPlayheadTime += dt;
+    const total = sdTotalDur();
+    if (sdPlayheadTime >= total) {
+      sdPlayheadTime = total;
+      sdUpdatePlayheadDOM();
+      sdPause();
+      stopAudioElement(sdPlay.voice); sdPlay.voice = null;
+      try { sdPlay.bgm?.pause(); } catch {}
+      return;
+    }
+    const { index, offset } = sdSceneAtTime(sdPlayheadTime);
+    if (index !== sdPlay.scene) sdEnterScene(index, offset);
+    sdUpdatePlayheadDOM();
+    sdPlay.raf = requestAnimationFrame(sdTick);
+  }
+
+  function sdSeekTo(time) {
+    sdPlayheadTime = Math.max(0, Math.min(sdTotalDur(), time));
+    const { index, offset } = sdSceneAtTime(sdPlayheadTime);
+    if (sdPlay.playing) {
+      sdEnterScene(index, offset);
+    } else {
+      if (getSceneViewMode() === 'storyboard') { if (index !== sbSelectedIndex) sbSelect(index); }
+      else sdSetCurrent(index);
+      const v = document.getElementById(`thumb-${index}`);
+      if (v && v.tagName === 'VIDEO') { try { v.currentTime = (v._clipStart || 0) + offset; } catch {} }
+    }
+    sdUpdatePlayheadDOM();
+  }
+
+  // Scrub by pressing on empty canvas or the ruler (bound once — #sd-canvas persists across renders)
+  (function sdInitScrub() {
+    const canvas = document.getElementById('sd-canvas');
+    if (!canvas) return;
+    let scrubbing = false;
+    const timeFromEvent = (e) => (e.clientX - canvas.getBoundingClientRect().left) / sdEffPPS;
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.sd-clip, .sd-bar, .sd-add-tile, .sd-resize')) return;
+      scrubbing = true;
+      sdSeekTo(timeFromEvent(e));
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => { if (scrubbing) sdSeekTo(timeFromEvent(e)); });
+    document.addEventListener('mouseup', () => { scrubbing = false; });
+  })();
+
+  /* ──────────────── DOWNLOAD + SHARE ──────────────── */
+  function sdCloseAllPops() {
+    document.querySelectorAll('.sd-pop').forEach(p => p.remove());
+  }
+
+  async function sdDownloadOpen(e) {
+    e.stopPropagation();
+    const dock = document.getElementById('scene-dock');
+    const wasOpen = !!document.getElementById('sd-pop-download');
+    sdCloseAllPops();
+    if (wasOpen || !dock) return;
+    const t = sdT();
+    const pop = document.createElement('div');
+    pop.className = 'sd-pop';
+    pop.id = 'sd-pop-download';
+    pop.innerHTML = `<h4>⬇ ${t.sd_download_title || 'Download rendered videos'}</h4><div class="sd-pop-note">…</div>`;
+    dock.appendChild(pop);
+    try {
+      const files = await fetch('/renders-list').then(r => r.json());
+      const head = `<h4>⬇ ${t.sd_download_title || 'Download rendered videos'}</h4>`;
+      if (!Array.isArray(files) || !files.length) {
+        pop.innerHTML = head + `<div class="sd-pop-note">${t.sd_no_renders || 'No rendered videos yet. Render from the Text to Video tab first.'}</div>`;
+        return;
+      }
+      pop.innerHTML = head + files.slice(0, 12).map(f =>
+        `<a class="sd-pop-item" href="/renders/${encodeURIComponent(f.name)}" download><span>🎬</span><span class="grow">${sdEsc(f.name)}</span><span class="dim">${f.sizeMB} MB · ${f.date}</span></a>`
+      ).join('') + `<div class="sd-pop-note">${t.sd_render_hint || 'New renders are created from the Text to Video tab.'}</div>`;
+    } catch (err) {
+      pop.innerHTML = `<div class="sd-pop-note">⚠️ ${err.message || err}</div>`;
+    }
+  }
+
+  async function sdShareOpen(e) {
+    e.stopPropagation();
+    const dock = document.getElementById('scene-dock');
+    const wasOpen = !!document.getElementById('sd-pop-share');
+    sdCloseAllPops();
+    if (wasOpen || !dock) return;
+    const t = sdT();
+    const pop = document.createElement('div');
+    pop.className = 'sd-pop';
+    pop.id = 'sd-pop-share';
+    let latestLink = '';
+    try {
+      const files = await fetch('/renders-list').then(r => r.json());
+      if (Array.isArray(files) && files.length) {
+        latestLink = `<a class="sd-pop-item" href="/renders/${encodeURIComponent(files[0].name)}" download><span>⬇</span><span class="grow">${t.sd_share_latest || 'Download latest render'}: ${sdEsc(files[0].name)}</span></a>`;
+      }
+    } catch {}
+    pop.innerHTML = `<h4>📤 ${t.sd_share_title || 'Share'}</h4>`
+      + latestLink
+      + `<div class="sd-pop-item" onclick="window.open('https://www.tiktok.com/tiktokstudio/upload','_blank')"><span>🎵</span><span class="grow">${t.sd_share_tiktok || 'Open TikTok Studio upload'}</span><span class="dim">↗</span></div>`
+      + `<div class="sd-pop-item" onclick="window.open('https://www.instagram.com/','_blank')"><span>📷</span><span class="grow">${t.sd_share_instagram || 'Open Instagram'}</span><span class="dim">↗</span></div>`
+      + `<div class="sd-pop-note">${t.sd_share_note || 'Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.'}</div>`;
+    dock.appendChild(pop);
+  }
+
+  // Click-away closes popovers
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.sd-pop') && !e.target.closest('.sd-zoom-btn')) sdCloseAllPops();
+  });
 
   window.addEventListener('resize', () => {
     clearTimeout(sdResizeTimer);
