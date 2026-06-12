@@ -702,6 +702,17 @@
     .sd-pop-item:hover { border-color: var(--accent); color: var(--text); }
     .sd-pop-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sd-pop-item .dim { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+    /* ── Preview transform box (select text/item → resize + rotate) ── */
+    .ptb-box { position: absolute; z-index: 60; pointer-events: none; border: 1.5px solid #38bdf8; box-shadow: 0 0 0 1px rgba(2,6,23,0.5); border-radius: 2px; }
+    .ptb-h { position: absolute; width: 11px; height: 11px; background: #fff; border: 2px solid #38bdf8; border-radius: 3px; pointer-events: auto; box-sizing: border-box; }
+    .ptb-nw { left: -6px; top: -6px; cursor: nwse-resize; }
+    .ptb-ne { right: -6px; top: -6px; cursor: nesw-resize; }
+    .ptb-sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+    .ptb-se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+    .ptb-rot { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #38bdf8; color: #0369a1; font-size: 11px; line-height: 14px; text-align: center; cursor: grab; pointer-events: auto; box-sizing: border-box; user-select: none; }
+    .ptb-rot:active { cursor: grabbing; }
+    .ptb-rot-line { position: absolute; left: 50%; top: -13px; width: 1.5px; height: 13px; background: #38bdf8; transform: translateX(-50%); }
+    .ptb-dim { position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); font: 600 10px monospace; background: #0f172a; color: #7dd3fc; border: 1px solid #1e3a5f; border-radius: 4px; padding: 1px 7px; white-space: nowrap; pointer-events: none; }
     .sd-add-tile { position: absolute; top: 2px; bottom: 2px; width: 26px; border: 2px dashed var(--border-mid); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); cursor: pointer; font-size: 14px; box-sizing: border-box; }
     .sd-add-tile:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -3879,6 +3890,206 @@
     const startY = parseFloat(document.getElementById(`shapey-${i}-${k}`)?.value) || 50;
     el.style.cursor = 'grabbing';
     shapeDragState = { i, k, startMouseX: e.clientX, startMouseY: e.clientY, startX, startY, rect };
+  });
+
+  /* ── Preview transform box: click text/item → resize + rotate handles (preview ≥ 250px) ── */
+  const PTB_MIN_W = 250;
+  let ptbSel = null;      // { type, i, j, elId, rotId }
+  let ptbGesture = null;  // active handle drag
+  let ptbRaf = null;
+
+  function ptbDescriptor(target) {
+    const mainEl = target.closest('[data-drag-main]');
+    if (mainEl) {
+      const i = parseInt(mainEl.dataset.dragSeg);
+      return { type: 'main', i, j: -1, elId: `tpreview-${i}`, rotId: `rotation-${i}` };
+    }
+    const etEl = target.closest('[data-drag-extra]');
+    if (etEl) {
+      const i = parseInt(etEl.dataset.dragSeg), j = parseInt(etEl.dataset.dragExtra);
+      return { type: 'extra', i, j, elId: `et-preview-${i}-${j}`, rotId: `et-rotation-${i}-${j}` };
+    }
+    const ovEl = target.closest('[data-drag-overlay]');
+    if (ovEl) {
+      const i = parseInt(ovEl.dataset.dragSeg), j = parseInt(ovEl.dataset.dragOverlay);
+      return { type: 'overlay', i, j, elId: `overlay-prev-${i}-${j}`, rotId: `overlay-rot-${i}-${j}` };
+    }
+    const shEl = target.closest('[data-drag-shape]');
+    if (shEl) {
+      const i = parseInt(shEl.dataset.dragSeg), k = parseInt(shEl.dataset.dragShape);
+      return { type: 'shape', i, j: k, elId: `shape-prev-${i}-${k}`, rotId: `shaperot-${i}-${k}` };
+    }
+    return null;
+  }
+
+  function ptbEl() { return ptbSel ? document.getElementById(ptbSel.elId) : null; }
+  function ptbWrap() { return ptbSel ? document.querySelector(`#card-${ptbSel.i} .thumb-wrap`) : null; }
+  function ptbLayerWidth(i) {
+    const layer = document.querySelector(`#card-${i} .scene-preview-layer`);
+    return layer ? layer.getBoundingClientRect().width : 0;
+  }
+  function ptbGetRot() {
+    return ptbSel ? (parseFloat(document.getElementById(ptbSel.rotId)?.value) || 0) : 0;
+  }
+
+  function ptbSelect(desc) {
+    ptbDeselect();
+    ptbSel = desc;
+    const wrap = ptbWrap();
+    if (!wrap) { ptbSel = null; return; }
+    const box = document.createElement('div');
+    box.className = 'ptb-box';
+    box.id = 'ptb-box';
+    box.innerHTML = `
+      <div class="ptb-rot-line"></div>
+      <div class="ptb-rot" data-ptb="rot" title="Drag to rotate (Shift = 15° steps)">⟳</div>
+      <div class="ptb-h ptb-nw" data-ptb="nw"></div>
+      <div class="ptb-h ptb-ne" data-ptb="ne"></div>
+      <div class="ptb-h ptb-sw" data-ptb="sw"></div>
+      <div class="ptb-h ptb-se" data-ptb="se"></div>
+      <div class="ptb-dim" id="ptb-dim"></div>`;
+    wrap.appendChild(box);
+    ptbFollow();
+  }
+
+  function ptbDeselect() {
+    document.getElementById('ptb-box')?.remove();
+    ptbSel = null;
+    ptbGesture = null;
+    if (ptbRaf) cancelAnimationFrame(ptbRaf);
+    ptbRaf = null;
+  }
+
+  function ptbReadout() {
+    if (!ptbSel) return '';
+    const rot = Math.round(ptbGetRot());
+    const { type, i, j } = ptbSel;
+    if (type === 'main') return `${parseInt(document.getElementById(`fontsize-${i}`)?.value) || 70}px · ${rot}°`;
+    if (type === 'extra') return `${parseInt(document.getElementById(`et-fontsize-${i}-${j}`)?.value) || 70}px · ${rot}°`;
+    if (type === 'overlay') return `${Math.round(parseFloat(document.getElementById(`overlay-size-${i}-${j}`)?.value) || 55)}% · ${rot}°`;
+    const w = parseFloat(document.getElementById(`shapew-${i}-${j}`)?.value) || 30;
+    const h = parseFloat(document.getElementById(`shapeh-${i}-${j}`)?.value) || 15;
+    return `${Math.round(w)}×${Math.round(h)}% · ${rot}°`;
+  }
+
+  // rAF follow loop — keeps the box glued to the item through moves, saves, animations and preview rebuilds
+  function ptbFollow() {
+    if (!ptbSel) return;
+    const box = document.getElementById('ptb-box');
+    const wrap = ptbWrap();
+    if (!box || !wrap || ptbLayerWidth(ptbSel.i) < PTB_MIN_W) { ptbDeselect(); return; }
+    const el = ptbEl();  // re-resolved every frame: preview rebuilds replace elements but keep ids
+    if (el) {
+      const b = el.getBoundingClientRect();
+      const wr = wrap.getBoundingClientRect();
+      const w = el.offsetWidth, h = el.offsetHeight;
+      const cx = b.left + b.width / 2 - wr.left;
+      const cy = b.top + b.height / 2 - wr.top;
+      box.style.left = (cx - w / 2) + 'px';
+      box.style.top = (cy - h / 2) + 'px';
+      box.style.width = w + 'px';
+      box.style.height = h + 'px';
+      box.style.transform = `rotate(${ptbGetRot()}deg)`;
+      const dim = document.getElementById('ptb-dim');
+      if (dim) dim.textContent = ptbReadout();
+    }
+    ptbRaf = requestAnimationFrame(ptbFollow);
+  }
+
+  function ptbLiveUpdate(g) {
+    try {
+      if (g.type === 'main') updateTextPreview(g.i);
+      else if (g.type === 'extra') updateExtraTextPreviewAll(g.i);
+      else if (g.type === 'overlay') refreshOverlayPreview(g.i, false);
+      else updateShapePreviewAll(g.i);
+    } catch {}
+  }
+
+  // Select on click; clicking empty preview area deselects
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#ptb-box')) return;
+    const layer = e.target.closest('.scene-preview-layer');
+    if (!layer) return;
+    const desc = ptbDescriptor(e.target);
+    if (!desc) { ptbDeselect(); return; }
+    if (ptbLayerWidth(desc.i) < PTB_MIN_W) return;  // preview too small for transform controls
+    if (ptbSel && ptbSel.elId === desc.elId) return;
+    ptbSelect(desc);
+  });
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ptbDeselect(); });
+
+  // Handle gestures (capture phase so the item-move drag never starts from a handle)
+  document.addEventListener('mousedown', (e) => {
+    const handle = e.target.closest('[data-ptb]');
+    if (!handle || !ptbSel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const el = ptbEl();
+    if (!el) return;
+    const b = el.getBoundingClientRect();
+    const g = {
+      mode: handle.dataset.ptb,
+      center: { x: b.left + b.width / 2, y: b.top + b.height / 2 },
+      type: ptbSel.type, i: ptbSel.i, j: ptbSel.j, rotId: ptbSel.rotId,
+    };
+    if (g.mode !== 'rot') {
+      g.startDist = Math.max(8, Math.hypot(e.clientX - g.center.x, e.clientY - g.center.y));
+      if (g.type === 'main') g.startSize = parseInt(document.getElementById(`fontsize-${g.i}`)?.value) || 70;
+      else if (g.type === 'extra') g.startSize = parseInt(document.getElementById(`et-fontsize-${g.i}-${g.j}`)?.value) || 70;
+      else if (g.type === 'overlay') g.startSize = parseFloat(document.getElementById(`overlay-size-${g.i}-${g.j}`)?.value) || 55;
+      else {
+        g.startW = parseFloat(document.getElementById(`shapew-${g.i}-${g.j}`)?.value) || 30;
+        g.startH = parseFloat(document.getElementById(`shapeh-${g.i}-${g.j}`)?.value) || 15;
+      }
+    }
+    ptbGesture = g;
+    document.body.style.userSelect = 'none';
+  }, true);
+
+  document.addEventListener('mousemove', (e) => {
+    const g = ptbGesture;
+    if (!g) return;
+    if (g.mode === 'rot') {
+      let deg = Math.atan2(e.clientY - g.center.y, e.clientX - g.center.x) * 180 / Math.PI + 90;
+      if (deg > 180) deg -= 360;
+      deg = e.shiftKey ? Math.round(deg / 15) * 15 : Math.round(deg);
+      if (Math.abs(deg) <= 2) deg = 0;  // gentle snap to level
+      const rotEl = document.getElementById(g.rotId);
+      if (rotEl) rotEl.value = deg;
+    } else {
+      const f = Math.hypot(e.clientX - g.center.x, e.clientY - g.center.y) / g.startDist;
+      if (g.type === 'main' || g.type === 'extra') {
+        const v = Math.max(20, Math.min(200, Math.round(g.startSize * f)));
+        const inp = document.getElementById(g.type === 'main' ? `fontsize-${g.i}` : `et-fontsize-${g.i}-${g.j}`);
+        if (inp) inp.value = v;
+      } else if (g.type === 'overlay') {
+        const v = Math.max(2, Math.min(300, Math.round(g.startSize * f * 10) / 10));
+        const inp = document.getElementById(`overlay-size-${g.i}-${g.j}`);
+        if (inp) inp.value = v;
+      } else {
+        const w = Math.max(1, Math.min(300, Math.round(g.startW * f * 10) / 10));
+        const h = Math.max(1, Math.min(300, Math.round(g.startH * f * 10) / 10));
+        const wEl = document.getElementById(`shapew-${g.i}-${g.j}`);
+        const hEl = document.getElementById(`shapeh-${g.i}-${g.j}`);
+        if (wEl) wEl.value = w;
+        if (hEl) hEl.value = h;
+      }
+    }
+    ptbLiveUpdate(g);
+  });
+
+  document.addEventListener('mouseup', async () => {
+    const g = ptbGesture;
+    if (!g) return;
+    ptbGesture = null;
+    document.body.style.userSelect = '';
+    try {
+      if (g.type === 'main') await saveMainTextMeta(g.i);
+      else if (g.type === 'extra') await saveExtraText(g.i);
+      else if (g.type === 'overlay') await saveOverlay(g.i);
+      else await saveShapes(g.i);
+    } catch (err) { console.warn('Transform save failed:', err); }
   });
 
   let currentVoicePreviewAudio = null;

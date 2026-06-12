@@ -1,10 +1,9 @@
 {
-  "version": "1.4.14",
+  "version": "1.4.15",
   "date": "2026-06-12",
-  "notes": "New: expanded channel timeline (🎚 button) showing voice/text/media tracks for the whole video; ▶ watch the full video with playhead, scrubbing and music bed; ⬇ download rendered videos and 📤 share to TikTok/Instagram from the timeline bar",
+  "notes": "New: transform box in the scene preview — click the caption, an extra text, an image overlay or a shape to get corner handles for resizing and a rotate handle (Shift = 15° steps). Shows when the preview is 250px or wider; changes save automatically and flow into the final render",
   "files": [
     "index.html",
-    "server.js",
     "version.json"
   ]
 }
