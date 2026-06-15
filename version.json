@@ -1,7 +1,7 @@
 {
-  "version": "1.4.34",
+  "version": "1.4.35",
   "date": "2026-06-15",
-  "notes": "Timeline view is now a built-in CapCut-style editor (no floating popup). Left: a Content rail listing every layer — background/media, main text, text layers, shapes, images, videos — with click-to-select, + Text / + Shape / + Image / change Media, and ▲▼ reorder (text/shape/image). Right: the preview as its own block. Below: the multi-track Voice/Text/Media timeline embedded full-width in the page, with GENERATE beneath it. Storyboard/List keep the floating strip.",
+  "notes": "Timeline view is now a full-screen CapCut/Filmora-style editor. The selected scene card + the timeline dock move into a dedicated full-window workspace: Content rail (left), large preview (centre), text/layer properties (right), and the multi-track Voice/Text/Media timeline full-width along the bottom. Slim top bar with Exit (or Esc), scene counter, + Scene, and Generate; the app chrome is hidden and the old full-width 'Add Scene' row is gone. Clicking a scene block swaps the mounted scene; hardened so reloading in Timeline mode can't leave duplicate cards. Storyboard/List are unchanged.",
   "files": [
     "index.html",
     "version.json"

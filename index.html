@@ -397,7 +397,7 @@
     .add-scene-row .line { flex: 1; height: 1px; background: var(--border); }
     .add-scene-row button { background: none; border: 1px dashed var(--border); color: var(--text-muted); font-size: 12px; padding: 4px 14px; border-radius: 99px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
     .add-scene-row button:hover { border-color: var(--accent); color: var(--accent); background: rgba(16,185,129,0.05); }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
     .modal h3 { margin: 0 0 18px; font-size: 16px; color: var(--text-main); }
@@ -826,6 +826,29 @@
     .tl-rail-adds { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px; }
     .tl-rail-adds button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
     .tl-rail-adds button:hover { border-color: var(--accent); color: var(--text-main); }
+    /* ── Full-screen Timeline editor (CapCut / Filmora-style workspace) ── */
+    .tl-editor { position: fixed; inset: 0; z-index: 1200; background: var(--bg-page); display: none; grid-template-rows: auto minmax(0,1fr) auto; }
+    .tl-editor.open { display: grid; }
+    body.tl-editor-open { overflow: hidden; }
+    .tl-ed-topbar { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+    .tl-ed-exit { display: flex; align-items: center; gap: 7px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 13px; font-size: 13px; cursor: pointer; }
+    .tl-ed-exit:hover { color: var(--text-main); border-color: var(--accent); }
+    .tl-ed-title { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+    .tl-ed-spacer { flex: 1; }
+    .tl-ed-btn { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 13px; font-size: 13px; cursor: pointer; }
+    .tl-ed-btn:hover { color: var(--text-main); border-color: var(--accent); }
+    .tl-ed-gen { background: var(--accent); border-color: var(--accent); color: #04253b; font-weight: 700; }
+    .tl-ed-stage { overflow: auto; padding: 18px 20px; min-height: 0; }
+    .tl-ed-timeline { border-top: 1px solid var(--border); background: var(--bg-card); padding: 2px 14px 8px; min-height: 0; overflow: hidden; }
+    /* The moved card becomes a 3-column grid: content | preview | properties */
+    .tl-editor .segment-card { display: grid !important; grid-template-columns: 232px minmax(0,1fr) 322px; gap: 18px; background: transparent; border: none; box-shadow: none; padding: 0; align-items: start; max-width: 1500px; margin: 0 auto; }
+    .tl-editor .segment-card > .tl-rail { order: 1; margin: 0; position: sticky; top: 0; }
+    .tl-editor .segment-card > .thumb-wrap { order: 2; position: static; justify-self: center; top: 0; }
+    .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; }
+    .tl-editor .seg-caption, .tl-editor .seg-vo { display: none; }
+    .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
+    .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
+    @media (max-width: 1100px) { .tl-editor .segment-card { grid-template-columns: 200px minmax(0,1fr) 264px; gap: 12px; } }
   </style>
 </head>
 <body>
@@ -1572,6 +1595,9 @@
       tl_change_media: 'Media',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
+      tl_exit: 'Exit editor',
+      tl_add_scene: 'Scene',
+      tl_scene: 'Scene',
       label_static: 'Static',
       label_fade_in: 'Fade in',
       label_fade_out: 'Fade out',
@@ -2123,6 +2149,9 @@
       tl_change_media: 'メディア',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
+      tl_exit: 'エディターを終了',
+      tl_add_scene: 'シーン',
+      tl_scene: 'シーン',
       label_static: '静的',
       label_fade_in: 'フェードイン',
       label_fade_out: 'フェードアウト',
@@ -11648,26 +11677,18 @@
     document.getElementById('view-btn-storyboard')?.classList.toggle('active', mode === 'storyboard');
     document.getElementById('view-btn-list')?.classList.toggle('active', mode === 'list');
     document.getElementById('view-btn-timeline')?.classList.toggle('active', timeline);
-    // Built-in timeline: move the (now in-flow) dock directly under the scene, above the GENERATE
-    // panel; restore it to the end of the tab in the other views.
-    try {
-      const dock = document.getElementById('scene-dock');
-      const rer = document.getElementById('scenes-rerender-section');
-      if (dock && rer && rer.parentNode) {
-        if (timeline) rer.parentNode.insertBefore(dock, rer);
-        else if (dock.parentNode === rer.parentNode) rer.parentNode.appendChild(dock);
-      }
-    } catch {}
-    if (!sdSegments.length) return;
+    if (!timeline) { try { closeTimelineEditor(); } catch {} }   // leaving Timeline → restore card + dock
+    if (!sdSegments.length) { if (!timeline) { try { closeTimelineEditor(); } catch {} } return; }
     if (singleScene) {
       sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
       sbApplySelection();
       if (timeline) {
-        // Timeline layout always shows the tracks docked open
+        // Timeline = full-screen editor: tracks docked open, card + dock moved into the shell
         sdExpanded = true;
         localStorage.setItem('sd-expanded-channels', '1');
         localStorage.setItem('sd-collapsed', '0');
         try { renderSceneDock(); } catch {}
+        try { openTimelineEditor(); } catch (e) { console.warn('timeline editor:', e); }
       }
     } else {
       document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
@@ -11802,8 +11823,9 @@
     const div = document.createElement('div');
     div.className = 'tl-rail';
     div.innerHTML = `<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`;
-    const anchor = card.querySelector('.tl-inspector') || card.querySelector('.scene-tabs') || card.querySelector('details.scene-accordion');
-    if (anchor) anchor.parentNode.insertBefore(div, anchor);
+    // Insert as the card's FIRST child so the editor's 3-column grid can place it as the
+    // left "Content" column (preview = centre, properties/inspector = right).
+    card.insertBefore(div, card.firstChild);
   }
 
   function tlSelectLayer(i, type, idx) {
@@ -11882,6 +11904,110 @@
     buildContentRail(card, i);
   }
 
+  // ── Full-screen Timeline editor: move the selected card + dock into a fixed shell ──
+  // The whole card moves intact (so all its inputs/handlers keep working); the shell carries
+  // the `timeline-mode` class so existing timeline CSS applies. Exit restores everything.
+  let tlEdMounted = -1;
+  function tlEditorEl() { return document.getElementById('tl-editor'); }
+  function tlEditorOpen() { return !!tlEditorEl()?.classList.contains('open'); }
+
+  function tlMoveNode(node, target) {
+    if (!node || !target) return;
+    if (!node._tlHome) node._tlHome = { parent: node.parentElement, next: node.nextSibling };
+    target.appendChild(node);
+  }
+  function tlRestoreNode(node) {
+    if (!node || !node._tlHome) return;
+    const home = node._tlHome; node._tlHome = null;
+    if (!home.parent) return;
+    if (home.next && home.next.parentElement === home.parent) home.parent.insertBefore(node, home.next);
+    else home.parent.appendChild(node);
+  }
+
+  function openTimelineEditor() {
+    const ed = tlEditorEl(); if (!ed) return;
+    const dock = document.getElementById('scene-dock');
+    const tz = document.getElementById('tl-ed-timeline');
+    if (dock && tz && dock.parentElement !== tz) tlMoveNode(dock, tz);
+    ed.classList.add('open');
+    document.body.classList.add('tl-editor-open');
+    tlEditorMount(sbSelectedIndex);
+    try { renderSceneDock(); } catch {}   // re-fit the dock to its new (in-editor) width
+    if (!ed._tlBound) {
+      ed._tlBound = true;
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && tlEditorOpen()) exitTimelineEditor(); });
+      window.addEventListener('resize', () => { if (tlEditorOpen()) { tlSizeEditorPreview(tlEdMounted); try { renderSceneDock(); } catch {} } });
+    }
+  }
+
+  // Empty the stage, keeping `keepEl`. A stage card whose id now resolves elsewhere (a re-render
+  // created a fresh copy in #segments-list) is stale → drop it; otherwise restore it to its home.
+  function tlStageClear(keepEl) {
+    const stage = document.getElementById('tl-ed-stage'); if (!stage) return;
+    Array.from(stage.querySelectorAll('.segment-card')).forEach(c => {
+      if (c === keepEl) return;
+      const canonical = c.id ? document.getElementById(c.id) : null;
+      if (canonical && canonical !== c) { c.remove(); return; }   // stale duplicate from a re-render
+      tlRestoreNode(c);
+      try { sbClearCardOverrides(c); } catch {}
+    });
+  }
+
+  function tlEditorMount(i) {
+    if (!tlEditorOpen()) return;
+    const stage = document.getElementById('tl-ed-stage'); if (!stage) return;
+    const card = document.getElementById('card-' + i);
+    tlStageClear(card);                       // remove any stale / other cards first
+    if (!card) { tlEdMounted = -1; return; }
+    if (card.parentElement !== stage) tlMoveNode(card, stage);
+    tlEdMounted = i;
+    tlSizeEditorPreview(i);
+    tlUpdateEditorTitle(i);
+  }
+
+  function tlEditorUnmount() {
+    tlStageClear(null);
+    tlEdMounted = -1;
+  }
+
+  function tlEditorSync() {           // called at the end of sbApplySelection
+    if (tlEditorOpen()) tlEditorMount(sbSelectedIndex);
+  }
+
+  function closeTimelineEditor() {
+    const ed = tlEditorEl(); if (!ed) return;
+    tlEditorUnmount();
+    const dock = document.getElementById('scene-dock');
+    if (dock && dock._tlHome) tlRestoreNode(dock);
+    ed.classList.remove('open');
+    document.body.classList.remove('tl-editor-open');
+  }
+
+  function exitTimelineEditor() { setSceneViewMode('storyboard'); }
+
+  function tlUpdateEditorTitle(i) {
+    const el = document.getElementById('tl-ed-title');
+    if (el) el.textContent = `${sdT().tl_scene || 'Scene'} ${i + 1} / ${sdSegments.length}`;
+  }
+
+  function tlSizeEditorPreview(i) {
+    const card = document.getElementById('card-' + i); if (!card) return;
+    try {
+      const preset = getActiveVideoPreset();
+      const stage = document.getElementById('tl-ed-stage');
+      const availH = Math.max(220, (stage?.clientHeight || Math.round(window.innerHeight * 0.5)) - 40);
+      const centreW = Math.max(180, (stage?.clientWidth || window.innerWidth) - 232 - 322 - 80);
+      let w = Math.round(availH * preset.width / preset.height);
+      w = Math.max(180, Math.min(w, centreW, 560));
+      const h = Math.round(w * preset.height / preset.width);
+      card.style.setProperty('--thumb-w', `${w}px`);
+      card.style.setProperty('--thumb-h', `${h}px`);
+    } catch {}
+  }
+
+  function tlEditorAddScene() { try { openModal(-1); } catch {} }
+  function tlEditorGenerate() { setSceneViewMode('storyboard'); try { scenesRerender(); } catch {} }
+
   function sbApplySelection() {
     document.querySelectorAll('#segments-list .segment-card').forEach(c => sbClearCardOverrides(c));
     const card = document.getElementById(`card-${sbSelectedIndex}`);
@@ -11913,6 +12039,7 @@
     try { sbBuildSceneTabs(card); } catch {}        // tabbed editor (under "All controls")
     try { buildTimelineInspector(card, sbSelectedIndex); } catch {}  // clean default inspector
     try { buildContentRail(card, sbSelectedIndex); } catch {}        // CapCut content rail (layers + add media)
+    try { tlEditorSync(); } catch {}                                 // keep the full-screen editor on the selected scene
   }
 
   function sbSelect(i) {
@@ -12655,6 +12782,20 @@
   <div id="uov-file"   style="color:#94a3b8;font-size:13px;font-family:monospace;letter-spacing:0.02em;max-width:90vw;text-align:center;word-break:break-all"></div>
   <div id="uov-status" data-i18n="update_overlay_downloading" style="color:#475569;font-size:12px;margin-top:4px">Downloading files…</div>
   <button id="uov-reload-btn" onclick="location.reload()" style="display:none;margin-top:8px;padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.4)">🔄 Reload Now</button>
+</div>
+
+<!-- Full-screen Timeline editor shell (CapCut-style). The selected scene card + the timeline dock
+     are moved in here while Timeline view is active; Exit restores them to the normal page. -->
+<div id="tl-editor" class="tl-editor timeline-mode">
+  <div class="tl-ed-topbar">
+    <button class="tl-ed-exit" onclick="exitTimelineEditor()"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="tl_exit">Exit editor</span></button>
+    <span class="tl-ed-title" id="tl-ed-title"></span>
+    <span class="tl-ed-spacer"></span>
+    <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
+    <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>
+  </div>
+  <div class="tl-ed-stage" id="tl-ed-stage"></div>
+  <div class="tl-ed-timeline" id="tl-ed-timeline"></div>
 </div>
 </body>
 </html>
