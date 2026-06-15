@@ -1,11 +1,9 @@
 {
-  "version": "1.4.17",
-  "date": "2026-06-12",
-  "notes": "Localization sweep for all new UI (timeline bar, channels, player, popovers, transform box, setup wizard — EN/JA); security: dashboard now binds to localhost only (set HOST=0.0.0.0 to opt out); browser auto-open now works on Windows/Linux too; new bilingual INSTALL.md ships with the package",
+  "version": "1.4.18",
+  "date": "2026-06-15",
+  "notes": "SECURITY: packaging scripts now exclude .env (and .claude/.agents/.vscode) so developer API keys are never shipped in the distribution zip — this also restores the first-run setup wizard for fresh installs (the bundled .env was silently providing keys and skipping setup)",
   "files": [
-    "index.html",
-    "server.js",
-    "INSTALL.md",
+    "package.json",
     "version.json"
   ]
 }
