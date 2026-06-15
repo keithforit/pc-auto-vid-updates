@@ -1,5 +1,5 @@
 {
-  "version": "1.4.20",
+  "version": "1.4.21",
   "date": "2026-06-15",
   "notes": "Stock-provider resilience: dashboard checks Pexels + Pixabay on startup. A rejected/expired key shows a localized 'Hey {name}, your API key needs updating' popup with a one-click key updater; a provider outage shows a non-blocking notice. Text-to-video now falls back Pexels↔Pixabay automatically when one is down. Also fixes wizard-configured keys not reaching the stock fetcher. EN/JA localized.",
   "files": [
