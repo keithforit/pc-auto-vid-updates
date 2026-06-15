@@ -692,6 +692,9 @@
     .sd-item-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 9px; cursor: ew-resize; border-radius: 0 4px 4px 0; }
     .sd-item-resize:hover { background: rgba(255,255,255,0.4); }
     .sd-detail-empty { font-size: 11px; color: var(--text-dim); padding: 4px 2px; }
+    .sd-detail-hint { font-size: 10px; color: #7dd3fc; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); border-radius: 5px; padding: 2px 8px; margin-left: auto; margin-right: 8px; white-space: nowrap; }
+    .sd-undo-btn { font-weight: 700; padding: 3px 10px; border-color: #f59e0b; color: #fbbf24; }
+    .sd-undo-btn:hover { background: rgba(245,158,11,0.15); }
     .sd-body { padding: 0 12px 10px; }
     .scene-dock.collapsed .sd-body { display: none; }
     .sd-scroll { overflow-x: auto; overflow-y: hidden; }
@@ -935,10 +938,11 @@
         <span class="sd-timecode" id="sd-timecode">0.0s / 0.0s</span>
         <span class="sd-title" data-i18n="sd_timeline">🎞 Timeline</span>
         <span class="sd-meta" id="sd-meta"></span>
+        <button class="sd-zoom-btn sd-undo-btn" id="sd-undo-btn" onclick="sdUndo()" style="display:none" data-i18n="sd_undo" data-i18n-attr="title" title="Undo last timeline edit">↶ <span data-i18n="sd_undo_btn">Undo</span></button>
         <button class="sd-zoom-btn sd-viewall-btn" id="sd-viewall-btn" onclick="sdToggleViewAll()" title="View all scenes / the full video">⊞ <span id="sd-viewall-label" data-i18n="sd_view_all">All scenes</span></button>
         <span style="flex:1"></span>
-        <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video">⬇</button>
-        <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share">📤</button>
+        <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video"><i class="fa-solid fa-download"></i></button>
+        <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share"><i class="fa-solid fa-share-nodes"></i></button>
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
         <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
         <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
@@ -1330,6 +1334,9 @@
       sd_scene_collapse: 'Collapse',
       sd_scene_label: 'Scene',
       sd_detail_empty: 'No timed items in this scene yet.',
+      sd_item_hint: "Drag a bar's edge to resize · its body to move",
+      sd_undo: 'Undo last timeline edit',
+      sd_undo_btn: 'Undo',
       sd_download: 'Download rendered video',
       sd_share: 'Share',
       sd_download_title: 'Download rendered videos',
@@ -1852,6 +1859,9 @@
       sd_scene_collapse: '折りたたむ',
       sd_scene_label: 'シーン',
       sd_detail_empty: 'このシーンにはまだタイミング付きのアイテムがありません。',
+      sd_item_hint: 'バーの端をドラッグで長さ変更・本体をドラッグで移動',
+      sd_undo: '直前のタイムライン編集を元に戻す',
+      sd_undo_btn: '元に戻す',
       sd_download: 'レンダリング済み動画をダウンロード',
       sd_share: '共有',
       sd_download_title: 'レンダリング済み動画をダウンロード',
@@ -10810,6 +10820,7 @@
     if (vBtn) { vBtn.classList.toggle('active', isListView); vBtn.firstChild.textContent = isListView ? '🎬 ' : '⊞ '; }
     const vLbl = document.getElementById('sd-viewall-label');
     if (vLbl) vLbl.textContent = isListView ? (sdT().sd_focus_scene || 'Focus scene') : (sdT().sd_view_all || 'All scenes');
+    sdUpdateUndoBtn();
     const cBtn = document.getElementById('sd-collapse-btn');
     if (cBtn) { cBtn.textContent = collapsed ? '▴' : '▾'; cBtn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
 
@@ -11168,7 +11179,9 @@
   function sdSceneDetailHTML(i) {
     const { dur, items } = sdSceneItems(i);
     const t = sdT();
-    const head = `<div class="sd-detail-head"><span class="sd-detail-title">▾ ${t.sd_scene_label || 'Scene'} ${i + 1} · ${dur.toFixed(1)}s</span><button class="sd-detail-close" onclick="sdToggleSceneExpand(${i})" title="${sdEsc(t.sd_scene_collapse || 'Collapse')}">▴</button></div>`;
+    const hint = localStorage.getItem('sd-item-hint-seen') !== '1'
+      ? `<span class="sd-detail-hint">↔ ${t.sd_item_hint || "Drag a bar's edge to resize · its body to move"}</span>` : '';
+    const head = `<div class="sd-detail-head"><span class="sd-detail-title">▾ ${t.sd_scene_label || 'Scene'} ${i + 1} · ${dur.toFixed(1)}s</span>${hint}<button class="sd-detail-close" onclick="sdToggleSceneExpand(${i})" title="${sdEsc(t.sd_scene_collapse || 'Collapse')}">▴</button></div>`;
     const rows = items.map((it, idx) => {
       const leftPct = (it.start / dur) * 100;
       const widPct = Math.max(2, ((it.end - it.start) / dur) * 100);
@@ -11189,6 +11202,9 @@
 
   function sdItemDown(ev, i, idx, mode) {
     ev.preventDefault(); ev.stopPropagation();
+    localStorage.setItem('sd-item-hint-seen', '1'); // they've discovered the gesture
+    const hintEl = document.querySelector('.sd-detail-hint');
+    if (hintEl) hintEl.remove();
     const bar = document.getElementById(`sd-item-${i}-${idx}`);
     if (!bar) return;
     const track = bar.parentElement;
@@ -11225,10 +11241,20 @@
     document.addEventListener('mouseup', up);
   }
 
-  async function sdItemPersist(i, ds, start, end) {
+  // Read an item's current timing (clamped, with defaults) — used to snapshot for undo
+  function _sdReadItemTiming(seg, ds, dur) {
+    if (ds.kind === 'maintext') return { start: _sdClampT(seg.mainTextStartAt, 0, dur, 0), end: _sdClampT(seg.mainTextEndAt, 0, dur, dur) };
+    if (ds.kind === 'extra') { const et = seg.extraTexts?.[parseInt(ds.j)]; return et ? { start: _sdClampT(et.startAt, 0, dur, 0), end: _sdClampT(et.endAt, 0, dur, dur) } : null; }
+    if (ds.kind === 'media') { const o = seg[ds.arr]?.[parseInt(ds.j)]; return o ? { start: _sdClampT(o.startAt, 0, dur, 0), end: _sdClampT(o.endAt, 0, dur, dur) } : null; }
+    if (ds.kind === 'sfx') { const s = seg.soundEffect; return s ? { start: _sdClampT(s.startAt, 0, dur, 0), end: _sdClampT(s.endAt, 0, dur, dur) } : null; }
+    return null;
+  }
+
+  async function sdItemPersist(i, ds, start, end, pushUndo = true) {
     const seg = sdSegments[i];
     if (!seg) return;
     const dur = Math.max(0.5, Number(seg.duration) || 5);
+    const old = pushUndo ? _sdReadItemTiming(seg, ds, dur) : null;  // snapshot before mutating
     const round = x => Math.round(x * 10) / 10;
     start = round(Math.max(0, Math.min(dur, start)));
     end = round(Math.max(start + 0.1, Math.min(dur, end)));
@@ -11251,12 +11277,34 @@
       seg.soundEffect.startAt = start; seg.soundEffect.endAt = end;
       body.soundEffect = seg.soundEffect;
     } else { return; }
+    // Apply succeeded — record how to put it back
+    if (pushUndo && old) {
+      const dsCopy = { kind: ds.kind, j: ds.j, arr: ds.arr };
+      sdPushUndo(() => sdItemPersist(i, dsCopy, old.start, old.end, false));
+    }
     try {
       await fetch('/update-scene-texts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     } catch {}
     renderSceneDock();
     // keep the scene's card editor previews in sync if it's mounted
     try { if (document.getElementById(`card-${i}`)) { updateExtraTextPreviewAll(i); updateTextPreview(i); } } catch {}
+  }
+
+  /* ── Single-/multi-level undo for timeline item edits ── */
+  let sdUndoStack = [];
+  function sdPushUndo(fn) {
+    sdUndoStack.push(fn);
+    if (sdUndoStack.length > 20) sdUndoStack.shift();
+    sdUpdateUndoBtn();
+  }
+  function sdUpdateUndoBtn() {
+    const b = document.getElementById('sd-undo-btn');
+    if (b) b.style.display = sdUndoStack.length ? '' : 'none';
+  }
+  async function sdUndo() {
+    const fn = sdUndoStack.pop();
+    sdUpdateUndoBtn();
+    if (fn) { try { await fn(); } catch {} }
   }
 
   /* ──────────────── DOCK PLAYER: watch the whole video ──────────────── */
