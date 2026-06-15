@@ -1467,6 +1467,10 @@
       anim_wipe: 'Wipe',
       label_wrap: 'Wrap:',
       btn_no_wrap_on: 'No Wrap',
+      btn_autofit: 'Auto-fit',
+      on_label: 'on',
+      off_label: 'off',
+      autofit_tip: 'Auto-shrink text so it always fits the frame (no-wrap text)',
       btn_wrap_on: 'No Wrap',
       hint_no_wrap: 'Text stays on one line',
       hint_wrap: 'Text wraps to next line',
@@ -1993,6 +1997,10 @@
       anim_wipe: 'ワイプ',
       label_wrap: '折り返し:',
       btn_no_wrap_on: '折り返しなし',
+      btn_autofit: '自動フィット',
+      on_label: 'オン',
+      off_label: 'オフ',
+      autofit_tip: 'テキストがフレームに収まるよう自動で縮小（折り返しなしのとき）',
       btn_wrap_on: '折り返しなし',
       hint_no_wrap: 'テキストは一行に収まります',
       hint_wrap: 'テキストは次の行に折り返されます',
@@ -3980,6 +3988,7 @@
       data-blockradius="${blockBorderRadius}"
       data-style="${style}"
       data-nowrap="${seg.textNoWrap !== false ? '1' : '0'}"
+      data-autofit="${seg.autoFit !== false ? '1' : '0'}"
       data-freepos="${hasFreePos?'1':'0'}"
       data-animation="${animation}"
       data-fadein="${textFadeInDuration}"
@@ -4232,6 +4241,17 @@
     // Re-apply the chosen font — setAttribute('style', …) above wipes it each rebuild
     const fontKey = document.getElementById(`main-font-${i}`)?.value;
     if (fontKey) innerEl.style.fontFamily = fontFamilyFor(fontKey);
+    // Auto-fit: when on (default) and no-wrap, shrink the font so the text fits the frame.
+    // The base style was just re-applied, so scrollWidth here is the un-fitted width.
+    if (noWrap && el.dataset.autofit !== '0') {
+      const layer = el.closest('.scene-preview-layer');
+      const availW = (layer ? layer.clientWidth : innerEl.clientWidth) * 0.88;
+      const naturalW = innerEl.scrollWidth;
+      if (availW > 0 && naturalW > availW) {
+        const base = parseFloat(getComputedStyle(innerEl).fontSize) || 16;
+        innerEl.style.fontSize = Math.max(6, base * availW / naturalW) + 'px';
+      }
+    }
     applyTextPreviewAnimation(i, false);
   }
 
@@ -5935,6 +5955,8 @@
               <span class="ctrl-row-label" data-i18n="label_wrap">${(I18N[window._appLang||'en']||I18N.en).label_wrap}</span>
               <button id="nowrap-btn-${i}" class="btn sm ${seg.textNoWrap !== false ? '' : 'ghost'}" onclick="toggleTextNoWrap(${i})" title="${(I18N[window._appLang||'en']||I18N.en).wrap}">${seg.textNoWrap !== false ? (I18N[window._appLang||'en']||I18N.en).btn_no_wrap_on : (I18N[window._appLang||'en']||I18N.en).btn_wrap_on}</button>
               <span style="font-size:10px;color:#64748b">${seg.textNoWrap !== false ? (I18N[window._appLang||'en']||I18N.en).hint_no_wrap : (I18N[window._appLang||'en']||I18N.en).hint_wrap}</span>
+              <span style="font-size:10px;color:#64748b;margin-left:8px">│</span>
+              <button id="autofit-btn-${i}" class="btn sm ${seg.autoFit !== false ? '' : 'ghost'}" onclick="toggleAutoFit(${i})" title="${(I18N[window._appLang||'en']||I18N.en).autofit_tip}">${(I18N[window._appLang||'en']||I18N.en).btn_autofit} ${seg.autoFit !== false ? (I18N[window._appLang||'en']||I18N.en).on_label : (I18N[window._appLang||'en']||I18N.en).off_label}</button>
               <span style="font-size:10px;color:#64748b;margin-left:8px">│</span>
               <span class="ctrl-row-label" style="min-width:auto;margin-left:4px" data-i18n="label_box_width">${(I18N[window._appLang||'en']||I18N.en).label_box_width}</span>
               <input type="number" class="num-input" id="textboxwidth-${i}" min="10" max="200" step="5"
@@ -7972,6 +7994,23 @@
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ index: i, textNoWrap: newVal })
+    });
+  }
+
+  async function toggleAutoFit(i) {
+    const btn = document.getElementById(`autofit-btn-${i}`);
+    const preview = document.getElementById(`tpreview-${i}`);
+    const newVal = !(preview?.dataset.autofit !== '0');  // flip current effective state
+    if (preview) preview.dataset.autofit = newVal ? '1' : '0';
+    if (btn) {
+      const T = (I18N[window._appLang||'en']||I18N.en);
+      btn.textContent = `${T.btn_autofit} ${newVal ? T.on_label : T.off_label}`;
+      btn.classList.toggle('ghost', !newVal);
+    }
+    updateTextPreview(i);  // apply (shrink) or remove the fit immediately
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ index: i, autoFit: newVal })
     });
   }
 

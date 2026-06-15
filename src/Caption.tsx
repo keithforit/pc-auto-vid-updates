@@ -1,6 +1,22 @@
 import React from 'react';
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
+// Largest font size (<= maxPx) at which the longest line of `text` fits within `availPx`.
+// Uses canvas measureText so it's deterministic and works in both the browser preview and
+// the Remotion render. Returns maxPx when it already fits (or measurement is unavailable).
+let _fitCanvas: HTMLCanvasElement | null = null;
+function fitFontSize(text: string, fontFamily: string, fontWeight: string | number, maxPx: number, availPx: number): number {
+    if (!text || availPx <= 0 || typeof document === 'undefined') return maxPx;
+    _fitCanvas = _fitCanvas || document.createElement('canvas');
+    const ctx = _fitCanvas.getContext('2d');
+    if (!ctx) return maxPx;
+    ctx.font = `${fontWeight} ${maxPx}px ${fontFamily}`;
+    let widest = 0;
+    for (const line of String(text).split(/\r?\n/)) widest = Math.max(widest, ctx.measureText(line).width);
+    if (widest <= availPx || widest === 0) return maxPx;
+    return Math.max(12, Math.floor(maxPx * (availPx / widest)));
+}
+
 // Parse [word|#hex] or [word] inline color spans within a single line of text.
 // [word] without a color uses highlightColor (if provided), otherwise renders plainly.
 function renderLine(line: string, highlightColor?: string): React.ReactNode[] {
@@ -50,6 +66,7 @@ interface CaptionProps {
     fadeInDurationSec?: number;
     fadeOutDurationSec?: number;
     noWrap?: boolean;
+    autoFit?: boolean;     // shrink font so no-wrap text fits the frame width (default on)
     textBoxWidth?: number; // percentage of video width, e.g. 85 = 85%
     textPadding?: number;  // padding in px for block/box styles (applied as px top/bottom and 2x px left/right)
     highlightColor?: string; // default color for [word] spans without explicit color
@@ -85,6 +102,7 @@ export const Caption: React.FC<CaptionProps> = ({
     fadeInDurationSec = 1.5,
     fadeOutDurationSec = 1.5,
     noWrap = false,
+    autoFit = true,
     textBoxWidth,
     textPadding,
     highlightColor,
@@ -221,6 +239,13 @@ export const Caption: React.FC<CaptionProps> = ({
         hanken:       '"Hanken Grotesk", sans-serif',
     };
     const fontFamily = fontMap[font] ?? '"Noto Sans JP", sans-serif';
+    // Auto-fit: when on (default) and not wrapping, shrink the font so the longest line
+    // fits within ~88% of the frame width — so no-wrap text never runs off the edge.
+    const fontWeightForFit = textStyle === 'box' ? 600 : 900;
+    const _visibleText = String(text || '').replace(/\[([^\]|]+)(?:\|[^\]]+)?\]/g, '$1');
+    const renderFontSize = (autoFit && noWrap)
+        ? fitFontSize(_visibleText, fontFamily, fontWeightForFit, fontSize, videoWidth * 0.88)
+        : fontSize;
 
     const positionStyle = (() => {
         const vertical = (() => {
@@ -272,20 +297,20 @@ export const Caption: React.FC<CaptionProps> = ({
     const blockPad = textPadding != null ? `${textPadding}px ${textPadding * 2}px` : '18px 40px';
     const boxPad   = textPadding != null ? `${textPadding}px ${textPadding * 2}px` : '25px 45px';
     if (textStyle === 'block') {
-        textContentStyle = { textAlign: textAlign as any, padding: blockPad, borderRadius: `${blockBorderRadius}px`, backgroundColor: blockColor, color: textColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...blockBorderStyle, ...widthStyle };
+        textContentStyle = { textAlign: textAlign as any, padding: blockPad, borderRadius: `${blockBorderRadius}px`, backgroundColor: blockColor, color: textColor, fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...blockBorderStyle, ...widthStyle };
     } else if (textStyle === 'glow') {
-        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: glowTextColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, WebkitTextStroke: `${Math.max(1, Math.round(glowAmount * 0.2))}px ${glowColor}`, textShadow: glowShadow, ...widthStyle };
+        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: glowTextColor, fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, WebkitTextStroke: `${Math.max(1, Math.round(glowAmount * 0.2))}px ${glowColor}`, textShadow: glowShadow, ...widthStyle };
     } else if (textStyle === 'shadow') {
         const sOff = Math.max(0, Number(shadowOffset) || 3);
         const sBlur = Math.max(0, Number(shadowBlur) || 6);
         const sAlpha = Math.min(1, Math.max(0, (Number(shadowOpacity) || 85) / 100));
         const sAlpha2 = Math.round(sAlpha * 70) / 100;
         const shadowCss = `${Math.round(sOff * 0.67)}px ${sOff}px ${sBlur}px rgba(0,0,0,${sAlpha.toFixed(2)}), 0 1px ${Math.max(1, Math.round(sBlur / 3))}px rgba(0,0,0,${sAlpha2.toFixed(2)})`;
-        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: shadowCss, ...widthStyle };
+        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: shadowCss, ...widthStyle };
     } else if (textStyle === 'plain') {
-        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || 'white', fontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...widthStyle };
+        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || 'white', fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...widthStyle };
     } else {
-        textContentStyle = { backgroundColor: 'rgba(0,0,0,0.7)', padding: boxPad, borderRadius: `${boxBorderRadius}px`, textAlign: textAlign as any, color: textColor || 'white', fontSize, fontWeight: '600', fontFamily, ...widthStyle };
+        textContentStyle = { backgroundColor: 'rgba(0,0,0,0.7)', padding: boxPad, borderRadius: `${boxBorderRadius}px`, textAlign: textAlign as any, color: textColor || 'white', fontSize: renderFontSize, fontWeight: '600', fontFamily, ...widthStyle };
     }
 
     const shellBorderRadius = textStyle === 'block'

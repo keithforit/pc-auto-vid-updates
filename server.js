@@ -1179,7 +1179,7 @@ app.post('/update-scene-texts', (req, res) => {
         const {
             index, text, textPosition, textHPosition, textAlign, textAnimation, textFadeInDuration, textFadeOutDuration, extraTexts, mainTextStyleOverride,
             overlayImage, overlayImages, overlayShapes, overlayVideos, voiceover_text, voiceoverRichText, voiceEmphasis, voicevoxSpeaker,
-            mainTextStartAt, mainTextEndAt, font,
+            mainTextStartAt, mainTextEndAt, font, autoFit,
             sceneAnimation, soundEffect, sceneFadeInDuration, sceneFadeOutDuration,
             backgroundMusicEnabled, backgroundMusicVolume, textNoWrap, textBoxWidth, textPadding,
         } = req.body;
@@ -1218,6 +1218,7 @@ app.post('/update-scene-texts', (req, res) => {
             else delete segments[index].soundEffect;
         }
         if (textNoWrap             !== undefined) segments[index].textNoWrap             = textNoWrap === true;
+        if (autoFit                !== undefined) segments[index].autoFit                = autoFit !== false;
         if (textPadding !== undefined) {
             const p = Number(textPadding);
             if (textPadding === null) delete segments[index].textPadding;
