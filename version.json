@@ -1,7 +1,7 @@
 {
-  "version": "1.4.25",
+  "version": "1.4.26",
   "date": "2026-06-15",
-  "notes": "Timeline polish: first-time hint on the per-scene editor ('drag a bar's edge to resize, its body to move'); an Undo button that reverts the last timeline item edit (multi-level); and the timeline Share button now uses a proper share icon instead of one that looked like Download.",
+  "notes": "Timeline is now a proper multi-track editor: scene blocks stay fixed on top, and the Voice / Text / Media / SFX tracks below are directly editable — drag a bar's right edge to change its length or its body to move its timing (Voice stays read-only). Replaces the per-scene expand panel. Undo and the first-use hint carry over.",
   "files": [
     "index.html",
     "version.json"

@@ -667,32 +667,6 @@
     .sd-chan-toggle #sd-expand-caret { font-size: 9px; opacity: .85; }
     .sd-viewall-btn { font-weight: 700; padding: 3px 10px; }
     .sd-viewall-btn.active { background: #38bdf8; border-color: #38bdf8; color: #04253b; }
-    /* Per-scene expand caret on each timeline block */
-    .sd-clip-caret { position: absolute; top: 2px; right: 2px; width: 16px; height: 15px; display: flex; align-items: center; justify-content: center;
-      background: rgba(2,6,23,0.6); color: #e2e8f0; border-radius: 4px; font-size: 9px; cursor: pointer; z-index: 6; line-height: 1; user-select: none; }
-    .sd-clip-caret:hover { background: #38bdf8; color: #04253b; }
-    .sd-clip.sd-clip-expanded .sd-clip-caret { background: #38bdf8; color: #04253b; }
-    /* Per-scene expanded detail editor (drag item bars) */
-    .sd-scene-details { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .sd-detail { background: rgba(148,163,184,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
-    .sd-detail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .sd-detail-title { font-size: 11px; font-weight: 700; color: var(--text-soft); }
-    .sd-detail-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; line-height: 1; }
-    .sd-detail-close:hover { color: var(--accent); }
-    .sd-detail-rows { display: flex; flex-direction: column; gap: 5px; }
-    .sd-detail-row { display: flex; align-items: center; gap: 8px; }
-    .sd-detail-label { width: 88px; flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sd-detail-track { position: relative; flex: 1; min-width: 0; height: 22px; background: rgba(148,163,184,0.09); border-radius: 5px; }
-    .sd-item-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; cursor: grab; box-sizing: border-box; min-width: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
-    .sd-item-bar.fixed { cursor: default; opacity: 0.8; }
-    .sd-item-bar:not(.fixed):hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); }
-    .sd-item-bar.sd-item-dragging { box-shadow: 0 0 0 2px #38bdf8; z-index: 3; }
-    .sd-item-bar:active { cursor: grabbing; }
-    .sd-item-lbl { font-size: 9px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.5); pointer-events: none; overflow: hidden; text-overflow: ellipsis; }
-    .sd-item-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 9px; cursor: ew-resize; border-radius: 0 4px 4px 0; }
-    .sd-item-resize:hover { background: rgba(255,255,255,0.4); }
-    .sd-detail-empty { font-size: 11px; color: var(--text-dim); padding: 4px 2px; }
-    .sd-detail-hint { font-size: 10px; color: #7dd3fc; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); border-radius: 5px; padding: 2px 8px; margin-left: auto; margin-right: 8px; white-space: nowrap; }
     .sd-undo-btn { font-weight: 700; padding: 3px 10px; border-color: #f59e0b; color: #fbbf24; }
     .sd-undo-btn:hover { background: rgba(245,158,11,0.15); }
     .sd-body { padding: 0 12px 10px; }
@@ -728,6 +702,12 @@
     .sd-chan-label { position: sticky; left: 2px; display: inline-block; font-size: 9px; font-weight: 700; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-top: 3px; z-index: 5; pointer-events: none; white-space: nowrap; }
     .sd-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: 0.88; }
     .sd-bar:hover { opacity: 1; box-shadow: 0 0 0 1px rgba(255,255,255,0.5) inset; }
+    .sd-bar-edit { cursor: grab; }
+    .sd-bar-edit:active { cursor: grabbing; }
+    .sd-bar-edit.sd-bar-dragging { opacity: 1; box-shadow: 0 0 0 2px #38bdf8; z-index: 6; overflow: visible; }
+    .sd-bar-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 7px; cursor: ew-resize; border-radius: 0 4px 4px 0; }
+    .sd-bar-resize:hover { background: rgba(255,255,255,0.5); }
+    .sd-chan-hint { font-size: 10px; color: #7dd3fc; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); border-radius: 5px; padding: 2px 8px; display: inline-block; margin: 2px 0 4px; }
     .sd-bar-lbl { font-size: 9px; color: #fff; padding: 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-family: monospace; }
     .sd-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #f87171; z-index: 30; pointer-events: none; }
     .sd-playhead-head { position: absolute; top: 0; left: -5px; width: 12px; height: 11px; background: #f87171; border-radius: 2px 2px 6px 6px; }
@@ -951,7 +931,6 @@
       </div>
       <div class="sd-body">
         <div class="sd-scroll" id="sd-scroll"><div class="sd-canvas" id="sd-canvas"></div></div>
-        <div id="sd-scene-details" class="sd-scene-details"></div>
       </div>
     </div>
   </div>
@@ -10766,7 +10745,6 @@
   let sdResizeState = null;    // active right-edge drag-resize gesture
   let sdResizeClickGuard = false; // swallow the click that fires right after a resize drag
   let sdExpanded = localStorage.getItem('sd-expanded-channels') === '1';
-  let sdExpandedScenes = new Set();   // scene indices expanded via their per-block caret
   let sdPlayheadTime = 0;
   const sdPlay = { playing: false, raf: null, lastTs: 0, voice: null, bgm: null, scene: -1 };
   let sdResizeTimer = null;
@@ -10849,8 +10827,7 @@
       const showNum = w >= 64;
       const showDur = w >= 96;
       const showLabel = w >= 34;
-      const caretHTML = w >= 24 ? `<div class="sd-clip-caret" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();sdToggleSceneExpand(${i})" title="${sdEsc(sdExpandedScenes.has(i) ? (sdT().sd_scene_collapse || 'Collapse') : (sdT().sd_scene_expand || 'Expand this scene'))}">${sdExpandedScenes.has(i) ? '▴' : '▾'}</div>` : '';
-      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}${sdExpandedScenes.has(i) ? ' sd-clip-expanded' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${caretHTML}${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
+      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
       curX += w;
     });
     clipsHTML += `<div class="sd-add-tile" style="left:${curX + 4}px" onclick="openModal(-1)" title="${sdEsc(sdT().btn_add_new_scene || '+ Add scene')}">＋</div>`;
@@ -10864,13 +10841,6 @@
     if (meta) meta.textContent = `${total.toFixed(1)}s · ${sdSegments.length} ${sdT().sd_scenes || 'scenes'}`;
     sdUpdatePlayheadDOM();
 
-    // Per-scene expanded detail editors (drag item bars to retime/resize)
-    const detailHost = document.getElementById('sd-scene-details');
-    if (detailHost) {
-      const open = [...sdExpandedScenes].filter(i => i >= 0 && i < sdSegments.length).sort((a, b) => a - b);
-      detailHost.innerHTML = open.map(i => sdSceneDetailHTML(i)).join('');
-    }
-
     // Reserve exactly the dock's height below the scene cards
     if (panel) panel.style.paddingBottom = (dock.offsetHeight + 24) + 'px';
 
@@ -10878,55 +10848,101 @@
   }
 
   // Channel rows for the expanded view — every scene's layers at their global offsets
+  // Editable multi-track view: scene blocks stay fixed above; the Voice/Text/Media/SFX
+  // tracks below are draggable — right edge = change length, body = move timing.
+  // Voice is read-only (its length is the narration audio). Like a normal NLE timeline.
   function sdChannelsHTML(totalWidth, pps) {
     const t = sdT();
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const num = (v, dflt) => (v != null && v !== '' && !isNaN(Number(v))) ? Number(v) : dflt;
     let voice = '', text = '', media = '', sfx = '';
     let hasMedia = false, hasSfx = false;
-    let x = 0;
+    let x = 0, dur = 0;  // outer-scoped so editBar's template sees the current scene
+    const editBar = (i, kind, j, arr, s, e, color, label, extra = '') => {
+      const a = arr ? `'${arr}'` : 'null';
+      const leftPx = x + s * pps + 1, widPx = Math.max(5, (e - s) * pps - 2);
+      return `<div class="sd-bar sd-bar-edit" data-scene-x="${x}" data-dur="${dur}" style="left:${leftPx}px;width:${widPx}px;background:${color};${extra}" onmousedown="sdChanItemDown(event,${i},'${kind}',${j},${a},'move')" title="#${i + 1} · ${label} · ${(e - s).toFixed(1)}s">${label ? `<span class="sd-bar-lbl">${label}</span>` : ''}<div class="sd-bar-resize" onmousedown="sdChanItemDown(event,${i},'${kind}',${j},${a},'resize')"></div></div>`;
+    };
     sdSegments.forEach((seg, i) => {
-      const dur = Math.max(0.5, Number(seg.duration) || 5);
-      const px = s => s * pps;
-      const jump = `onclick="sdJump(${i})"`;
+      dur = Math.max(0.5, Number(seg.duration) || 5);
+      const px = sec => sec * pps;
       const aDur = Number(seg.audioDuration);
       if (Number.isFinite(aDur) && aDur > 0) {
         const clipped = aDur > dur + 0.01;
-        voice += `<div class="sd-bar" style="left:${x + 1}px;width:${Math.max(4, px(Math.min(aDur, dur)) - 2)}px;background:${clipped ? '#dc2626' : '#2563eb'}" ${jump} title="#${i + 1} ${t.voice_label || 'Voice'} ${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}"><span class="sd-bar-lbl">${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}</span></div>`;
+        voice += `<div class="sd-bar" style="left:${x + 1}px;width:${Math.max(4, px(Math.min(aDur, dur)) - 2)}px;background:${clipped ? '#dc2626' : '#2563eb'}" onclick="sdJump(${i})" title="#${i + 1} ${t.voice_label || 'Voice'} ${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}"><span class="sd-bar-lbl">${aDur.toFixed(1)}s${clipped ? ' ✂' : ''}</span></div>`;
       }
       if ((seg.text || '').trim()) {
-        const s = clamp(Number(seg.mainTextStartAt) || 0, 0, dur);
-        const e = (seg.mainTextEndAt != null && seg.mainTextEndAt !== '' && !isNaN(Number(seg.mainTextEndAt))) ? clamp(Number(seg.mainTextEndAt), s, dur) : dur;
-        text += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#10b981" ${jump} title="#${i + 1} ${sdEsc(seg.text)}"><span class="sd-bar-lbl">${sdEsc(seg.text)}</span></div>`;
+        const s = clamp(num(seg.mainTextStartAt, 0), 0, dur);
+        text += editBar(i, 'maintext', -1, null, s, clamp(num(seg.mainTextEndAt, dur), s, dur), '#10b981', sdEsc((seg.text || '').slice(0, 18)));
       }
-      (seg.extraTexts || []).forEach(et => {
-        const s = clamp(Number(et?.startAt) || 0, 0, dur);
-        const e = (et?.endAt != null && et.endAt !== '' && !isNaN(Number(et.endAt))) ? clamp(Number(et.endAt), s, dur) : dur;
-        text += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#14b8a6;top:14px;height:7px;bottom:auto" ${jump} title="#${i + 1} ${sdEsc(et?.text || '')}"></div>`;
+      (seg.extraTexts || []).forEach((et, j) => {
+        const s = clamp(num(et?.startAt, 0), 0, dur);
+        text += editBar(i, 'extra', j, null, s, clamp(num(et?.endAt, dur), s, dur), '#14b8a6', sdEsc((et?.text || '#' + (j + 1)).slice(0, 12)), 'top:13px;height:9px;bottom:auto');
       });
       const mediaItems = [
-        ...(seg.overlayImages || []).map(o => ({ ...o, color: '#a855f7', icon: '🖼' })),
-        ...(seg.overlayVideos || []).map(o => ({ ...o, color: '#7c3aed', icon: '🎞' })),
-        ...(seg.overlayShapes || []).map(o => ({ ...o, color: '#f59e0b', icon: '⬛' })),
+        ...(seg.overlayImages || []).map((o, k) => ({ o, arr: 'overlayImages', k, color: '#a855f7', icon: '🖼' })),
+        ...(seg.overlayVideos || []).map((o, k) => ({ o, arr: 'overlayVideos', k, color: '#7c3aed', icon: '🎞' })),
+        ...(seg.overlayShapes || []).map((o, k) => ({ o, arr: 'overlayShapes', k, color: '#f59e0b', icon: '⬛' })),
       ];
-      mediaItems.forEach(o => {
+      mediaItems.forEach(m => {
         hasMedia = true;
-        const s = clamp(Number(o?.startAt) || 0, 0, dur);
-        const e = (o?.endAt != null && o.endAt !== '' && !isNaN(Number(o.endAt))) ? clamp(Number(o.endAt), s, dur) : dur;
-        media += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:${o.color}" ${jump} title="#${i + 1} ${o.icon}"><span class="sd-bar-lbl">${o.icon}</span></div>`;
+        const s = clamp(num(m.o?.startAt, 0), 0, dur);
+        media += editBar(i, 'media', m.k, m.arr, s, clamp(num(m.o?.endAt, dur), s, dur), m.color, m.icon);
       });
       if (seg.soundEffect && (seg.soundEffect.file || seg.soundEffect.src)) {
         hasSfx = true;
-        const s = clamp(Number(seg.soundEffect.startAt) || 0, 0, dur);
-        const e = (seg.soundEffect.endAt != null && !isNaN(Number(seg.soundEffect.endAt))) ? clamp(Number(seg.soundEffect.endAt), s, dur) : dur;
-        sfx += `<div class="sd-bar" style="left:${x + px(s) + 1}px;width:${Math.max(4, px(e - s) - 2)}px;background:#ec4899" ${jump} title="#${i + 1} SFX"><span class="sd-bar-lbl">SFX</span></div>`;
+        const s = clamp(num(seg.soundEffect.startAt, 0), 0, dur);
+        sfx += editBar(i, 'sfx', -1, null, s, clamp(num(seg.soundEffect.endAt, dur), s, dur), '#ec4899', 'SFX');
       }
       x += px(dur);
     });
     const row = (label, bars) => `<div class="sd-chan" style="width:${totalWidth}px"><span class="sd-chan-label">${label}</span>${bars}</div>`;
-    let html = row(`🎙 ${t.voice_label || 'Voice'}`, voice) + row(`💬 ${t.sd_chan_text || 'Text'}`, text);
+    const hint = localStorage.getItem('sd-item-hint-seen') !== '1'
+      ? `<div class="sd-chan-hint">↔ ${t.sd_item_hint || "Drag a bar's edge to resize · its body to move"}</div>` : '';
+    let html = hint + row(`🎙 ${t.voice_label || 'Voice'}`, voice) + row(`💬 ${t.sd_chan_text || 'Text'}`, text);
     if (hasMedia) html += row(`🎨 ${t.sd_chan_media || 'Media'}`, media);
     if (hasSfx) html += row(`🔊 SFX`, sfx);
     return html;
+  }
+
+  // Drag an item bar in the channel tracks. Global px↔time via sdEffPPS; timing is
+  // clamped within the item's own scene. Pure click (no drag) jumps to that scene.
+  function sdChanItemDown(ev, i, kind, j, arr, mode) {
+    ev.preventDefault(); ev.stopPropagation();
+    localStorage.setItem('sd-item-hint-seen', '1');
+    document.querySelector('.sd-chan-hint')?.remove();
+    const bar = (mode === 'resize') ? ev.target.closest('.sd-bar') : ev.currentTarget;
+    if (!bar) return;
+    const pps = sdEffPPS || 10;
+    const sceneX = parseFloat(bar.dataset.sceneX) || 0;
+    const dur = parseFloat(bar.dataset.dur) || Math.max(0.5, Number((sdSegments[i] || {}).duration) || 5);
+    const startX = ev.clientX;
+    const startS0 = Math.max(0, (parseFloat(bar.style.left) - 1 - sceneX) / pps);
+    const widS = Math.max(0.1, (parseFloat(bar.style.width) + 2) / pps);
+    bar.classList.add('sd-bar-dragging');
+    let moved = false;
+    const move = (e) => {
+      const dSec = (e.clientX - startX) / pps;
+      if (Math.abs(e.clientX - startX) > 2) moved = true;
+      let s = startS0, en = startS0 + widS;
+      if (mode === 'resize') en = Math.max(s + 0.2, Math.min(dur, startS0 + widS + dSec));
+      else { s = Math.max(0, Math.min(dur - widS, startS0 + dSec)); en = s + widS; }
+      bar.style.left = (sceneX + s * pps + 1) + 'px';
+      bar.style.width = Math.max(5, (en - s) * pps - 2) + 'px';
+      bar.dataset.curStart = s; bar.dataset.curEnd = en;
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      bar.classList.remove('sd-bar-dragging');
+      if (moved && bar.dataset.curStart != null) {
+        sdItemPersist(i, { kind, j: String(j), arr }, parseFloat(bar.dataset.curStart), parseFloat(bar.dataset.curEnd));
+      } else {
+        sdJump(i);  // pure click navigates to the scene
+      }
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
   }
 
   function sdJump(i) {
@@ -11128,117 +11144,10 @@
     renderSceneDock();
   }
 
-  /* ── Per-scene expand: drag item bars to retime/resize a scene's layers ── */
-  function sdToggleSceneExpand(i) {
-    if (sdExpandedScenes.has(i)) sdExpandedScenes.delete(i);
-    else sdExpandedScenes.add(i);
-    renderSceneDock();
-  }
-
   function _sdClampT(v, lo, hi, dflt) {
     const n = Number(v);
     if (v == null || v === '' || !Number.isFinite(n)) return dflt;
     return Math.max(lo, Math.min(hi, n));
-  }
-
-  // The editable (and read-only voice) items of a scene, with timing in seconds
-  function sdSceneItems(i) {
-    const seg = sdSegments[i] || {};
-    const dur = Math.max(0.5, Number(seg.duration) || 5);
-    const t = sdT();
-    const items = [];
-    const aDur = Number(seg.audioDuration);
-    if (Number.isFinite(aDur) && aDur > 0) {
-      items.push({ kind: 'voice', j: -1, label: '🎙 ' + (t.voice_label || 'Voice'), color: '#2563eb', start: 0, end: Math.min(aDur, dur), fixed: true });
-    }
-    if ((seg.text || '').trim()) {
-      const s = _sdClampT(seg.mainTextStartAt, 0, dur, 0);
-      items.push({ kind: 'maintext', j: -1, label: '💬 ' + (t.main_text || 'Main text'), color: '#10b981', start: s, end: _sdClampT(seg.mainTextEndAt, s, dur, dur), fixed: false });
-    }
-    (seg.extraTexts || []).forEach((et, j) => {
-      const s = _sdClampT(et?.startAt, 0, dur, 0);
-      const label = (et?.text || ('#' + (j + 1))).toString().slice(0, 14);
-      items.push({ kind: 'extra', j, label: '💬 ' + sdEsc(label), color: '#14b8a6', start: s, end: _sdClampT(et?.endAt, s, dur, dur), fixed: false });
-    });
-    const media = [
-      ...(seg.overlayImages || []).map((o, k) => ({ o, arr: 'overlayImages', k, icon: '🖼' })),
-      ...(seg.overlayVideos || []).map((o, k) => ({ o, arr: 'overlayVideos', k, icon: '🎞' })),
-      ...(seg.overlayShapes || []).map((o, k) => ({ o, arr: 'overlayShapes', k, icon: '⬛' })),
-    ];
-    media.forEach(m => {
-      const s = _sdClampT(m.o?.startAt, 0, dur, 0);
-      items.push({ kind: 'media', arr: m.arr, j: m.k, label: m.icon + ' ' + (t.sd_chan_media || 'Media'), color: '#a855f7', start: s, end: _sdClampT(m.o?.endAt, s, dur, dur), fixed: false });
-    });
-    if (seg.soundEffect && (seg.soundEffect.file || seg.soundEffect.src)) {
-      const s = _sdClampT(seg.soundEffect.startAt, 0, dur, 0);
-      items.push({ kind: 'sfx', j: -1, label: '🔊 SFX', color: '#ec4899', start: s, end: _sdClampT(seg.soundEffect.endAt, s, dur, dur), fixed: false });
-    }
-    return { dur, items };
-  }
-
-  function sdSceneDetailHTML(i) {
-    const { dur, items } = sdSceneItems(i);
-    const t = sdT();
-    const hint = localStorage.getItem('sd-item-hint-seen') !== '1'
-      ? `<span class="sd-detail-hint">↔ ${t.sd_item_hint || "Drag a bar's edge to resize · its body to move"}</span>` : '';
-    const head = `<div class="sd-detail-head"><span class="sd-detail-title">▾ ${t.sd_scene_label || 'Scene'} ${i + 1} · ${dur.toFixed(1)}s</span>${hint}<button class="sd-detail-close" onclick="sdToggleSceneExpand(${i})" title="${sdEsc(t.sd_scene_collapse || 'Collapse')}">▴</button></div>`;
-    const rows = items.map((it, idx) => {
-      const leftPct = (it.start / dur) * 100;
-      const widPct = Math.max(2, ((it.end - it.start) / dur) * 100);
-      const attrs = `data-kind="${it.kind}" data-j="${it.j}"${it.arr ? ` data-arr="${it.arr}"` : ''}`;
-      const handle = it.fixed ? '' : `<div class="sd-item-resize" onmousedown="sdItemDown(event,${i},${idx},'resize')"></div>`;
-      const moveDown = it.fixed ? '' : `onmousedown="sdItemDown(event,${i},${idx},'move')"`;
-      return `<div class="sd-detail-row">
-        <span class="sd-detail-label" title="${sdEsc(it.label)}">${it.label}</span>
-        <div class="sd-detail-track" data-dur="${dur}">
-          <div class="sd-item-bar${it.fixed ? ' fixed' : ''}" id="sd-item-${i}-${idx}" ${attrs} style="left:${leftPct}%;width:${widPct}%;background:${it.color}" ${moveDown} title="${it.start.toFixed(1)}–${it.end.toFixed(1)}s">
-            <span class="sd-item-lbl">${(it.end - it.start).toFixed(1)}s</span>${handle}
-          </div>
-        </div>
-      </div>`;
-    }).join('') || `<div class="sd-detail-empty">${t.sd_detail_empty || 'No timed items in this scene yet.'}</div>`;
-    return `<div class="sd-detail" data-scene="${i}">${head}<div class="sd-detail-rows">${rows}</div></div>`;
-  }
-
-  function sdItemDown(ev, i, idx, mode) {
-    ev.preventDefault(); ev.stopPropagation();
-    localStorage.setItem('sd-item-hint-seen', '1'); // they've discovered the gesture
-    const hintEl = document.querySelector('.sd-detail-hint');
-    if (hintEl) hintEl.remove();
-    const bar = document.getElementById(`sd-item-${i}-${idx}`);
-    if (!bar) return;
-    const track = bar.parentElement;
-    const dur = Number(track.dataset.dur) || Math.max(0.5, Number((sdSegments[i] || {}).duration) || 5);
-    const trackW = track.getBoundingClientRect().width || 1;
-    const pps = trackW / dur;
-    const startX = ev.clientX;
-    const startS = (parseFloat(bar.style.left) / 100) * dur;
-    const widS = (parseFloat(bar.style.width) / 100) * dur;
-    bar.classList.add('sd-item-dragging');
-    const move = (e) => {
-      const dSec = (e.clientX - startX) / pps;
-      let s = startS, en = startS + widS;
-      if (mode === 'resize') {
-        en = Math.max(s + 0.2, Math.min(dur, startS + widS + dSec));
-      } else {
-        s = Math.max(0, Math.min(dur - widS, startS + dSec));
-        en = s + widS;
-      }
-      bar.style.left = (s / dur * 100) + '%';
-      bar.style.width = ((en - s) / dur * 100) + '%';
-      bar.dataset.curStart = s; bar.dataset.curEnd = en;
-      const lbl = bar.querySelector('.sd-item-lbl');
-      if (lbl) lbl.textContent = (en - s).toFixed(1) + 's';
-    };
-    const up = () => {
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-      bar.classList.remove('sd-item-dragging');
-      const s = parseFloat(bar.dataset.curStart), en = parseFloat(bar.dataset.curEnd);
-      if (Number.isFinite(s) && Number.isFinite(en)) sdItemPersist(i, { kind: bar.dataset.kind, j: bar.dataset.j, arr: bar.dataset.arr }, s, en);
-    };
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
   }
 
   // Read an item's current timing (clamped, with defaults) — used to snapshot for undo
