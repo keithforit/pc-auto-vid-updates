@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Geist:wght@400;700;900&family=Cal+Sans&family=Manrope:wght@400;700;800&family=Space+Grotesk:wght@400;500;700&family=Hanken+Grotesk:wght@400;700;800&family=LINE+Seed+JP:wght@400;700;800&family=M+PLUS+1:wght@400;700;800&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Sans+JP:wght@400;600;700&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,700,900&display=swap');
 
 /* Local font support — drop .ttf or .woff2 files into public/fonts/ and add @font-face rules here:
 @font-face {

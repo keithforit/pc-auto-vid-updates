@@ -1179,12 +1179,13 @@ app.post('/update-scene-texts', (req, res) => {
         const {
             index, text, textPosition, textHPosition, textAlign, textAnimation, textFadeInDuration, textFadeOutDuration, extraTexts, mainTextStyleOverride,
             overlayImage, overlayImages, overlayShapes, overlayVideos, voiceover_text, voiceoverRichText, voiceEmphasis, voicevoxSpeaker,
-            mainTextStartAt, mainTextEndAt,
+            mainTextStartAt, mainTextEndAt, font,
             sceneAnimation, soundEffect, sceneFadeInDuration, sceneFadeOutDuration,
             backgroundMusicEnabled, backgroundMusicVolume, textNoWrap, textBoxWidth, textPadding,
         } = req.body;
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         if (text                  !== undefined) segments[index].text                  = text;
+        if (font                  !== undefined) segments[index].font                  = font;
         if (textPosition          !== undefined) segments[index].textPosition          = textPosition;
         if (textHPosition         !== undefined) segments[index].textHPosition         = textHPosition;
         if (textAlign             !== undefined) segments[index].textAlign             = textAlign;

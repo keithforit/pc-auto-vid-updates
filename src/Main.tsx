@@ -276,7 +276,7 @@ export const Main: React.FC = () => {
                                                     text={et.text}
                                                     textStyle={et.textStyle || (segment as any).textStyle}
                                                     animation={et.animation || 'pop'}
-                                                    font={(segment as any).font}
+                                                    font={et.font ?? (segment as any).font}
                                                     position={et.position}
                                                     textHPosition={(et as any).textHPosition || 'center'}
                                                     textAlign={et.textAlign || 'center'}

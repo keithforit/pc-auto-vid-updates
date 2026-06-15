@@ -4,7 +4,9 @@
   <title>AI Video Factory</title>
   <script src="/socket.io/socket.io.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;900&family=Noto+Serif+JP:wght@700&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;900&family=Noto+Serif+JP:wght@700&family=Dela+Gothic+One&family=Bebas+Neue&family=Oswald:wght@700&family=Bangers&family=M+PLUS+Rounded+1c:wght@700&family=Geist:wght@400;700;900&family=Cal+Sans&family=Manrope:wght@700;800&family=Space+Grotesk:wght@500;700&family=Hanken+Grotesk:wght@700;800&family=LINE+Seed+JP:wght@700;800&family=M+PLUS+1:wght@700;800&family=BIZ+UDPGothic:wght@700&family=IBM+Plex+Sans+JP:wght@600;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,700,900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
   <style>
     * { box-sizing: border-box; }
@@ -456,6 +458,11 @@
     .font-card.active { border-color: var(--accent); background: rgba(16,185,129,0.08); }
     .font-card .font-preview { font-size: 20px; margin-bottom: 4px; }
     .font-card .font-label { font-size: 11px; color: var(--text-muted); }
+    /* Compact per-scene / per-layer font picker */
+    .typo-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .typo-row label { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+    .font-select { flex: 1; min-width: 0; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 6px; padding: 6px 8px; font-size: 13px; outline: none; cursor: pointer; }
+    .font-select:focus { border-color: var(--accent); }
 
     /* Glow color row */
     #glow-color-row { display: none; margin-top: 14px; align-items: center; gap: 12px; }
@@ -1091,36 +1098,8 @@
     <!-- FONT -->
     <div class="settings-section">
       <h3 data-i18n="settings_font">🔡 Font</h3>
-      <div class="font-cards">
-        <div class="font-card active" id="fontCard_noto" onclick="selectFont('noto')">
-          <div class="font-preview" style="font-family:'Noto Sans JP';font-weight:900">あいう ABC</div>
-          <div class="font-label">Noto Sans JP</div>
-        </div>
-        <div class="font-card" id="fontCard_dela" onclick="selectFont('dela')">
-          <div class="font-preview" style="font-family:'Dela Gothic One'">あいう ABC</div>
-          <div class="font-label">Dela Gothic One</div>
-        </div>
-        <div class="font-card" id="fontCard_notoserifJP" onclick="selectFont('notoserifJP')">
-          <div class="font-preview" style="font-family:'Noto Serif JP';font-weight:700">あいう ABC</div>
-          <div class="font-label">Noto Serif JP</div>
-        </div>
-        <div class="font-card" id="fontCard_bebas" onclick="selectFont('bebas')">
-          <div class="font-preview" style="font-family:'Bebas Neue'">BEBAS 123</div>
-          <div class="font-label">Bebas Neue</div>
-        </div>
-        <div class="font-card" id="fontCard_oswald" onclick="selectFont('oswald')">
-          <div class="font-preview" style="font-family:'Oswald';font-weight:700">OSWALD ABC</div>
-          <div class="font-label">Oswald</div>
-        </div>
-        <div class="font-card" id="fontCard_bangers" onclick="selectFont('bangers')">
-          <div class="font-preview" style="font-family:'Bangers'">BANGERS!</div>
-          <div class="font-label">Bangers</div>
-        </div>
-        <div class="font-card" id="fontCard_mplus" onclick="selectFont('mplus')">
-          <div class="font-preview" style="font-family:'M PLUS Rounded 1c';font-weight:700">あいう ABC</div>
-          <div class="font-label">M PLUS Rounded</div>
-        </div>
-      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 10px" data-i18n="settings_font_hint">Fonts shown match your app language. This is the default font for new scenes — each scene can override it.</div>
+      <div class="font-cards" id="settings-font-cards"></div>
     </div>
 
     <div class="settings-section">
@@ -1406,6 +1385,8 @@
       settings_text_style: '🔤 Text Style',
       settings_style: 'Style',
       settings_font: '🔡 Font',
+      settings_font_hint: 'Fonts shown match your app language. This is the default for new scenes — each scene and text layer can override it.',
+      label_font: 'Font:',
       settings_bgmusic: '🎵 Background Music',
       settings_random: 'Random',
       settings_video_size: '📐 Video Size',
@@ -1920,6 +1901,8 @@
       settings_text_style: '🔤 テキストスタイル',
       settings_style: 'スタイル',
       settings_font: '🔡 フォント',
+      settings_font_hint: '表示されるフォントはアプリの言語に合わせて切り替わります。これは新しいシーンの既定フォントで、各シーン・各テキストレイヤーで個別に変更できます。',
+      label_font: 'フォント:',
       settings_bgmusic: '🎵 バックグラウンドミュージック',
       settings_random: 'ランダム',
       settings_video_size: '📐 動画サイズ',
@@ -2430,6 +2413,8 @@
     if (typeof renderProjectDraftStatus === 'function') renderProjectDraftStatus();
     // Re-render the docked timeline so its JS-built labels (channels, meta, tooltips) re-localize
     try { if (typeof renderSceneDock === 'function' && sdSegments.length) renderSceneDock(); } catch {}
+    // Re-filter the settings font cards for the new language
+    try { renderSettingsFontCards(); } catch {}
   }
 
   /* ── Load media library on startup so brand swatches are ready ── */
@@ -3385,6 +3370,8 @@
     selectStyle(s.textStyle || 'box', false);
     onGlowColorChange(s.glowColor || '#00ffff');
     document.getElementById('glowColorPicker').value = s.glowColor || '#00ffff';
+    currentSettings.font = s.font || 'noto';
+    renderSettingsFontCards();
     selectFont(s.font || 'noto', false);
     const bc = s.blockColor || '#ffdd00';
     const tc = s.textColor  || '#000000';
@@ -3676,8 +3663,65 @@
   }
 
   /* Font */
+  // ── Font registry ──────────────────────────────────────────────────────
+  // langs: which app language a font is offered under. CJK fonts → 'ja' (they can
+  // render Japanese); Latin display/text fonts → 'en'. Keys are stable — they're
+  // stored in scene data and mapped to the same families in src/Caption.tsx.
+  // family uses SINGLE quotes for font names — these strings get interpolated into
+  // double-quoted HTML style="…" attributes, and double quotes would truncate them.
+  const FONTS = [
+    // Japanese / CJK
+    { key:'noto',         label:'Noto Sans JP',     family:"'Noto Sans JP', sans-serif",      langs:['ja'], w:900 },
+    { key:'notoserifJP',  label:'Noto Serif JP',    family:"'Noto Serif JP', serif",          langs:['ja'], w:700 },
+    { key:'dela',         label:'Dela Gothic One',  family:"'Dela Gothic One', sans-serif",   langs:['ja'], w:400 },
+    { key:'mplus',        label:'M PLUS Rounded',   family:"'M PLUS Rounded 1c', sans-serif", langs:['ja'], w:700 },
+    { key:'lineseedjp',   label:'LINE Seed JP',     family:"'LINE Seed JP', sans-serif",      langs:['ja'], w:700 },
+    { key:'mplus1',       label:'M PLUS 1',         family:"'M PLUS 1', sans-serif",          langs:['ja'], w:800 },
+    { key:'bizudp',       label:'BIZ UDPGothic',    family:"'BIZ UDPGothic', sans-serif",     langs:['ja'], w:700 },
+    { key:'ibmplexjp',    label:'IBM Plex Sans JP', family:"'IBM Plex Sans JP', sans-serif",  langs:['ja'], w:700 },
+    { key:'yugothic',     label:'Yu Gothic',        family:"'Yu Gothic','YuGothic','Hiragino Kaku Gothic ProN',sans-serif", langs:['ja'], w:500 },
+    { key:'zenmaru',      label:'Zen Maru Gothic',  family:"'Zen Maru Gothic', sans-serif",   langs:['ja'], w:700 },
+    // English / Latin
+    { key:'bebas',        label:'Bebas Neue',       family:"'Bebas Neue', sans-serif",        langs:['en'], w:400 },
+    { key:'oswald',       label:'Oswald',           family:"'Oswald', sans-serif",            langs:['en'], w:700 },
+    { key:'bangers',      label:'Bangers',          family:"'Bangers', cursive",              langs:['en'], w:400 },
+    { key:'geist',        label:'Geist',            family:"'Geist', sans-serif",             langs:['en'], w:700 },
+    { key:'satoshi',      label:'Satoshi',          family:"'Satoshi', sans-serif",           langs:['en'], w:700 },
+    { key:'calsans',      label:'Cal Sans',         family:"'Cal Sans', sans-serif",          langs:['en'], w:600 },
+    { key:'manrope',      label:'Manrope',          family:"'Manrope', sans-serif",           langs:['en'], w:800 },
+    { key:'spacegrotesk', label:'Space Grotesk',    family:"'Space Grotesk', sans-serif",     langs:['en'], w:700 },
+    { key:'helvetica',    label:'Helvetica',        family:"'Helvetica Neue', Helvetica, Arial, sans-serif", langs:['en'], w:700 },
+    { key:'hanken',       label:'Hanken Grotesk',   family:"'Hanken Grotesk', sans-serif",    langs:['en'], w:800 },
+  ];
+  const FONT_BY_KEY = Object.fromEntries(FONTS.map(f => [f.key, f]));
+  function fontFamilyFor(key) { return (FONT_BY_KEY[key] || FONT_BY_KEY.noto).family; }
+  function fontsForLang(lang) { const L = (lang === 'ja') ? 'ja' : 'en'; return FONTS.filter(f => f.langs.includes(L)); }
+
+  // Settings font picker — cards filtered by the current app language
+  function renderSettingsFontCards() {
+    const host = document.getElementById('settings-font-cards');
+    if (!host) return;
+    const cur = currentSettings.font || 'noto';
+    host.innerHTML = fontsForLang(window._appLang || 'en').map(f => `
+      <div class="font-card${f.key === cur ? ' active' : ''}" id="fontCard_${f.key}" onclick="selectFont('${f.key}')">
+        <div class="font-preview" style="font-family:${f.family};font-weight:${f.w}">${f.langs.includes('ja') ? 'あいう ABC' : 'Aa Bb 12'}</div>
+        <div class="font-label">${f.label}</div>
+      </div>`).join('');
+  }
+
+  // Compact <select> of language-appropriate fonts — for the per-scene / per-layer pickers
+  function fontSelectHTML(id, current, onchange) {
+    const cur = current || 'noto';
+    const opts = fontsForLang(window._appLang || 'en');
+    // Always include the current value even if it's from the other language set
+    if (!opts.some(f => f.key === cur) && FONT_BY_KEY[cur]) opts.unshift(FONT_BY_KEY[cur]);
+    return `<select id="${id}" class="font-select" onchange="${onchange}">${
+      opts.map(f => `<option value="${f.key}"${f.key === cur ? ' selected' : ''} style="font-family:${f.family}">${f.label}</option>`).join('')
+    }</select>`;
+  }
+
   function selectFont(val, save=false) {
-    document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('#settings-font-cards .font-card').forEach(el => el.classList.remove('active'));
     const card = document.getElementById('fontCard_' + val);
     if (card) card.classList.add('active');
     currentSettings.font = val;
@@ -3912,7 +3956,7 @@
       data-fulltext="${escapeHtml(rawText)}"
       style="${wrap};display:${previewDisplay}">
       <div class="tprev-block-strip" id="tprev-strip-${i}" style="background:${glowColor || blockColor}"></div>
-      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner}">${txt}</div>
+      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner};font-family:${fontFamilyFor(seg.font)}">${txt}</div>
     </div>`;
   }
 
@@ -4151,6 +4195,9 @@
     } else {
       innerEl.style.maxWidth = `${boxWidth}%`;
     }
+    // Re-apply the chosen font — setAttribute('style', …) above wipes it each rebuild
+    const fontKey = document.getElementById(`main-font-${i}`)?.value;
+    if (fontKey) innerEl.style.fontFamily = fontFamilyFor(fontKey);
     applyTextPreviewAnimation(i, false);
   }
 
@@ -4427,26 +4474,29 @@
   let ptbGesture = null;  // active handle drag
   let ptbRaf = null;
 
+  // measureId = the element the transform box should hug. For text that's the inner
+  // text block (.tprev-inner) — NOT the full-size .text-preview wrapper, which spans
+  // the whole preview. Overlays/shapes are already sized, so they measure themselves.
   function ptbDescriptor(target) {
     const mainEl = target.closest('[data-drag-main]');
     if (mainEl) {
       const i = parseInt(mainEl.dataset.dragSeg);
-      return { type: 'main', i, j: -1, elId: `tpreview-${i}`, rotId: `rotation-${i}` };
+      return { type: 'main', i, j: -1, elId: `tpreview-${i}`, measureId: `tprev-inner-${i}`, rotId: `rotation-${i}` };
     }
     const etEl = target.closest('[data-drag-extra]');
     if (etEl) {
       const i = parseInt(etEl.dataset.dragSeg), j = parseInt(etEl.dataset.dragExtra);
-      return { type: 'extra', i, j, elId: `et-preview-${i}-${j}`, rotId: `et-rotation-${i}-${j}` };
+      return { type: 'extra', i, j, elId: `et-preview-${i}-${j}`, measureId: `et-inner-${i}-${j}`, rotId: `et-rotation-${i}-${j}` };
     }
     const ovEl = target.closest('[data-drag-overlay]');
     if (ovEl) {
       const i = parseInt(ovEl.dataset.dragSeg), j = parseInt(ovEl.dataset.dragOverlay);
-      return { type: 'overlay', i, j, elId: `overlay-prev-${i}-${j}`, rotId: `overlay-rot-${i}-${j}` };
+      return { type: 'overlay', i, j, elId: `overlay-prev-${i}-${j}`, measureId: `overlay-prev-${i}-${j}`, rotId: `overlay-rot-${i}-${j}` };
     }
     const shEl = target.closest('[data-drag-shape]');
     if (shEl) {
       const i = parseInt(shEl.dataset.dragSeg), k = parseInt(shEl.dataset.dragShape);
-      return { type: 'shape', i, j: k, elId: `shape-prev-${i}-${k}`, rotId: `shaperot-${i}-${k}` };
+      return { type: 'shape', i, j: k, elId: `shape-prev-${i}-${k}`, measureId: `shape-prev-${i}-${k}`, rotId: `shaperot-${i}-${k}` };
     }
     return null;
   }
@@ -4507,7 +4557,9 @@
     const box = document.getElementById('ptb-box');
     const wrap = ptbWrap();
     if (!box || !wrap || ptbLayerWidth(ptbSel.i) < PTB_MIN_W) { ptbDeselect(); return; }
-    const el = ptbEl();  // re-resolved every frame: preview rebuilds replace elements but keep ids
+    // Measure the content element (text glyphs / image), re-resolved every frame so the box
+    // hugs the object — not the full-size text wrapper. Rebuilds replace elements but keep ids.
+    const el = document.getElementById(ptbSel.measureId) || ptbEl();
     if (el) {
       const b = el.getBoundingClientRect();
       const wr = wrap.getBoundingClientRect();
@@ -5879,6 +5931,10 @@
                 <button class="btn sm ghost rot-quick" onclick="setRotQuick(${i},-45)">-45</button>
                 <button class="btn sm ghost rot-quick" onclick="setRotQuick(${i},45)">45</button>
               </div>
+            </div>
+            <div class="ctrl-row typo-row" style="margin-top:4px">
+              <label data-i18n="label_font">${(I18N[window._appLang||'en']||I18N.en).label_font}</label>
+              ${fontSelectHTML(`main-font-${i}`, seg.font, `saveMainFont(${i})`)}
             </div>
             <div class="ctrl-row" style="flex-wrap:wrap;gap:6px;margin-top:2px">
               <span class="ctrl-row-label" data-i18n="label_colors">${(I18N[window._appLang||'en']||I18N.en).label_colors}</span>
@@ -7675,6 +7731,10 @@
             <button class="btn sm ghost rot-quick" onclick="setExtraRotQuick(${i},${j},-45)">-45</button>
           </div>
         </div>
+        <div class="ctrl-row typo-row" style="margin-top:2px">
+          <label>${t.label_font}</label>
+          ${fontSelectHTML(`et-font-${i}-${j}`, et.font, `saveExtraText(${i})`)}
+        </div>
         <!-- Wrap + Width -->
         <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="ctrl-row-label" data-i18n="label_wrap">${t.label_wrap}</span>
@@ -8210,7 +8270,7 @@
     const noWrapStyle = noWrap
       ? 'white-space:pre;width:max-content;max-width:none;overflow:visible'
       : `max-width:${boxWidth}%`;
-    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" style="${inner};${noWrapStyle}">${escapeHtml(txt)}</div></div>`;
+    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" id="et-inner-${i}-${j}" style="${inner};${noWrapStyle};font-family:${fontFamilyFor(et?.font || seg.font)}">${escapeHtml(txt)}</div></div>`;
   }
 
   function buildExtraTextPreviewsHTML(i, seg) {
@@ -8264,6 +8324,7 @@
       glowSizeOverride: parseInt(document.getElementById(`glowsize-${i}`)?.value) || 14,
       boxBorderRadius: parseInt(document.getElementById(`boxradius-${i}`)?.value) || 20,
       blockBorderRadius: parseInt(document.getElementById(`blockradius-${i}`)?.value) || 10,
+      font: document.getElementById(`main-font-${i}`)?.value || 'noto',
       extraTexts: extraTexts || getExtraTexts(i),
     };
     container.innerHTML = buildExtraTextPreviewsHTML(i, previewState);
@@ -8312,6 +8373,7 @@
       const textAlign   = alignActive ? ['left','center','right'][Array.from(alignActive.parentElement.children).indexOf(alignActive)] : 'center';
       const rotation    = parseInt(document.getElementById(`et-rotation-${i}-${j}`)?.value) || 0;
       const fontSize    = parseInt(document.getElementById(`et-fontsize-${i}-${j}`)?.value) || 70;
+      const font        = document.getElementById(`et-font-${i}-${j}`)?.value || undefined;
       const startAtRaw  = document.getElementById(`et-startat-${i}-${j}`)?.value;
       const startAt     = startAtRaw !== '' && startAtRaw != null ? parseFloat(startAtRaw) : null;
       const endAtRaw    = document.getElementById(`et-endat-${i}-${j}`)?.value;
@@ -8350,7 +8412,7 @@
       const noWrap = noWrapEl ? !noWrapEl.classList.contains('ghost') : (et?.noWrap || false);
       const textBoxWidthRaw = document.getElementById(`et-boxwidth-${i}-${j}`)?.value;
       const textBoxWidth = textBoxWidthRaw ? parseFloat(textBoxWidthRaw) : undefined;
-      return { text, position, textHPosition, textStyle, animation, textAlign, rotation, fontSize, startAt, endAt, fadeInDuration, fadeOutDuration, textX, textY, noWrap, textBoxWidth, ...overrides };
+      return { text, position, textHPosition, textStyle, animation, textAlign, rotation, fontSize, font, startAt, endAt, fadeInDuration, fadeOutDuration, textX, textY, noWrap, textBoxWidth, ...overrides };
     });
   }
 
@@ -9258,6 +9320,17 @@
   function setRotQuick(i, deg) {
     const el = document.getElementById(`rotation-${i}`);
     if (el) { el.value = deg; saveMainTextMeta(i); }
+  }
+
+  /* ── Per-scene font (Typography) ── */
+  async function saveMainFont(i) {
+    const sel = document.getElementById(`main-font-${i}`);
+    if (!sel) return;
+    updateTextPreview(i); // live preview picks up the new font from the select
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ index: i, font: sel.value })
+    });
   }
 
   function setExtraRotQuick(i, j, deg) {

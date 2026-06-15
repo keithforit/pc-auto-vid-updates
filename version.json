@@ -1,10 +1,13 @@
 {
-  "version": "1.4.22",
+  "version": "1.4.23",
   "date": "2026-06-15",
-  "notes": "Bad-key popup now only asks for the provider(s) that actually failed (one field if just Pexels or just Pixabay) and saving one key no longer wipes the other. Timeline: the channel view is now a clearly labelled 'Channels' toggle instead of a bare icon. New Settings → API Keys card shows live Pexels/Pixabay status and lets you verify + rotate keys anytime. EN/JA localized.",
+  "notes": "Typography: new per-scene and per-text-layer font picker (under Main text / each layer) plus a language-filtered font list in Settings. Adds Geist, Hanken Grotesk (free Aeonik stand-in), Satoshi, Cal Sans, Manrope, Helvetica, Space Grotesk (EN) and LINE Seed JP, M PLUS 1, BIZ UDPGothic, IBM Plex Sans JP, Yu Gothic, Zen Maru Gothic (JA); the preview now renders the chosen font. Transform box now hugs the selected object (text/image) instead of the whole preview. EN/JA localized.",
   "files": [
     "index.html",
     "server.js",
+    "src/Caption.tsx",
+    "src/Main.tsx",
+    "src/index.css",
     "version.json"
   ]
 }

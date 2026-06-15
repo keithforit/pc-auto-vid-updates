@@ -197,13 +197,28 @@ export const Caption: React.FC<CaptionProps> = ({
     }
 
     const fontMap: Record<string, string> = {
-        noto:        '"Noto Sans JP", sans-serif',
-        dela:        '"Dela Gothic One", sans-serif',
-        notoserifJP: '"Noto Serif JP", serif',
-        bebas:       '"Bebas Neue", sans-serif',
-        oswald:      '"Oswald", sans-serif',
-        bangers:     '"Bangers", sans-serif',
-        mplus:       '"M PLUS Rounded 1c", sans-serif',
+        noto:         '"Noto Sans JP", sans-serif',
+        dela:         '"Dela Gothic One", sans-serif',
+        notoserifJP:  '"Noto Serif JP", serif',
+        bebas:        '"Bebas Neue", sans-serif',
+        oswald:       '"Oswald", sans-serif',
+        bangers:      '"Bangers", sans-serif',
+        mplus:        '"M PLUS Rounded 1c", sans-serif',
+        // Japanese
+        lineseedjp:   '"LINE Seed JP", sans-serif',
+        mplus1:       '"M PLUS 1", sans-serif',
+        bizudp:       '"BIZ UDPGothic", sans-serif',
+        ibmplexjp:    '"IBM Plex Sans JP", sans-serif',
+        yugothic:     '"Yu Gothic", "YuGothic", "Hiragino Kaku Gothic ProN", sans-serif',
+        zenmaru:      '"Zen Maru Gothic", sans-serif',
+        // English / Latin
+        geist:        '"Geist", sans-serif',
+        satoshi:      '"Satoshi", sans-serif',
+        calsans:      '"Cal Sans", sans-serif',
+        manrope:      '"Manrope", sans-serif',
+        spacegrotesk: '"Space Grotesk", sans-serif',
+        helvetica:    '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        hanken:       '"Hanken Grotesk", sans-serif',
     };
     const fontFamily = fontMap[font] ?? '"Noto Sans JP", sans-serif';
 
