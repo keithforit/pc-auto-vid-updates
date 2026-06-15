@@ -1,7 +1,7 @@
 {
-  "version": "1.4.32",
+  "version": "1.4.33",
   "date": "2026-06-15",
-  "notes": "Timeline layout now opens to a clean inspector (matching the mockup): the selected scene's caption, Font, Colour, Size and Box/Glow/Plain style in one compact panel — no more wading through every control. 'All controls' reveals the full tabbed editor when you need it. The inspector drives the existing controls, so nothing diverges.",
+  "notes": "Fix: the Timeline inspector's caption box was inheriting the global 320px textarea height, which pushed the Font/Colour/Size/style controls down behind the docked tracks. Caption is now compact (auto height) so the whole inspector is visible.",
   "files": [
     "index.html",
     "version.json"
