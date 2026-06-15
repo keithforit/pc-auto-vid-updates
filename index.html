@@ -849,6 +849,13 @@
     .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
     .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
     @media (max-width: 1100px) { .tl-editor .segment-card { grid-template-columns: 200px minmax(0,1fr) 264px; gap: 12px; } }
+    /* ── List view: compact tabbed sections per card (the options the timeline had) ── */
+    .list-mode .scene-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 12px; }
+    .list-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
+    .list-mode .scene-accordion summary { display: none; }
+    .list-mode .scene-accordion-body { padding: 0; }
+    /* Dock Download/Share disabled until a video exists */
+    .sd-btn-disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -960,7 +967,6 @@
         <button class="btn sm ghost" type="button" onclick="restoreProjectDraft()" data-i18n="restore_project_draft">↩ Restore Project Draft</button>
         <button class="btn sm" type="button" id="global-bgm-btn" onclick="toggleAllScenesBgm()" title="Toggle background music on/off for all scenes" style="background:#1e293b;border:1px solid #334155;">🎵 BGM: ON</button>
         <span class="view-toggle" id="scene-view-toggle">
-          <button type="button" id="view-btn-storyboard" onclick="setSceneViewMode('storyboard')" data-i18n="view_storyboard">🎬 Storyboard</button>
           <button type="button" id="view-btn-list" onclick="setSceneViewMode('list')" data-i18n="view_list">📋 List</button>
           <button type="button" id="view-btn-timeline" onclick="setSceneViewMode('timeline')" data-i18n="view_timeline">🎞 Timeline</button>
         </span>
@@ -996,8 +1002,8 @@
         <button class="sd-zoom-btn sd-undo-btn" id="sd-undo-btn" onclick="sdUndo()" style="display:none" data-i18n="sd_undo" data-i18n-attr="title" title="Undo last timeline edit">↶ <span data-i18n="sd_undo_btn">Undo</span></button>
         <button class="sd-zoom-btn sd-viewall-btn" id="sd-viewall-btn" onclick="sdToggleViewAll()" title="View all scenes / the full video">⊞ <span id="sd-viewall-label" data-i18n="sd_view_all">All scenes</span></button>
         <span style="flex:1"></span>
-        <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video"><i class="fa-solid fa-download"></i></button>
-        <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share"><i class="fa-solid fa-share-nodes"></i></button>
+        <button class="sd-zoom-btn sd-btn-disabled" id="sd-download-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_need_render" data-i18n-attr="title" title="Generate a video first"><i class="fa-solid fa-download"></i></button>
+        <button class="sd-zoom-btn sd-btn-disabled" id="sd-share-btn" onclick="sdShareOpen(event)" data-i18n="sd_need_render" data-i18n-attr="title" title="Generate a video first"><i class="fa-solid fa-share-nodes"></i></button>
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
         <input type="range" id="sd-zoom-slider" class="sd-zoom-slider" min="2" max="300" step="1" value="20" oninput="sdZoomSlider(this.value)" data-i18n="sd_zoom_slider" data-i18n-attr="title" title="Zoom timeline (or scroll over it)" />
         <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
@@ -1396,6 +1402,7 @@
       sd_share: 'Share',
       sd_download_title: 'Download rendered videos',
       sd_no_renders: 'No rendered videos yet. Render from the Text to Video tab first.',
+      sd_need_render: 'Generate a video first',
       sd_render_hint: 'New renders are created from the Text to Video tab.',
       sd_share_title: 'Share',
       sd_share_latest: 'Download latest render',
@@ -1950,6 +1957,7 @@
       sd_share: '共有',
       sd_download_title: 'レンダリング済み動画をダウンロード',
       sd_no_renders: 'レンダリング済みの動画がまだありません。先に「テキストから動画」タブでレンダリングしてください。',
+      sd_need_render: '先に動画を生成してください',
       sd_render_hint: '新しいレンダリングは「テキストから動画」タブから作成します。',
       sd_share_title: '共有',
       sd_share_latest: '最新レンダリングをダウンロード',
@@ -2579,6 +2587,16 @@
     try { if (typeof renderSceneDock === 'function' && sdSegments.length) renderSceneDock(); } catch {}
     // Re-filter the settings font cards for the new language
     try { renderSettingsFontCards(); } catch {}
+    // Re-localize the scene-tabs / content rail / inspector — they're built from the summaries &
+    // i18n keys that just changed, so rebuild them for the new language.
+    try { applyListTabs(); } catch {}
+    try {
+      if (typeof tlEditorOpen === 'function' && tlEditorOpen()) {
+        const ci = tlEdMounted, c = document.getElementById('card-' + ci);
+        if (c) { try { buildContentRail(c, ci); } catch {} try { buildTimelineInspector(c, ci); } catch {} try { sbBuildSceneTabs(c); } catch {} }
+        try { tlUpdateEditorTitle(ci); } catch {}
+      }
+    } catch {}
   }
 
   /* ── Load media library on startup so brand swatches are ready ── */
@@ -7925,7 +7943,7 @@
         </div>
         <!-- Per-layer colour & style overrides -->
         <details class="scene-accordion" style="margin-top:6px">
-          <summary style="font-size:11px;padding:7px 10px">${t.label_style_overrides} <span style="font-size:10px;color:#64748b;font-weight:400">${t.label_style_overrides_hint}</span></summary>
+          <summary style="font-size:11px;padding:7px 10px"><span data-i18n="label_style_overrides">${t.label_style_overrides}</span> <span data-i18n="label_style_overrides_hint" style="font-size:10px;color:#64748b;font-weight:400">${t.label_style_overrides_hint}</span></summary>
           <div class="scene-accordion-body">
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
               <span class="ctrl-row-label" style="min-width:auto">${t.label_block_bg}:</span>
@@ -10465,6 +10483,7 @@
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     const doneMsg = _lt.log_done_saved(data.file);
     _renderRunning = false;
+    try { sdRefreshRenderButtons(true); } catch {}   // a video now exists → enable Download / Share
     if (scenesRerenderActive) {
       scenesRerenderActive = false;
       document.getElementById('scenes-rerender-progress-bar').style.width = '100%';
@@ -11016,6 +11035,8 @@
     // dock is in-flow (built in), so no overlay padding is needed.
     if (panel) panel.style.paddingBottom = (getSceneViewMode() === 'timeline') ? '' : (dock.offsetHeight + 24) + 'px';
 
+    try { sdApplyRenderBtnState(); } catch {}
+    if (sdHasRenders === null) { try { sdRefreshRenderButtons(); } catch {} }
     sdSetupObserver();
   }
 
@@ -11336,7 +11357,7 @@
   // Step out of single-scene editing back to all scenes (and vice-versa) from the timeline
   function sdToggleViewAll() {
     const goingToList = getSceneViewMode() !== 'list';
-    setSceneViewMode(goingToList ? 'list' : 'storyboard');
+    setSceneViewMode(goingToList ? 'list' : 'timeline');
     if (sdPlay.playing) sdPause();
     if (goingToList) window.scrollTo({ top: 0, behavior: 'smooth' });
     renderSceneDock();
@@ -11458,7 +11479,7 @@
   async function sdPlayToggle() {
     if (sdPlay.playing) { sdPause(); return; }
     if (!sdSegments.length) return;
-    if (getSceneViewMode() === 'list') setSceneViewMode('storyboard');  // watching needs a big preview
+    if (getSceneViewMode() === 'list') setSceneViewMode('timeline');  // watching needs a big preview
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
     stopAudioElement(currentVoicePreviewAudio); currentVoicePreviewAudio = null; _restoreVoicePreviewButton();
@@ -11586,8 +11607,28 @@
     document.querySelectorAll('.sd-pop').forEach(p => p.remove());
   }
 
+  // Download / Share only work once a video has been generated — gate them on a render existing.
+  let sdHasRenders = null;
+  function sdApplyRenderBtnState() {
+    const need = sdT().sd_need_render || 'Generate a video first';
+    [['sd-download-btn', sdT().sd_download || 'Download rendered video'],
+     ['sd-share-btn', sdT().sd_share || 'Share']].forEach(([id, onTitle]) => {
+      const b = document.getElementById(id);
+      if (!b) return;
+      b.classList.toggle('sd-btn-disabled', !sdHasRenders);
+      b.title = sdHasRenders ? onTitle : need;
+    });
+  }
+  async function sdRefreshRenderButtons(force) {
+    if (sdHasRenders !== null && !force) { sdApplyRenderBtnState(); return; }
+    try { const files = await fetch('/renders-list').then(r => r.json()); sdHasRenders = Array.isArray(files) && files.length > 0; }
+    catch { sdHasRenders = false; }
+    sdApplyRenderBtnState();
+  }
+
   async function sdDownloadOpen(e) {
     e.stopPropagation();
+    if (!sdHasRenders) { sdRefreshRenderButtons(); return; }   // disabled until a render exists
     const dock = document.getElementById('scene-dock');
     const wasOpen = !!document.getElementById('sd-pop-download');
     sdCloseAllPops();
@@ -11615,6 +11656,7 @@
 
   async function sdShareOpen(e) {
     e.stopPropagation();
+    if (!sdHasRenders) { sdRefreshRenderButtons(); return; }   // disabled until a render exists
     const dock = document.getElementById('scene-dock');
     const wasOpen = !!document.getElementById('sd-pop-share');
     sdCloseAllPops();
@@ -11658,7 +11700,8 @@
   let sdDropTarget = null;
 
   function getSceneViewMode() {
-    return localStorage.getItem('scene-view-mode') || 'storyboard';
+    const m = localStorage.getItem('scene-view-mode') || 'list';
+    return m === 'storyboard' ? 'list' : m;   // Storyboard view removed → fall back to List
   }
 
   function setSceneViewMode(mode) {
@@ -11670,28 +11713,28 @@
     const panel = document.getElementById('tab-scenes');
     if (!panel) return;
     const mode = getSceneViewMode();
-    const singleScene = mode !== 'list';       // storyboard + timeline both edit one scene
     const timeline = mode === 'timeline';
+    const singleScene = timeline;              // only Timeline edits one scene at a time
     panel.classList.toggle('storyboard-mode', singleScene);  // hides the other scene cards
-    panel.classList.toggle('timeline-mode', timeline);       // CapCut-style 3-pane styling
-    document.getElementById('view-btn-storyboard')?.classList.toggle('active', mode === 'storyboard');
+    panel.classList.toggle('timeline-mode', timeline);       // full-screen editor styling
+    panel.classList.toggle('list-mode', mode === 'list');    // compact tabbed cards
     document.getElementById('view-btn-list')?.classList.toggle('active', mode === 'list');
     document.getElementById('view-btn-timeline')?.classList.toggle('active', timeline);
     if (!timeline) { try { closeTimelineEditor(); } catch {} }   // leaving Timeline → restore card + dock
-    if (!sdSegments.length) { if (!timeline) { try { closeTimelineEditor(); } catch {} } return; }
+    try { sdRefreshRenderButtons(); } catch {}
+    if (!sdSegments.length) return;
     if (singleScene) {
       sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
       sbApplySelection();
-      if (timeline) {
-        // Timeline = full-screen editor: tracks docked open, card + dock moved into the shell
-        sdExpanded = true;
-        localStorage.setItem('sd-expanded-channels', '1');
-        localStorage.setItem('sd-collapsed', '0');
-        try { renderSceneDock(); } catch {}
-        try { openTimelineEditor(); } catch (e) { console.warn('timeline editor:', e); }
-      }
+      // Timeline = full-screen editor: tracks docked open, card + dock moved into the shell
+      sdExpanded = true;
+      localStorage.setItem('sd-expanded-channels', '1');
+      localStorage.setItem('sd-collapsed', '0');
+      try { renderSceneDock(); } catch {}
+      try { openTimelineEditor(); } catch (e) { console.warn('timeline editor:', e); }
     } else {
       document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
+      try { applyListTabs(); } catch {}        // compact tabbed sections per card (List view)
       try { refreshGlowShadows(); } catch {}
       sdSetupObserver();
     }
@@ -11711,7 +11754,7 @@
   // showing one section at a time instead of the stacked accordions.
   function sbBuildSceneTabs(card) {
     card.querySelector('.scene-tabs')?.remove();
-    if (getSceneViewMode() !== 'timeline' || !card) return;
+    if (!card || (getSceneViewMode() !== 'timeline' && getSceneViewMode() !== 'list')) return;
     const accs = Array.from(card.querySelectorAll('details.scene-accordion'));
     if (!accs.length) return;
     const bar = document.createElement('div');
@@ -11721,7 +11764,9 @@
       bar.querySelectorAll('.scene-tab').forEach((b, j) => b.classList.toggle('active', j === idx));
     };
     accs.forEach((d, idx) => {
-      const label = (d.querySelector('summary')?.textContent || `${idx + 1}`).trim().slice(0, 22);
+      const sm = d.querySelector('summary');
+      const lblEl = sm?.querySelector('[data-i18n]') || sm;   // prefer a labelled child (e.g. style overrides) for a clean, localized tab
+      const label = (lblEl?.textContent || `${idx + 1}`).trim().slice(0, 28);
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'scene-tab';
@@ -11733,6 +11778,15 @@
     // Default to the "Main text" section (.text-controls), else the first tab
     const mtIdx = accs.findIndex(d => d.querySelector('.text-controls'));
     activate(mtIdx >= 0 ? mtIdx : 0);
+  }
+
+  // List view: give every scene card the same compact tabbed sections (one section at a time)
+  // that the timeline editor uses, instead of stacked accordions.
+  function applyListTabs() {
+    if (getSceneViewMode() !== 'list') return;
+    document.querySelectorAll('#segments-list .segment-card').forEach(card => {
+      try { sbBuildSceneTabs(card); } catch {}
+    });
   }
 
   // Clean CapCut-style inspector for the selected scene's text — the default panel in
@@ -11983,7 +12037,7 @@
     document.body.classList.remove('tl-editor-open');
   }
 
-  function exitTimelineEditor() { setSceneViewMode('storyboard'); }
+  function exitTimelineEditor() { setSceneViewMode('list'); }
 
   function tlUpdateEditorTitle(i) {
     const el = document.getElementById('tl-ed-title');
@@ -12006,7 +12060,7 @@
   }
 
   function tlEditorAddScene() { try { openModal(-1); } catch {} }
-  function tlEditorGenerate() { setSceneViewMode('storyboard'); try { scenesRerender(); } catch {} }
+  function tlEditorGenerate() { setSceneViewMode('list'); try { scenesRerender(); } catch {} }
 
   function sbApplySelection() {
     document.querySelectorAll('#segments-list .segment-card').forEach(c => sbClearCardOverrides(c));

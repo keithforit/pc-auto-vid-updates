@@ -1,7 +1,7 @@
 {
-  "version": "1.4.35",
+  "version": "1.4.36",
   "date": "2026-06-15",
-  "notes": "Timeline view is now a full-screen CapCut/Filmora-style editor. The selected scene card + the timeline dock move into a dedicated full-window workspace: Content rail (left), large preview (centre), text/layer properties (right), and the multi-track Voice/Text/Media timeline full-width along the bottom. Slim top bar with Exit (or Esc), scene counter, + Scene, and Generate; the app chrome is hidden and the old full-width 'Add Scene' row is gone. Clicking a scene block swaps the mounted scene; hardened so reloading in Timeline mode can't leave duplicate cards. Storyboard/List are unchanged.",
+  "notes": "Removed the Storyboard view — the Scenes tab is now just List (default) + Timeline. List view uses the compact tabbed sections (Timeline / Voice / Main text / Colour & Style / Shapes, Images & Video / Scene Animation / Background) — one section at a time per card, like the timeline editor. Download / Share in the timeline are now disabled (greyed) until a video has been generated, then auto-enable when a render finishes. Localization pass: the scene tabs, content rail, inspector and editor title re-translate on EN/JA switch, and the Colour & Style Overrides label is now localized.",
   "files": [
     "index.html",
     "version.json"
