@@ -9,14 +9,20 @@ if (fs.existsSync(envPath)) {
         if (match) process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
     });
 }
-const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+const PEXELS_API_KEY  = process.env.PEXELS_API_KEY;
+const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+// Order to try the stock providers in. The server sets this from a live health check so a
+// provider that's down is tried last (or not at all). Default: Pexels first, Pixabay fallback.
+const PROVIDER_ORDER = (process.env.STOCK_PROVIDER_ORDER || 'pexels,pixabay')
+    .split(',').map(s => s.trim().toLowerCase()).filter(p => p === 'pexels' || p === 'pixabay');
 
-// Download a remote video to public/backgrounds/ and return the local filename
-async function downloadVideo(url) {
+// Download a remote video to public/backgrounds/ and return the local filename.
+// `provider` becomes the filename prefix so cleanup can recognise auto-fetched backgrounds.
+async function downloadVideo(url, provider = 'pexels') {
     if (!fs.existsSync('./public/backgrounds')) fs.mkdirSync('./public/backgrounds', { recursive: true });
-    const filename = `pexels-${Date.now()}.mp4`;
+    const filename = `${provider}-${Date.now()}.mp4`;
     const dest = `./public/backgrounds/${filename}`;
-    const response = await axios.get(url, { responseType: 'stream' });
+    const response = await axios.get(url, { responseType: 'stream', timeout: 30000 });
     await new Promise((resolve, reject) => {
         const writer = fs.createWriteStream(dest);
         response.data.pipe(writer);
@@ -26,22 +32,71 @@ async function downloadVideo(url) {
     return filename;
 }
 
-function clearOldPexelsBackgrounds() {
+function clearOldAutoBackgrounds() {
     const dir = './public/backgrounds';
     if (!fs.existsSync(dir)) return;
     for (const file of fs.readdirSync(dir)) {
-        if (!/^pexels-.*\.(mp4|mov|webm)$/i.test(file)) continue;
+        if (!/^(pexels|pixabay)-.*\.(mp4|mov|webm)$/i.test(file)) continue;
         try {
             fs.unlinkSync(path.join(dir, file));
-            console.log(`🧹 Removed old Pexels background: ${file}`);
+            console.log(`🧹 Removed old stock background: ${file}`);
         } catch (e) {
-            console.log(`⚠ Could not remove old Pexels background ${file}: ${e.message}`);
+            console.log(`⚠ Could not remove old stock background ${file}: ${e.message}`);
         }
     }
 }
 
+// ── Stock-video providers ────────────────────────────────────────────────────
+// Each returns a downloadable portrait video URL for the query, or null if none found.
+// Throws on a real failure (bad key, network/outage) so fetchStockVideo can fall through.
+async function searchPexels(query) {
+    if (!PEXELS_API_KEY) return null;
+    const res = await axios.get(
+        `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait`,
+        { headers: { Authorization: PEXELS_API_KEY }, timeout: 15000 }
+    );
+    const vids = res.data.videos || [];
+    if (!vids.length) return null;
+    const chosen = vids[vids.length > 1 ? 1 : 0];
+    return chosen.video_files.slice().sort((a, b) => b.width - a.width)[0].link;
+}
+
+async function searchPixabay(query) {
+    if (!PIXABAY_API_KEY) return null;
+    const res = await axios.get(
+        `https://pixabay.com/api/videos/?key=${encodeURIComponent(PIXABAY_API_KEY)}&q=${encodeURIComponent(query)}&per_page=5&video_type=film&order=popular`,
+        { timeout: 15000 }
+    );
+    const hits = res.data.hits || [];
+    if (!hits.length) return null;
+    const chosen = hits[hits.length > 1 ? 1 : 0];
+    const v = chosen.videos || {};
+    const best = v.large || v.medium || v.small || v.tiny;
+    return best ? best.url : null;
+}
+
+// Try each provider in PROVIDER_ORDER; the first that returns a video wins. If one errors
+// (key rejected, provider down) or has no match, fall through to the next. Returns '' if all fail.
+async function fetchStockVideo(query) {
+    for (const provider of PROVIDER_ORDER) {
+        try {
+            const url = provider === 'pixabay' ? await searchPixabay(query) : await searchPexels(query);
+            if (url) {
+                console.log(`⬇ Downloading ${provider} video for: ${query}`);
+                const file = await downloadVideo(url, provider);
+                console.log(`✅ Saved: ${file}`);
+                return file;
+            }
+            console.log(`· No ${provider} match for: ${query}`);
+        } catch (e) {
+            console.log(`⚠ ${provider} failed for "${query}": ${e.message} — trying next provider`);
+        }
+    }
+    return '';
+}
+
 async function parse() {
-    clearOldPexelsBackgrounds();
+    clearOldAutoBackgrounds();
     const rawText = fs.readFileSync('temp_input.txt', 'utf8');
 
     // ── Topic / title ────────────────────────────────────────────────────────
@@ -92,26 +147,12 @@ async function parse() {
         let query = visualMatch ? visualMatch[1].trim() : textMatch[1].trim();
         query = query.replace(/(Person looking |Close-up of |Quick flash of )/gi, '');
 
-        // Warn if query is non-English — Pexels works best with English search terms
+        // Warn if query is non-English — stock searches work best with English search terms
         if (/[぀-ヿ一-鿿]/.test(query)) {
-            console.log(`⚠️ Visual idea "${query}" contains non-English text — Pexels searches work best in English. / 視覚案が日本語です。英語で入力すると動画が見つかりやすくなります。`);
+            console.log(`⚠️ Visual idea "${query}" contains non-English text — stock searches work best in English. / 視覚案が日本語です。英語で入力すると動画が見つかりやすくなります。`);
         }
 
-        let videoFile = '';
-        try {
-            const res = await axios.get(
-                `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait`,
-                { headers: { Authorization: PEXELS_API_KEY } }
-            );
-            if (res.data.videos?.length > 0) {
-                const videoIdx = res.data.videos.length > 1 ? 1 : 0;
-                const chosen   = res.data.videos[videoIdx];
-                const remoteUrl = chosen.video_files.sort((a, b) => b.width - a.width)[0].link;
-                console.log(`⬇ Downloading video for: ${query}`);
-                videoFile = await downloadVideo(remoteUrl);
-                console.log(`✅ Saved: ${videoFile}`);
-            }
-        } catch (e) { console.log('Pexels/download error for:', query, e.message); }
+        const videoFile = await fetchStockVideo(query);
 
         segments.push({
             text: textMatch[1].trim(),

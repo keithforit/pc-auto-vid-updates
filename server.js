@@ -1339,6 +1339,47 @@ app.post('/setup-complete', (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Live health of the stock-video providers, using the keys the user has saved.
+// Distinguishes a *bad key* (needs updating) from a *service outage* (provider down),
+// so the dashboard can show the right message and pick a working provider for generation.
+//   reason: 'ok' | 'auth' (key rejected) | 'down' (unreachable / 5xx) | 'missing' (no key saved)
+app.get('/provider-health', async (req, res) => {
+    const axios = require('axios');
+    const cfg = readUserConfig();
+    const pexelsKey  = getUserApiKey('pexelsApiKey', 'PEXELS_API_KEY');
+    const pixabayKey = getUserApiKey('pixabayApiKey', 'PIXABAY_API_KEY');
+    // Unique query each call — Pexels' CDN serves cached 200s for repeated URLs and would
+    // mask a rejected key; a cache miss forces the request through to the real auth check.
+    const bust = Date.now();
+
+    const checkPexels = async () => {
+        if (!pexelsKey) return { ok: false, reason: 'missing' };
+        try {
+            const r = await axios.get(`https://api.pexels.com/videos/search?query=nature%20${bust}&per_page=1`, {
+                headers: { Authorization: pexelsKey }, timeout: 12000, validateStatus: () => true,
+            });
+            if (r.status === 200) return { ok: true, reason: 'ok' };
+            if (r.status === 401 || r.status === 403 || r.status === 429) return { ok: false, reason: 'auth' };
+            return { ok: false, reason: 'down' };
+        } catch { return { ok: false, reason: 'down' }; }
+    };
+    const checkPixabay = async () => {
+        if (!pixabayKey) return { ok: false, reason: 'missing' };
+        try {
+            const r = await axios.get(`https://pixabay.com/api/?key=${encodeURIComponent(pixabayKey)}&q=nature%20${bust}&per_page=3`, {
+                timeout: 12000, validateStatus: () => true,
+            });
+            if (r.status === 200) return { ok: true, reason: 'ok' };
+            // Pixabay returns 400 "[ERROR] Invalid API key" for a bad key
+            if (r.status === 400 || r.status === 401 || r.status === 403 || r.status === 429) return { ok: false, reason: 'auth' };
+            return { ok: false, reason: 'down' };
+        } catch { return { ok: false, reason: 'down' }; }
+    };
+
+    const [pexels, pixabay] = await Promise.all([checkPexels(), checkPixabay()]);
+    res.json({ userName: cfg.userName || '', pexels, pixabay });
+});
+
 // Set a static colour or gradient background on a segment
 app.post('/set-background-style', (req, res) => {
     try {
@@ -1423,7 +1464,19 @@ io.on('connection', (socket) => {
                 // Step 1: Parse script → Content.json
                 const parserScript = contentType === 'captions' ? 'parser-captions.js' : 'parser.js';
                 socket.emit('log', L.parsing(contentType === 'captions'));
-                await runProc('node', [parserScript]);
+                // Hand the parser the resolved keys (wizard users keep them in UserConfig, not
+                // the environment) plus the provider order — so it can fall back Pexels↔Pixabay
+                // if the preferred stock provider is down.
+                const order = (Array.isArray(data.providerOrder) && data.providerOrder.length)
+                    ? data.providerOrder.filter(p => p === 'pexels' || p === 'pixabay')
+                    : ['pexels', 'pixabay'];
+                const parserEnv = {
+                    ...process.env,
+                    PEXELS_API_KEY:  getUserApiKey('pexelsApiKey', 'PEXELS_API_KEY'),
+                    PIXABAY_API_KEY: getUserApiKey('pixabayApiKey', 'PIXABAY_API_KEY'),
+                    STOCK_PROVIDER_ORDER: (order.length ? order : ['pexels', 'pixabay']).join(','),
+                };
+                await runProc('node', [parserScript], { env: parserEnv });
                 if (cancelled) break;
                 socket.emit('log', L.parsed);
 

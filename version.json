@@ -1,10 +1,11 @@
 {
-  "version": "1.4.19",
+  "version": "1.4.20",
   "date": "2026-06-15",
-  "notes": "Setup wizard confetti now fills the whole screen (was a static clump in the top-left — the canvas wasn't being sized to the viewport); retina-crisp, resize-aware, denser, with mixed shapes. Server now honors the PORT env var so it can run on a custom port. Packaging still excludes .env (security fix from 1.4.18).",
+  "notes": "Stock-provider resilience: dashboard checks Pexels + Pixabay on startup. A rejected/expired key shows a localized 'Hey {name}, your API key needs updating' popup with a one-click key updater; a provider outage shows a non-blocking notice. Text-to-video now falls back Pexels↔Pixabay automatically when one is down. Also fixes wizard-configured keys not reaching the stock fetcher. EN/JA localized.",
   "files": [
     "index.html",
     "server.js",
+    "parser.js",
     "version.json"
   ]
 }
