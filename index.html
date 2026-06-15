@@ -838,13 +838,15 @@
     .tl-ed-btn { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 13px; font-size: 13px; cursor: pointer; }
     .tl-ed-btn:hover { color: var(--text-main); border-color: var(--accent); }
     .tl-ed-gen { background: var(--accent); border-color: var(--accent); color: #04253b; font-weight: 700; }
-    .tl-ed-stage { overflow: auto; padding: 18px 20px; min-height: 0; }
+    .tl-ed-stage { overflow: hidden; padding: 18px 20px; min-height: 0; }
     .tl-ed-timeline { border-top: 1px solid var(--border); background: var(--bg-card); padding: 2px 14px 8px; min-height: 0; overflow: hidden; }
     /* The moved card becomes a 3-column grid: content | preview | properties */
-    .tl-editor .segment-card { display: grid !important; grid-template-columns: 232px minmax(0,1fr) 322px; gap: 18px; background: transparent; border: none; box-shadow: none; padding: 0; align-items: start; max-width: 1500px; margin: 0 auto; }
-    .tl-editor .segment-card > .tl-rail { order: 1; margin: 0; position: sticky; top: 0; }
-    .tl-editor .segment-card > .thumb-wrap { order: 2; position: static; justify-self: center; top: 0; }
-    .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; }
+    .tl-editor .segment-card { display: grid !important; grid-template-columns: 232px minmax(0,1fr) 322px; gap: 18px; background: transparent; border: none; box-shadow: none; padding: 0; align-items: stretch; max-width: 1500px; margin: 0 auto; height: 100%; }
+    /* Each column is height-capped to the stage and scrolls on its own, so revealing tall
+       controls in one column never moves the preview in the centre. */
+    .tl-editor .segment-card > .tl-rail { order: 1; margin: 0; min-height: 0; overflow-y: auto; }
+    .tl-editor .segment-card > .thumb-wrap { order: 2; position: relative; justify-self: center; align-self: center; }
+    .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; min-height: 0; overflow-y: auto; }
     .tl-editor .seg-caption, .tl-editor .seg-vo { display: none; }
     .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
     .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
