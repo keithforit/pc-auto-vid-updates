@@ -789,6 +789,26 @@
     .timeline-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
     .timeline-mode .scene-accordion summary { display: none; }
     .timeline-mode .scene-accordion-body { padding: 0; }
+    /* Clean CapCut-style inspector — the default left panel in timeline mode */
+    .tl-inspector { display: none; }
+    .timeline-mode .segment-card:not(.tl-show-all) .tl-inspector { display: block; }
+    .timeline-mode .segment-card:not(.tl-show-all) .scene-accordion,
+    .timeline-mode .segment-card:not(.tl-show-all) .scene-tabs { display: none; }
+    .tl-insp-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-soft); margin-bottom: 14px; }
+    .tl-insp-more { background: none; border: none; color: var(--text-dim); font-size: 12px; cursor: pointer; }
+    .tl-insp-more:hover { color: var(--accent); }
+    .tl-insp-text { width: 100%; box-sizing: border-box; background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: 10px; color: var(--text-main); font-size: 15px; padding: 12px 14px; margin-bottom: 16px; outline: none; font-family: inherit; resize: vertical; min-height: 48px; line-height: 1.4; }
+    .tl-insp-text:focus { border-color: var(--accent); }
+    .tl-insp-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .tl-insp-row > label { width: 54px; flex-shrink: 0; font-size: 13px; color: var(--text-dim); }
+    .tl-insp-row .font-select { flex: 1; }
+    .tl-swatches { display: flex; gap: 10px; }
+    .tl-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; }
+    .tl-swatch.active { border-color: var(--text-main); }
+    .tl-insp-size { flex: 1; accent-color: #38bdf8; }
+    .tl-insp-styles { display: flex; gap: 8px; margin-top: 6px; }
+    .tl-style { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+    .tl-style.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -1396,6 +1416,13 @@
       view_storyboard: '🎬 Storyboard',
       view_list: '📋 List',
       view_timeline: '🎞 Timeline',
+      tl_selected_text: 'Selected: text layer',
+      tl_all_controls: 'All controls',
+      tl_colour: 'Colour',
+      tl_size: 'Size',
+      tl_box: 'Box',
+      tl_glow: 'Glow',
+      tl_plain: 'Plain',
       new_scene: '➕ New Scene',
       restore_draft: '↩ Restore Draft',
       no_draft: 'No draft saved yet.',
@@ -1927,6 +1954,13 @@
       view_storyboard: '🎬 ストーリーボード',
       view_list: '📋 リスト',
       view_timeline: '🎞 タイムライン',
+      tl_selected_text: '選択中: テキストレイヤー',
+      tl_all_controls: 'すべての設定',
+      tl_colour: '色',
+      tl_size: 'サイズ',
+      tl_box: 'ボックス',
+      tl_glow: 'グロー',
+      tl_plain: 'プレーン',
       new_scene: '➕ 新規シーン',
       restore_draft: '↩ ドラフトを復元',
       no_draft: 'ドラフトはまだ保存されていません。',
@@ -11592,6 +11626,8 @@
     card.style.removeProperty('--thumb-w');
     card.style.removeProperty('--thumb-h');
     card.querySelector('.scene-tabs')?.remove();  // tab strip is timeline-mode only
+    card.querySelector('.tl-inspector')?.remove();
+    card.classList.remove('tl-show-all');
   }
 
   // Build a tab strip for the selected card's accordion sections (timeline layout only),
@@ -11622,6 +11658,50 @@
     activate(mtIdx >= 0 ? mtIdx : 0);
   }
 
+  // Clean CapCut-style inspector for the selected scene's text — the default panel in
+  // timeline mode. Its controls drive the existing (hidden) card inputs so there's one
+  // source of truth; "All controls" reveals the full tabbed editor.
+  const TL_SWATCHES = ['#ffffff', '#ef4444', '#3b82f6', '#f59e0b', '#22c55e', '#ec4899', '#000000'];
+  function buildTimelineInspector(card, i) {
+    card.querySelector('.tl-inspector')?.remove();
+    if (getSceneViewMode() !== 'timeline' || !card) return;
+    const v = (id, dflt) => { const el = document.getElementById(`${id}-${i}`); return el ? el.value : dflt; };
+    const seg = sdSegments[i] || {};
+    const text = v('maintext', seg.text || '');
+    const font = v('main-font', seg.font || 'noto');
+    const size = parseInt(v('fontsize', seg.fontSize || 70)) || 70;
+    const color = (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff').toLowerCase();
+    const curStyle = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.textStyle || 'box';
+    const t = (I18N[window._appLang || 'en'] || I18N.en);
+    const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('');
+    const styleChips = [['box', t.tl_box || 'Box'], ['glow', t.tl_glow || 'Glow'], ['plain', t.tl_plain || 'Plain']]
+      .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
+    const div = document.createElement('div');
+    div.className = 'tl-inspector';
+    div.innerHTML = `
+      <div class="tl-insp-head"><span>🎛 ${t.tl_selected_text || 'Selected: text layer'}</span><button type="button" class="tl-insp-more" onclick="tlInspToggleAll(${i})">⋯ ${t.tl_all_controls || 'All controls'}</button></div>
+      <textarea class="tl-insp-text" id="tl-text-${i}" rows="2" oninput="tlInspText(${i})" onblur="saveMainTextContent(${i})">${escapeHtml(text)}</textarea>
+      <div class="tl-insp-row"><label>${t.label_font ? t.label_font.replace(':', '') : 'Font'}</label>${fontSelectHTML(`tl-font-${i}`, font, `tlInspFont(${i})`)}</div>
+      <div class="tl-insp-row"><label>${t.tl_colour || 'Colour'}</label><div class="tl-swatches">${swatches}</div></div>
+      <div class="tl-insp-row"><label>${t.tl_size || 'Size'}</label><input type="range" class="tl-insp-size" id="tl-size-${i}" min="20" max="200" step="2" value="${size}" oninput="tlInspSize(${i})" /></div>
+      <div class="tl-insp-styles">${styleChips}</div>`;
+    const firstAcc = card.querySelector('details.scene-accordion');
+    if (firstAcc) firstAcc.parentNode.insertBefore(div, card.querySelector('.scene-tabs') || firstAcc);
+  }
+
+  function tlInspText(i) { const el = document.getElementById(`maintext-${i}`); if (el) { el.value = document.getElementById(`tl-text-${i}`).value; onMainTextInput(i); } }
+  function tlInspFont(i) { const el = document.getElementById(`main-font-${i}`); if (el) { el.value = document.getElementById(`tl-font-${i}`).value; saveMainFont(i); } }
+  function tlInspSize(i) { const el = document.getElementById(`fontsize-${i}`); if (el) { el.value = document.getElementById(`tl-size-${i}`).value; saveMainTextMeta(i); } }
+  function tlInspColor(i, c) {
+    const el = document.getElementById(`textco-${i}`); if (el) { el.value = c; saveMainColors(i); }
+    document.querySelectorAll(`#card-${i} .tl-swatch`).forEach(s => s.classList.toggle('active', s.dataset.c === c));
+  }
+  function tlInspStyle(i, s) {
+    try { setMainTextStyle(i, s); } catch {}
+    document.querySelectorAll(`#card-${i} .tl-style`).forEach(b => b.classList.toggle('active', b.dataset.s === s));
+  }
+  function tlInspToggleAll(i) { document.getElementById(`card-${i}`)?.classList.toggle('tl-show-all'); }
+
   function sbApplySelection() {
     document.querySelectorAll('#segments-list .segment-card').forEach(c => sbClearCardOverrides(c));
     const card = document.getElementById(`card-${sbSelectedIndex}`);
@@ -11650,7 +11730,8 @@
     try { refreshGlowShadows(); } catch {}
     sdObserver?.disconnect();
     sdSetCurrent(sbSelectedIndex);
-    try { sbBuildSceneTabs(card); } catch {}  // tabbed properties panel in timeline layout
+    try { sbBuildSceneTabs(card); } catch {}        // tabbed editor (under "All controls")
+    try { buildTimelineInspector(card, sbSelectedIndex); } catch {}  // clean default inspector
   }
 
   function sbSelect(i) {

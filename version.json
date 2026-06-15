@@ -1,7 +1,7 @@
 {
-  "version": "1.4.31",
+  "version": "1.4.32",
   "date": "2026-06-15",
-  "notes": "Timeline layout now has a tabbed properties panel (CapCut-style): the left controls show as tabs — Timeline, Voice, Main text, Shapes/Images/Videos, Scene Animation, Background & Video — and you see one section at a time instead of scrolling through stacked accordions (defaults to Main text). Storyboard and List keep the normal stacked sections.",
+  "notes": "Timeline layout now opens to a clean inspector (matching the mockup): the selected scene's caption, Font, Colour, Size and Box/Glow/Plain style in one compact panel — no more wading through every control. 'All controls' reveals the full tabbed editor when you need it. The inspector drives the existing controls, so nothing diverges.",
   "files": [
     "index.html",
     "version.json"
