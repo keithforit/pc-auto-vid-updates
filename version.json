@@ -1,9 +1,10 @@
 {
-  "version": "1.4.18",
+  "version": "1.4.19",
   "date": "2026-06-15",
-  "notes": "SECURITY: packaging scripts now exclude .env (and .claude/.agents/.vscode) so developer API keys are never shipped in the distribution zip — this also restores the first-run setup wizard for fresh installs (the bundled .env was silently providing keys and skipping setup)",
+  "notes": "Setup wizard confetti now fills the whole screen (was a static clump in the top-left — the canvas wasn't being sized to the viewport); retina-crisp, resize-aware, denser, with mixed shapes. Server now honors the PORT env var so it can run on a custom port. Packaging still excludes .env (security fix from 1.4.18).",
   "files": [
-    "package.json",
+    "index.html",
+    "server.js",
     "version.json"
   ]
 }

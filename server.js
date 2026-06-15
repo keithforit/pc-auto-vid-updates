@@ -2398,7 +2398,8 @@ app.post('/apply-update', async (req, res) => {
 // Simple liveness probe — client polls this to know when the server is back up after a restart
 app.get('/ping', (req, res) => res.json({ ok: true }));
 
-let activePort = 3000;
+const startPort = parseInt(process.env.PORT, 10) || 3000;
+let activePort = startPort;
 // Bind to localhost only — the dashboard has no login, so it must not be reachable
 // from other machines on the network. Set HOST=0.0.0.0 to opt out deliberately.
 const BIND_HOST = process.env.HOST || '127.0.0.1';
@@ -2412,7 +2413,7 @@ const OPEN_CMD = process.platform === 'win32' ? 'start ""' : process.platform ==
     });
     server.listen(port, BIND_HOST, () => {
         activePort = port;
-        if (port !== 3000) console.log(`⚠️  Port 3000 in use — running on http://localhost:${port}`);
+        if (port !== startPort) console.log(`⚠️  Port ${startPort} in use — running on http://localhost:${port}`);
         console.log(`🚀 Dashboard at http://localhost:${port}`);
         exec(`${OPEN_CMD} http://localhost:${port}`);
     // Backfill video_duration for any existing segments that are missing it.
@@ -2449,4 +2450,4 @@ const OPEN_CMD = process.platform === 'win32' ? 'start ""' : process.platform ==
         }
     })();
     });
-})(3000);
+})(startPort);
