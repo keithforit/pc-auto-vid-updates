@@ -1,12 +1,9 @@
 {
-  "version": "1.4.28",
+  "version": "1.4.29",
   "date": "2026-06-15",
-  "notes": "Auto-fit (on by default): no-wrap text now auto-shrinks so it always fits inside the frame instead of running off the edge — consistent in the preview and the rendered video (shared canvas measurement). Per-scene 'Auto-fit on/off' toggle next to the Wrap button; turn it off for full manual font control. Pairs with the no-wrap default so generated scenes look right with no fiddling.",
+  "notes": "New 'Timeline' editor layout (CapCut-style): a third view toggle beside Storyboard/List. It shows one scene with the properties on the left, a big preview on the right, and the editable Voice/Text/Media tracks docked open at the bottom — click any block in the timeline to edit that scene. Storyboard and List are unchanged.",
   "files": [
     "index.html",
-    "server.js",
-    "src/Caption.tsx",
-    "src/Main.tsx",
     "version.json"
   ]
 }
