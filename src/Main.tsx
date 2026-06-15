@@ -256,7 +256,7 @@ export const Main: React.FC = () => {
                                             hideAtFrame={mainHideAt}
                                             fadeInDurationSec={(segment as any).textFadeInDuration ?? 1.5}
                                             fadeOutDurationSec={(segment as any).textFadeOutDuration ?? 1.5}
-                                            noWrap={(segment as any).textNoWrap === true}
+                                            noWrap={(segment as any).textNoWrap !== false}
                                             textBoxWidth={(segment as any).textBoxWidth ?? undefined}
                                             textPadding={(segment as any).textPadding ?? undefined}
                                             highlightColor={(segment as any).highlightColorOverride ?? (segment as any).highlightColor}
@@ -287,7 +287,7 @@ export const Main: React.FC = () => {
                                                     fontSize={et.fontSize}
                                                     fadeInDurationSec={et.fadeInDuration ?? (segment as any).textFadeInDuration ?? 1.5}
                                                     fadeOutDurationSec={et.fadeOutDuration ?? (segment as any).textFadeOutDuration ?? 1.5}
-                                                    noWrap={et.noWrap === true || (segment as any).textNoWrap === true}
+                                                    noWrap={et.noWrap !== false}
                                                     textBoxWidth={et.textBoxWidth ?? (segment as any).textBoxWidth ?? undefined}
                                                     textPadding={et.textPadding ?? (segment as any).textPadding ?? undefined}
                                                     blockColor={et.blockColorOverride ?? (segment as any).blockColorOverride ?? (segment as any).blockColor ?? '#ffdd00'}

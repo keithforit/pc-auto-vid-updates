@@ -661,6 +661,7 @@
     .sd-meta { font-size: 11px; color: var(--text-dim); font-family: monospace; white-space: nowrap; }
     .sd-zoom-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-soft); border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer; line-height: 1.3; }
     .sd-zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .sd-zoom-slider { width: 96px; height: 4px; accent-color: #38bdf8; cursor: pointer; vertical-align: middle; flex-shrink: 0; }
     /* Labelled, easy-to-find toggle for the channel (Voice/Text/Media/SFX) view */
     .sd-chan-toggle { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; padding: 3px 10px; border-color: var(--accent); color: var(--accent); }
     .sd-chan-toggle.active { background: #38bdf8; border-color: #38bdf8; color: #04253b; }
@@ -924,8 +925,9 @@
         <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video"><i class="fa-solid fa-download"></i></button>
         <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share"><i class="fa-solid fa-share-nodes"></i></button>
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
-        <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
+        <input type="range" id="sd-zoom-slider" class="sd-zoom-slider" min="2" max="300" step="1" value="20" oninput="sdZoomSlider(this.value)" data-i18n="sd_zoom_slider" data-i18n-attr="title" title="Zoom timeline (or scroll over it)" />
         <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
+        <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
         <button class="sd-zoom-btn sd-chan-toggle" id="sd-expand-btn" onclick="sdToggleExpand()" data-i18n="sd_channels" data-i18n-attr="title" title="Show Voice / Text / Media channels">▦ <span data-i18n="sd_channels_btn">Channels</span> <span id="sd-expand-caret">▾</span></button>
         <button class="sd-zoom-btn" id="sd-collapse-btn" onclick="sdToggleCollapse()" title="Collapse">▾</button>
       </div>
@@ -1374,6 +1376,7 @@
       settings_keys_saved: 'Keys saved ✓',
       settings_keys_bad: 'Some keys did not work — check the notes above.',
       sd_zoom_in: 'Zoom in',
+      sd_zoom_slider: 'Zoom timeline (or scroll over it)',
       sd_zoom_out: 'Zoom out',
       ptb_rotate_tip: 'Drag to rotate (Shift = 15° steps)',
       view_storyboard: '🎬 Storyboard',
@@ -1899,6 +1902,7 @@
       settings_keys_saved: 'キーを保存しました ✓',
       settings_keys_bad: '一部のキーが無効です。上の注記を確認してください。',
       sd_zoom_in: 'ズームイン',
+      sd_zoom_slider: 'タイムラインをズーム（スクロールでも可）',
       sd_zoom_out: 'ズームアウト',
       ptb_rotate_tip: 'ドラッグして回転（Shift = 15°刻み）',
       view_storyboard: '🎬 ストーリーボード',
@@ -3975,7 +3979,7 @@
       data-boxradius="${boxBorderRadius}"
       data-blockradius="${blockBorderRadius}"
       data-style="${style}"
-      data-nowrap="${seg.textNoWrap ? '1' : '0'}"
+      data-nowrap="${seg.textNoWrap !== false ? '1' : '0'}"
       data-freepos="${hasFreePos?'1':'0'}"
       data-animation="${animation}"
       data-fadein="${textFadeInDuration}"
@@ -4393,7 +4397,7 @@
     const blockBorderRadius  = _etN(`et-blockradius-${i}-${j}`, `blockradius-${i}`, 10);
     const { wrap, inner } = calcPreviewStyleFree(x, y, style, glowColor, blockColor, textColor, glowTextColor, hAlign, rotation, fontSize, boxBorderRadius, blockBorderRadius, textStrokeColor, textStrokeSize, glowSize);
     const noWrapBtn = document.getElementById(`et-nowrap-btn-${i}-${j}`);
-    const noWrap = noWrapBtn ? !noWrapBtn.classList.contains('ghost') : false;
+    const noWrap = noWrapBtn ? !noWrapBtn.classList.contains('ghost') : true;
     const boxWidthVal = parseFloat(document.getElementById(`et-boxwidth-${i}-${j}`)?.value) || 85;
     const noWrapStyle = noWrap ? 'white-space:pre;width:max-content;max-width:none;overflow:visible' : `max-width:${boxWidthVal}%`;
     el.setAttribute('style', `${wrap};display:flex`);
@@ -5929,8 +5933,8 @@
             </div>
             <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
               <span class="ctrl-row-label" data-i18n="label_wrap">${(I18N[window._appLang||'en']||I18N.en).label_wrap}</span>
-              <button id="nowrap-btn-${i}" class="btn sm ${seg.textNoWrap ? '' : 'ghost'}" onclick="toggleTextNoWrap(${i})" title="${(I18N[window._appLang||'en']||I18N.en).wrap}">${seg.textNoWrap ? (I18N[window._appLang||'en']||I18N.en).btn_no_wrap_on : (I18N[window._appLang||'en']||I18N.en).btn_wrap_on}</button>
-              <span style="font-size:10px;color:#64748b">${seg.textNoWrap ? (I18N[window._appLang||'en']||I18N.en).hint_no_wrap : (I18N[window._appLang||'en']||I18N.en).hint_wrap}</span>
+              <button id="nowrap-btn-${i}" class="btn sm ${seg.textNoWrap !== false ? '' : 'ghost'}" onclick="toggleTextNoWrap(${i})" title="${(I18N[window._appLang||'en']||I18N.en).wrap}">${seg.textNoWrap !== false ? (I18N[window._appLang||'en']||I18N.en).btn_no_wrap_on : (I18N[window._appLang||'en']||I18N.en).btn_wrap_on}</button>
+              <span style="font-size:10px;color:#64748b">${seg.textNoWrap !== false ? (I18N[window._appLang||'en']||I18N.en).hint_no_wrap : (I18N[window._appLang||'en']||I18N.en).hint_wrap}</span>
               <span style="font-size:10px;color:#64748b;margin-left:8px">│</span>
               <span class="ctrl-row-label" style="min-width:auto;margin-left:4px" data-i18n="label_box_width">${(I18N[window._appLang||'en']||I18N.en).label_box_width}</span>
               <input type="number" class="num-input" id="textboxwidth-${i}" min="10" max="200" step="5"
@@ -7768,7 +7772,7 @@
         <!-- Wrap + Width -->
         <div class="ctrl-row" style="margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="ctrl-row-label" data-i18n="label_wrap">${t.label_wrap}</span>
-          <button id="et-nowrap-btn-${i}-${j}" class="btn sm ${et.noWrap ? '' : 'ghost'}" onclick="toggleExtraNoWrap(${i},${j})" title="${t.wrap}">${et.noWrap ? (t.btn_no_wrap_on||'No wrap') : (t.btn_wrap_on||'Wrap')}</button>
+          <button id="et-nowrap-btn-${i}-${j}" class="btn sm ${et.noWrap !== false ? '' : 'ghost'}" onclick="toggleExtraNoWrap(${i},${j})" title="${t.wrap}">${et.noWrap !== false ? (t.btn_no_wrap_on||'No wrap') : (t.btn_wrap_on||'Wrap')}</button>
           <span style="font-size:10px;color:#64748b">│</span>
           <span class="ctrl-row-label" style="min-width:auto" data-i18n="label_box_width">${t.label_box_width}</span>
           <input type="number" class="num-input" id="et-boxwidth-${i}-${j}" min="10" max="200" step="5"
@@ -8221,7 +8225,7 @@
         _copiedStyle = {
           fontSize: seg.fontSize,
           rotation: seg.rotation,
-          textNoWrap: seg.textNoWrap ?? false,
+          textNoWrap: seg.textNoWrap !== false,
           blockColorOverride: effectiveBlockColor,
           textColorOverride: effectiveTextColor,
           glowColorOverride: effectiveGlowColor,
@@ -8295,7 +8299,7 @@
     const startAt = et?.startAt ?? null;
     const endAt = et?.endAt ?? null;
     const animation = et?.animation || 'pop';
-    const noWrap = et?.noWrap || false;
+    const noWrap = et?.noWrap !== false;
     const boxWidth = et?.textBoxWidth ?? 85;
     const noWrapStyle = noWrap
       ? 'white-space:pre;width:max-content;max-width:none;overflow:visible'
@@ -8439,7 +8443,7 @@
       if (blockBorderRadius       !== undefined) overrides.blockBorderRadius       = blockBorderRadius;
       if (textPadding             !== undefined) overrides.textPadding             = textPadding;
       const noWrapEl = document.getElementById(`et-nowrap-btn-${i}-${j}`);
-      const noWrap = noWrapEl ? !noWrapEl.classList.contains('ghost') : (et?.noWrap || false);
+      const noWrap = noWrapEl ? !noWrapEl.classList.contains('ghost') : (et?.noWrap !== false);
       const textBoxWidthRaw = document.getElementById(`et-boxwidth-${i}-${j}`)?.value;
       const textBoxWidth = textBoxWidthRaw ? parseFloat(textBoxWidthRaw) : undefined;
       return { text, position, textHPosition, textStyle, animation, textAlign, rotation, fontSize, font, startAt, endAt, fadeInDuration, fadeOutDuration, textX, textY, noWrap, textBoxWidth, ...overrides };
@@ -10809,6 +10813,11 @@
     sdEffPPS = pps;
     const totalWidth = Math.max(avail, Math.ceil(total * pps) + ADD_W);
 
+    // Keep the zoom slider in sync (unless the user is actively dragging it) + attach wheel-zoom once
+    const zSlider = document.getElementById('sd-zoom-slider');
+    if (zSlider && document.activeElement !== zSlider) zSlider.value = Math.round(pps);
+    if (!scroll._wheelZoomAttached) { scroll._wheelZoomAttached = true; scroll.addEventListener('wheel', sdWheelZoom, { passive: false }); }
+
     // Ruler: pick a label interval that keeps labels ~70px apart
     const intervals = [1, 2, 5, 10, 15, 30, 60, 120];
     const tickInterval = intervals.find(v => v * pps >= 70) || 120;
@@ -11114,6 +11123,32 @@
       sdPPS = Math.max(2, Math.min(300, current * (dir > 0 ? 1.4 : 1 / 1.4)));
     }
     renderSceneDock();
+  }
+
+  // CapCut-style zoom slider: set px/sec directly
+  function sdZoomSlider(val) {
+    if (!sdSegments.length) return;
+    sdPPS = Math.max(2, Math.min(300, Number(val) || 20));
+    renderSceneDock();
+  }
+
+  // Scroll-wheel zoom over the timeline, anchored on the cursor (Shift+wheel = scroll)
+  function sdWheelZoom(e) {
+    if (!sdSegments.length || e.shiftKey || Math.abs(e.deltaY) < 1) return;
+    e.preventDefault();
+    const scroll = document.getElementById('sd-scroll');
+    if (!scroll) return;
+    const rect = scroll.getBoundingClientRect();
+    const cursorCanvasX = (e.clientX - rect.left) + scroll.scrollLeft;
+    const total = sdTotalDur();
+    const avail = Math.max(200, scroll.clientWidth - 4);
+    const cur = sdPPS || Math.max(2, Math.min(200, avail / total));
+    const next = Math.max(2, Math.min(300, cur * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+    if (Math.abs(next - cur) < 0.01) return;
+    const timeAtCursor = cursorCanvasX / cur;
+    sdPPS = next;
+    renderSceneDock();
+    scroll.scrollLeft = timeAtCursor * next - (e.clientX - rect.left);  // keep cursor point fixed
   }
 
   function sdToggleCollapse() {
