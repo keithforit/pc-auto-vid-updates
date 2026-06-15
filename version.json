@@ -1,7 +1,7 @@
 {
-  "version": "1.4.30",
+  "version": "1.4.31",
   "date": "2026-06-15",
-  "notes": "Timeline layout polish: the preview is now sized to sit neatly above the docked tracks (no more overlap), and the Main text controls auto-open when you pick a scene so you can edit straight away.",
+  "notes": "Timeline layout now has a tabbed properties panel (CapCut-style): the left controls show as tabs — Timeline, Voice, Main text, Shapes/Images/Videos, Scene Animation, Background & Video — and you see one section at a time instead of scrolling through stacked accordions (defaults to Main text). Storyboard and List keep the normal stacked sections.",
   "files": [
     "index.html",
     "version.json"

@@ -780,6 +780,15 @@
     .timeline-mode #segments-list .segment-card.sb-selected { grid-template-columns: 1fr var(--thumb-w); }
     .timeline-mode .thumb-wrap { top: 8px; }
     .timeline-mode .scene-preview-layer { box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+    /* Tabbed properties panel — one section at a time instead of stacked accordions */
+    .scene-tabs { display: none; }
+    .timeline-mode .scene-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 12px; }
+    .scene-tab { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-dim); border-radius: 8px; padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .scene-tab:hover { color: var(--text-soft); border-color: var(--border-mid); }
+    .scene-tab.active { background: var(--accent); border-color: var(--accent); color: #04253b; }
+    .timeline-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
+    .timeline-mode .scene-accordion summary { display: none; }
+    .timeline-mode .scene-accordion-body { padding: 0; }
   </style>
 </head>
 <body>
@@ -11570,11 +11579,6 @@
         localStorage.setItem('sd-expanded-channels', '1');
         localStorage.setItem('sd-collapsed', '0');
         try { renderSceneDock(); } catch {}
-        // Open the Main text controls so editing is immediate when you pick a scene
-        try {
-          const mt = document.getElementById(`card-${sbSelectedIndex}`)?.querySelector('.text-controls')?.closest('details');
-          if (mt) mt.open = true;
-        } catch {}
       }
     } else {
       document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
@@ -11587,6 +11591,35 @@
     card.classList.remove('sb-selected');
     card.style.removeProperty('--thumb-w');
     card.style.removeProperty('--thumb-h');
+    card.querySelector('.scene-tabs')?.remove();  // tab strip is timeline-mode only
+  }
+
+  // Build a tab strip for the selected card's accordion sections (timeline layout only),
+  // showing one section at a time instead of the stacked accordions.
+  function sbBuildSceneTabs(card) {
+    card.querySelector('.scene-tabs')?.remove();
+    if (getSceneViewMode() !== 'timeline' || !card) return;
+    const accs = Array.from(card.querySelectorAll('details.scene-accordion'));
+    if (!accs.length) return;
+    const bar = document.createElement('div');
+    bar.className = 'scene-tabs';
+    const activate = (idx) => {
+      accs.forEach((d, j) => { d.open = (j === idx); });
+      bar.querySelectorAll('.scene-tab').forEach((b, j) => b.classList.toggle('active', j === idx));
+    };
+    accs.forEach((d, idx) => {
+      const label = (d.querySelector('summary')?.textContent || `${idx + 1}`).trim().slice(0, 22);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scene-tab';
+      btn.textContent = label;
+      btn.onclick = () => activate(idx);
+      bar.appendChild(btn);
+    });
+    accs[0].parentNode.insertBefore(bar, accs[0]);
+    // Default to the "Main text" section (.text-controls), else the first tab
+    const mtIdx = accs.findIndex(d => d.querySelector('.text-controls'));
+    activate(mtIdx >= 0 ? mtIdx : 0);
   }
 
   function sbApplySelection() {
@@ -11617,6 +11650,7 @@
     try { refreshGlowShadows(); } catch {}
     sdObserver?.disconnect();
     sdSetCurrent(sbSelectedIndex);
+    try { sbBuildSceneTabs(card); } catch {}  // tabbed properties panel in timeline layout
   }
 
   function sbSelect(i) {
