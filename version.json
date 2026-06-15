@@ -1,7 +1,7 @@
 {
-  "version": "1.4.33",
+  "version": "1.4.34",
   "date": "2026-06-15",
-  "notes": "Fix: the Timeline inspector's caption box was inheriting the global 320px textarea height, which pushed the Font/Colour/Size/style controls down behind the docked tracks. Caption is now compact (auto height) so the whole inspector is visible.",
+  "notes": "Timeline view is now a built-in CapCut-style editor (no floating popup). Left: a Content rail listing every layer — background/media, main text, text layers, shapes, images, videos — with click-to-select, + Text / + Shape / + Image / change Media, and ▲▼ reorder (text/shape/image). Right: the preview as its own block. Below: the multi-track Voice/Text/Media timeline embedded full-width in the page, with GENERATE beneath it. Storyboard/List keep the floating strip.",
   "files": [
     "index.html",
     "version.json"

@@ -809,6 +809,23 @@
     .tl-insp-styles { display: flex; gap: 8px; margin-top: 6px; }
     .tl-style { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
     .tl-style.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
+    /* ── Built-in timeline editor: in Timeline mode the tracks dock INTO the page (not a floating popup) ── */
+    .timeline-mode #scene-dock { position: static; left: auto; right: auto; bottom: auto; width: auto; margin: 18px 0 0; border-radius: 14px; border-bottom: 1px solid var(--border); box-shadow: none; z-index: auto; }
+    /* ── Content rail (left column): the scene's layers + add-media, CapCut-style ── */
+    .tl-rail { display: none; margin-bottom: 16px; }
+    .timeline-mode .tl-rail { display: block; }
+    .tl-rail-head { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+    .tl-layer { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; margin-bottom: 6px; font-size: 13px; color: var(--text-soft); cursor: pointer; background: var(--bg-input); }
+    .tl-layer:hover { border-color: var(--border-mid); color: var(--text-main); }
+    .tl-layer.active { border-color: var(--accent); background: var(--bg-card); color: var(--text-main); box-shadow: inset 0 0 0 1px var(--accent); }
+    .tl-layer-ico { width: 18px; text-align: center; flex-shrink: 0; }
+    .tl-layer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tl-layer-move { display: flex; gap: 1px; flex-shrink: 0; }
+    .tl-layer-move button { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; line-height: 1; padding: 2px 3px; border-radius: 4px; }
+    .tl-layer-move button:hover { color: var(--text-main); background: var(--bg-card); }
+    .tl-rail-adds { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px; }
+    .tl-rail-adds button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+    .tl-rail-adds button:hover { border-color: var(--accent); color: var(--text-main); }
   </style>
 </head>
 <body>
@@ -1542,6 +1559,19 @@
       btn_upload_image: '🖼 Upload image',
       btn_upload_video_overlay: '🎬 Upload video overlay',
       btn_add_shape: '+ Add shape',
+      tl_content: 'Content',
+      tl_media: 'Background / media',
+      tl_main_text: 'Main text',
+      tl_text_layer: 'Text',
+      tl_shape: 'Shape',
+      tl_image: 'Image',
+      tl_overlay_video: 'Video',
+      tl_add_text: 'Text',
+      tl_add_shape: 'Shape',
+      tl_add_image: 'Image',
+      tl_change_media: 'Media',
+      tl_move_up: 'Move up',
+      tl_move_down: 'Move down',
       label_static: 'Static',
       label_fade_in: 'Fade in',
       label_fade_out: 'Fade out',
@@ -2080,6 +2110,19 @@
       btn_upload_image: '🖼 画像をアップロード',
       btn_upload_video_overlay: '🎬 動画オーバーレイをアップロード',
       btn_add_shape: '+ シェイプを追加',
+      tl_content: 'コンテンツ',
+      tl_media: '背景 / メディア',
+      tl_main_text: 'メインテキスト',
+      tl_text_layer: 'テキスト',
+      tl_shape: 'シェイプ',
+      tl_image: '画像',
+      tl_overlay_video: '動画',
+      tl_add_text: 'テキスト',
+      tl_add_shape: 'シェイプ',
+      tl_add_image: '画像',
+      tl_change_media: 'メディア',
+      tl_move_up: '上へ',
+      tl_move_down: '下へ',
       label_static: '静的',
       label_fade_in: 'フェードイン',
       label_fade_out: 'フェードアウト',
@@ -9347,6 +9390,7 @@
     refreshOverlayPreview(i, true);
     await saveOverlay(i);
     addEditorLog(`✅ Scene ${i+1} overlay uploaded`);
+    try { if (getSceneViewMode() === 'timeline') tlSelectLayer(i, 'image', getOverlayDataAll(i).length - 1); } catch {}
   }
 
   async function replaceOverlay(i, j) {
@@ -10939,8 +10983,9 @@
     if (meta) meta.textContent = `${total.toFixed(1)}s · ${sdSegments.length} ${sdT().sd_scenes || 'scenes'}`;
     sdUpdatePlayheadDOM();
 
-    // Reserve exactly the dock's height below the scene cards
-    if (panel) panel.style.paddingBottom = (dock.offsetHeight + 24) + 'px';
+    // Reserve the floating dock's height below the cards — except in Timeline mode, where the
+    // dock is in-flow (built in), so no overlay padding is needed.
+    if (panel) panel.style.paddingBottom = (getSceneViewMode() === 'timeline') ? '' : (dock.offsetHeight + 24) + 'px';
 
     sdSetupObserver();
   }
@@ -11603,6 +11648,16 @@
     document.getElementById('view-btn-storyboard')?.classList.toggle('active', mode === 'storyboard');
     document.getElementById('view-btn-list')?.classList.toggle('active', mode === 'list');
     document.getElementById('view-btn-timeline')?.classList.toggle('active', timeline);
+    // Built-in timeline: move the (now in-flow) dock directly under the scene, above the GENERATE
+    // panel; restore it to the end of the tab in the other views.
+    try {
+      const dock = document.getElementById('scene-dock');
+      const rer = document.getElementById('scenes-rerender-section');
+      if (dock && rer && rer.parentNode) {
+        if (timeline) rer.parentNode.insertBefore(dock, rer);
+        else if (dock.parentNode === rer.parentNode) rer.parentNode.appendChild(dock);
+      }
+    } catch {}
     if (!sdSegments.length) return;
     if (singleScene) {
       sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
@@ -11627,6 +11682,7 @@
     card.style.removeProperty('--thumb-h');
     card.querySelector('.scene-tabs')?.remove();  // tab strip is timeline-mode only
     card.querySelector('.tl-inspector')?.remove();
+    card.querySelector('.tl-rail')?.remove();     // CapCut content rail
     card.classList.remove('tl-show-all');
   }
 
@@ -11702,6 +11758,130 @@
   }
   function tlInspToggleAll(i) { document.getElementById(`card-${i}`)?.classList.toggle('tl-show-all'); }
 
+  // ── Content rail (Timeline / CapCut view): the scene's layers + add-media ──
+  // A thin UI over the existing per-layer controls (single source of truth): clicking a
+  // layer focuses it, the + buttons reuse the real add handlers, ▲▼ reorder in place.
+  let tlSelLayer = { type: 'main', idx: 0 };
+
+  function tlSceneLayers(card, i) {
+    const t = (I18N[window._appLang || 'en'] || I18N.en);
+    const out = [{ type: 'media', idx: 0, icon: '🎞', name: t.tl_media || 'Background / media' }];
+    const mt = (document.getElementById(`maintext-${i}`)?.value || '').trim();
+    out.push({ type: 'main', idx: 0, icon: '🅣', name: mt ? mt.slice(0, 28) : (t.tl_main_text || 'Main text') });
+    card.querySelectorAll(`#extratexts-${i} .extra-text-block`).forEach((b, j) => {
+      const nm = (b.querySelector('textarea')?.value || '').trim();
+      out.push({ type: 'extra', idx: j, icon: '🆃', name: nm ? nm.slice(0, 24) : `${t.tl_text_layer || 'Text'} ${j + 2}` });
+    });
+    card.querySelectorAll(`#shapes-${i} .shape-block`).forEach((b, k) => out.push({ type: 'shape', idx: k, icon: '▢', name: `${t.tl_shape || 'Shape'} ${k + 1}` }));
+    const imgHost = document.getElementById(`overlay-list-${i}`);
+    if (imgHost) Array.from(imgHost.children).forEach((b, j) => out.push({ type: 'image', idx: j, icon: '🖼', name: `${t.tl_image || 'Image'} ${j + 1}` }));
+    const vidHost = document.getElementById(`overlay-video-list-${i}`);
+    if (vidHost) Array.from(vidHost.children).forEach((b, j) => out.push({ type: 'video', idx: j, icon: '🎬', name: `${t.tl_overlay_video || 'Video'} ${j + 1}` }));
+    return out;
+  }
+
+  function buildContentRail(card, i) {
+    card.querySelector('.tl-rail')?.remove();
+    if (getSceneViewMode() !== 'timeline' || !card) return;
+    const t = (I18N[window._appLang || 'en'] || I18N.en);
+    const layers = tlSceneLayers(card, i);
+    const counts = {};
+    layers.forEach(L => { counts[L.type] = (counts[L.type] || 0) + 1; });
+    const reorderable = { extra: 1, shape: 1, image: 1 };
+    const rows = layers.map(L => {
+      const active = (tlSelLayer.type === L.type && tlSelLayer.idx === L.idx);
+      let mv = '';
+      if (reorderable[L.type] && counts[L.type] > 1) {
+        const up = L.idx > 0 ? `<button title="${t.tl_move_up || 'Move up'}" onclick="event.stopPropagation();tlMoveLayer(${i},'${L.type}',${L.idx},-1)">▲</button>` : '<button style="visibility:hidden">▲</button>';
+        const dn = L.idx < counts[L.type] - 1 ? `<button title="${t.tl_move_down || 'Move down'}" onclick="event.stopPropagation();tlMoveLayer(${i},'${L.type}',${L.idx},1)">▼</button>` : '<button style="visibility:hidden">▼</button>';
+        mv = `<span class="tl-layer-move">${up}${dn}</span>`;
+      }
+      return `<div class="tl-layer${active ? ' active' : ''}" onclick="tlSelectLayer(${i},'${L.type}',${L.idx})"><span class="tl-layer-ico">${L.icon}</span><span class="tl-layer-name">${escapeHtml(L.name)}</span>${mv}</div>`;
+    }).join('');
+    const adds = `<div class="tl-rail-adds"><button onclick="tlAddText(${i})">＋ ${t.tl_add_text || 'Text'}</button><button onclick="tlAddShape(${i})">＋ ${t.tl_add_shape || 'Shape'}</button><button onclick="tlAddImage(${i})">＋ ${t.tl_add_image || 'Image'}</button><button onclick="tlChangeMedia(${i})">⇄ ${t.tl_change_media || 'Media'}</button></div>`;
+    const div = document.createElement('div');
+    div.className = 'tl-rail';
+    div.innerHTML = `<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`;
+    const anchor = card.querySelector('.tl-inspector') || card.querySelector('.scene-tabs') || card.querySelector('details.scene-accordion');
+    if (anchor) anchor.parentNode.insertBefore(div, anchor);
+  }
+
+  function tlSelectLayer(i, type, idx) {
+    tlSelLayer = { type, idx };
+    const card = document.getElementById(`card-${i}`);
+    if (!card) return;
+    if (type === 'main') {
+      card.classList.remove('tl-show-all');
+      try { buildTimelineInspector(card, i); } catch {}
+    } else {
+      card.classList.add('tl-show-all');
+      try { tlRevealLayer(card, i, type, idx); } catch {}
+    }
+    try { buildContentRail(card, i); } catch {}
+  }
+
+  function tlActivateSection(card, sectionKey) {
+    const accs = Array.from(card.querySelectorAll('details.scene-accordion'));
+    const idx = accs.findIndex(d => d.querySelector('summary')?.getAttribute('data-i18n') === sectionKey);
+    if (idx < 0) return null;
+    const tabs = card.querySelectorAll('.scene-tab');
+    if (tabs[idx]) tabs[idx].click(); else accs.forEach((d, n) => { d.open = (n === idx); });
+    return accs[idx];
+  }
+
+  function tlRevealLayer(card, i, type, idx) {
+    const sectionKey = (type === 'media') ? 'bg_video' : (type === 'extra') ? 'main_text_label' : 'overlays';
+    const acc = tlActivateSection(card, sectionKey);
+    let item = null;
+    if (type === 'extra') item = card.querySelectorAll(`#extratexts-${i} .extra-text-block`)[idx];
+    else if (type === 'shape') item = card.querySelectorAll(`#shapes-${i} .shape-block`)[idx];
+    else if (type === 'image') item = document.getElementById(`overlay-list-${i}`)?.children[idx];
+    else if (type === 'video') item = document.getElementById(`overlay-video-list-${i}`)?.children[idx];
+    const target = item || acc;
+    if (target) setTimeout(() => { try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {} }, 30);
+  }
+
+  async function tlAddText(i) {
+    try { await addExtraText(i); } catch {}
+    const card = document.getElementById(`card-${i}`);
+    const j = Math.max(0, (card?.querySelectorAll(`#extratexts-${i} .extra-text-block`).length || 1) - 1);
+    tlSelectLayer(i, 'extra', j);
+  }
+  async function tlAddShape(i) {
+    try { await addShape(i); } catch {}
+    const card = document.getElementById(`card-${i}`);
+    const k = Math.max(0, (card?.querySelectorAll(`#shapes-${i} .shape-block`).length || 1) - 1);
+    tlSelectLayer(i, 'shape', k);
+  }
+  function tlAddImage(i) { document.getElementById(`overlay-file-${i}`)?.click(); }
+  function tlChangeMedia(i) { tlSelectLayer(i, 'media', 0); }
+
+  async function tlMoveLayer(i, type, idx, dir) {
+    const card = document.getElementById(`card-${i}`);
+    if (!card) return;
+    const ni = idx + dir;
+    if (type === 'extra') {
+      const arr = getExtraTexts(i); if (ni < 0 || ni >= arr.length) return;
+      [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+      document.getElementById(`extratexts-${i}`).innerHTML = arr.map((et, n) => buildExtraTextHTML(i, n, et)).join('');
+      try { updateExtraTextPreviewAll(i); } catch {}
+      await saveExtraText(i);
+    } else if (type === 'shape') {
+      const arr = getShapes(i); if (ni < 0 || ni >= arr.length) return;
+      [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+      document.getElementById(`shapes-${i}`).innerHTML = arr.map((sh, n) => buildShapeHTML(i, n, sh)).join('');
+      await saveShapes(i);
+    } else if (type === 'image') {
+      const arr = getOverlayDataAll(i); if (ni < 0 || ni >= arr.length) return;
+      [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+      renderOverlayEditorList(i, arr);
+      try { refreshOverlayPreview(i, true); } catch {}
+      await saveOverlay(i);
+    } else return;
+    tlSelLayer = { type, idx: ni };
+    buildContentRail(card, i);
+  }
+
   function sbApplySelection() {
     document.querySelectorAll('#segments-list .segment-card').forEach(c => sbClearCardOverrides(c));
     const card = document.getElementById(`card-${sbSelectedIndex}`);
@@ -11732,11 +11912,13 @@
     sdSetCurrent(sbSelectedIndex);
     try { sbBuildSceneTabs(card); } catch {}        // tabbed editor (under "All controls")
     try { buildTimelineInspector(card, sbSelectedIndex); } catch {}  // clean default inspector
+    try { buildContentRail(card, sbSelectedIndex); } catch {}        // CapCut content rail (layers + add media)
   }
 
   function sbSelect(i) {
     if (i < 0 || i >= sdSegments.length) return;
     sbSelectedIndex = i;
+    tlSelLayer = { type: 'main', idx: 0 };   // each scene opens on its main text (clean inspector)
     sbApplySelection();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
