@@ -11570,6 +11570,11 @@
         localStorage.setItem('sd-expanded-channels', '1');
         localStorage.setItem('sd-collapsed', '0');
         try { renderSceneDock(); } catch {}
+        // Open the Main text controls so editing is immediate when you pick a scene
+        try {
+          const mt = document.getElementById(`card-${sbSelectedIndex}`)?.querySelector('.text-controls')?.closest('details');
+          if (mt) mt.open = true;
+        } catch {}
       }
     } else {
       document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
@@ -11594,9 +11599,17 @@
     try {
       const preset = getActiveVideoPreset();
       const timeline = getSceneViewMode() === 'timeline';
-      const w = timeline
-        ? Math.max(240, Math.min(440, Math.round(window.innerWidth * 0.34)))  // bigger in the timeline layout
-        : Math.max(200, Math.min(340, Math.round(window.innerWidth * 0.26)));
+      let w;
+      if (timeline) {
+        // Fit the preview between the page header (~260px above the card) and the docked
+        // tracks (~200px), capped by width too — so a tall 9:16 doesn't run behind the dock.
+        const availH = Math.max(200, window.innerHeight - 200 - 260 - 20);
+        const wByHeight = Math.round(availH * preset.width / preset.height);
+        const wByWidth = Math.round(window.innerWidth * 0.34);
+        w = Math.max(220, Math.min(440, wByWidth, wByHeight));
+      } else {
+        w = Math.max(200, Math.min(340, Math.round(window.innerWidth * 0.26)));
+      }
       const h = Math.max(54, Math.round(w * preset.height / preset.width));
       card.style.setProperty('--thumb-w', `${w}px`);
       card.style.setProperty('--thumb-h', `${h}px`);

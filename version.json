@@ -1,7 +1,7 @@
 {
-  "version": "1.4.29",
+  "version": "1.4.30",
   "date": "2026-06-15",
-  "notes": "New 'Timeline' editor layout (CapCut-style): a third view toggle beside Storyboard/List. It shows one scene with the properties on the left, a big preview on the right, and the editable Voice/Text/Media tracks docked open at the bottom — click any block in the timeline to edit that scene. Storyboard and List are unchanged.",
+  "notes": "Timeline layout polish: the preview is now sized to sit neatly above the docked tracks (no more overlap), and the Main text controls auto-open when you pick a scene so you can edit straight away.",
   "files": [
     "index.html",
     "version.json"
