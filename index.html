@@ -654,6 +654,10 @@
     .sd-meta { font-size: 11px; color: var(--text-dim); font-family: monospace; white-space: nowrap; }
     .sd-zoom-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-soft); border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer; line-height: 1.3; }
     .sd-zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* Labelled, easy-to-find toggle for the channel (Voice/Text/Media/SFX) view */
+    .sd-chan-toggle { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; padding: 3px 10px; border-color: var(--accent); color: var(--accent); }
+    .sd-chan-toggle.active { background: #38bdf8; border-color: #38bdf8; color: #04253b; }
+    .sd-chan-toggle #sd-expand-caret { font-size: 9px; opacity: .85; }
     .sd-body { padding: 0 12px 10px; }
     .scene-dock.collapsed .sd-body { display: none; }
     .sd-scroll { overflow-x: auto; overflow-y: hidden; }
@@ -903,7 +907,7 @@
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
         <button class="sd-zoom-btn" onclick="sdZoom(0)" data-i18n="sd_fit" data-i18n-attr="title" title="Fit to width">⤢</button>
         <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
-        <button class="sd-zoom-btn" id="sd-expand-btn" onclick="sdToggleExpand()" data-i18n="sd_channels" data-i18n-attr="title" title="Expand into channels">🎚</button>
+        <button class="sd-zoom-btn sd-chan-toggle" id="sd-expand-btn" onclick="sdToggleExpand()" data-i18n="sd_channels" data-i18n-attr="title" title="Show Voice / Text / Media channels">▦ <span data-i18n="sd_channels_btn">Channels</span> <span id="sd-expand-caret">▾</span></button>
         <button class="sd-zoom-btn" id="sd-collapse-btn" onclick="sdToggleCollapse()" title="Collapse">▾</button>
       </div>
       <div class="sd-body">
@@ -1185,6 +1189,23 @@
         <button class="btn sm blue" onclick="applyUpdate()" id="apply-update-btn" style="display:none" data-i18n="btn_apply_update">⬇️ Download &amp; Install Update</button>
       </div>
     </div>
+
+    <!-- API KEYS SECTION -->
+    <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px;">
+      <h3 style="margin:0 0 8px;font-size:15px;color:var(--text-soft)" data-i18n="settings_keys_title">🔑 API Keys</h3>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:14px;line-height:1.5" data-i18n="settings_keys_desc">Used to fetch stock video from Pexels and Pixabay. Leave a field blank to keep the current key — status is checked each time you open this tab.</div>
+
+      <div class="field-label"><span data-i18n="setup_pexels_label">Pexels API key</span> <span id="settings-pexels-status" style="font-size:11px;font-weight:700;margin-left:6px"></span></div>
+      <input type="password" id="settings-pexels-key" autocomplete="off" spellcheck="false" data-i18n="settings_key_ph" data-i18n-attr="placeholder" placeholder="Paste a new key to replace" />
+      <div class="setup-field-note" id="settings-pexels-note"></div>
+
+      <div class="field-label" style="margin-top:10px"><span data-i18n="setup_pixabay_label">Pixabay API key</span> <span id="settings-pixabay-status" style="font-size:11px;font-weight:700;margin-left:6px"></span></div>
+      <input type="password" id="settings-pixabay-key" autocomplete="off" spellcheck="false" data-i18n="settings_key_ph" data-i18n-attr="placeholder" placeholder="Paste a new key to replace" />
+      <div class="setup-field-note" id="settings-pixabay-note"></div>
+
+      <button class="btn sm blue" style="margin-top:12px" onclick="saveApiKeysFromSettings()" id="settings-keys-btn" data-i18n="settings_keys_save">💾 Verify &amp; save keys</button>
+      <div id="settings-keys-msg" style="font-size:12px;margin-top:8px;min-height:18px;"></div>
+    </div>
   </div>
 </div>
 
@@ -1293,7 +1314,8 @@
       sd_expand: 'Expand',
       sd_resize_tip: 'Drag to change scene length',
       sd_play: 'Play the whole video',
-      sd_channels: 'Expand into channels',
+      sd_channels: 'Show Voice / Text / Media channels',
+      sd_channels_btn: 'Channels',
       sd_download: 'Download rendered video',
       sd_share: 'Share',
       sd_download_title: 'Download rendered videos',
@@ -1315,6 +1337,7 @@
       setup_continue: 'Continue',
       setup_keys_title: 'Enter your API keys',
       setup_keys_sub: 'Paste the two keys you were given. We will check they work before continuing.',
+      setup_keys_sub_one: 'Paste a new {provider} key. We will check it works before saving.',
       setup_pexels_label: 'Pexels API key',
       setup_pixabay_label: 'Pixabay API key',
       setup_verify_btn: 'Verify & continue',
@@ -1339,6 +1362,17 @@
       health_down_one: "{provider} looks like it's down right now — new videos will use {other} instead.",
       health_down_both: "Can't reach Pexels or Pixabay right now. Check your internet connection.",
       health_dismiss: 'Dismiss',
+      settings_keys_title: '🔑 API Keys',
+      settings_keys_desc: 'Used to fetch stock video from Pexels and Pixabay. Leave a field blank to keep the current key — status is checked each time you open this tab.',
+      settings_key_ph: 'Paste a new key to replace',
+      settings_keys_save: '💾 Verify & save keys',
+      settings_key_working: 'working',
+      settings_key_invalid: 'invalid',
+      settings_key_down: 'provider down',
+      settings_key_unset: 'not set',
+      settings_keys_none: 'Enter at least one key to save.',
+      settings_keys_saved: 'Keys saved ✓',
+      settings_keys_bad: 'Some keys did not work — check the notes above.',
       sd_zoom_in: 'Zoom in',
       sd_zoom_out: 'Zoom out',
       ptb_rotate_tip: 'Drag to rotate (Shift = 15° steps)',
@@ -1794,7 +1828,8 @@
       sd_expand: '展開',
       sd_resize_tip: 'ドラッグしてシーンの長さを変更',
       sd_play: '動画全体を再生',
-      sd_channels: 'チャンネル表示に拡大',
+      sd_channels: '音声 / テキスト / メディアのチャンネルを表示',
+      sd_channels_btn: 'チャンネル',
       sd_download: 'レンダリング済み動画をダウンロード',
       sd_share: '共有',
       sd_download_title: 'レンダリング済み動画をダウンロード',
@@ -1816,6 +1851,7 @@
       setup_continue: '続ける',
       setup_keys_title: 'APIキーを入力してください',
       setup_keys_sub: '受け取った2つのキーを貼り付けてください。続行する前に動作を確認します。',
+      setup_keys_sub_one: '新しい{provider}キーを貼り付けてください。保存する前に動作を確認します。',
       setup_pexels_label: 'Pexels APIキー',
       setup_pixabay_label: 'Pixabay APIキー',
       setup_verify_btn: '確認して続ける',
@@ -1840,6 +1876,17 @@
       health_down_one: '{provider} は現在ダウンしているようです。新しい動画には代わりに {other} を使用します。',
       health_down_both: 'Pexels と Pixabay に接続できません。インターネット接続を確認してください。',
       health_dismiss: '閉じる',
+      settings_keys_title: '🔑 APIキー',
+      settings_keys_desc: 'Pexels と Pixabay からストック動画を取得するために使用します。空欄のままにすると現在のキーが保持されます。このタブを開くたびに状態を確認します。',
+      settings_key_ph: '新しいキーを貼り付けて置き換え',
+      settings_keys_save: '💾 確認して保存',
+      settings_key_working: '正常',
+      settings_key_invalid: '無効',
+      settings_key_down: 'ダウン中',
+      settings_key_unset: '未設定',
+      settings_keys_none: '保存するキーを1つ以上入力してください。',
+      settings_keys_saved: 'キーを保存しました ✓',
+      settings_keys_bad: '一部のキーが無効です。上の注記を確認してください。',
       sd_zoom_in: 'ズームイン',
       sd_zoom_out: 'ズームアウト',
       ptb_rotate_tip: 'ドラッグして回転（Shift = 15°刻み）',
@@ -2431,8 +2478,9 @@
     setupStep1();
   }
 
-  // Re-open just the API-key entry step to fix expired/invalid keys (no welcome, no confetti)
-  function showUpdateKeysDialog(prefillName) {
+  // Re-open just the API-key entry step to fix expired/invalid keys (no welcome, no confetti).
+  // `providers` limits which fields show — e.g. ['pexels'] when only Pexels is broken.
+  function showUpdateKeysDialog(prefillName, providers) {
     if (document.getElementById('setup-overlay')) return;
     _setupMode = 'update';
     _setupName = (prefillName || (window._providerHealth && window._providerHealth.userName) || _setupName || '').trim();
@@ -2441,7 +2489,7 @@
     ov.id = 'setup-overlay';
     ov.innerHTML = `<canvas class="setup-confetti" id="setup-confetti"></canvas><div class="setup-card" id="setup-card"></div>`;
     document.body.appendChild(ov);
-    setupStep3();
+    setupStep3(providers);
   }
 
   function setupStep1() {
@@ -2467,27 +2515,33 @@
     inp.focus();
   }
 
-  function setupStep3() {
+  let _setupProviders = ['pexels', 'pixabay']; // which keys the current key step is editing
+
+  function setupStep3(providers) {
     _setupName = document.getElementById('setup-name')?.value.trim() || _setupName;
+    const list = (Array.isArray(providers) ? providers : []).filter(p => p === 'pexels' || p === 'pixabay');
+    _setupProviders = list.length ? list : ['pexels', 'pixabay'];
     const t = setupT();
+    const labelFor = p => p === 'pexels' ? t.setup_pexels_label : t.setup_pixabay_label;
+    const field = p => `
+      <label class="setup-label">${labelFor(p)}</label>
+      <input class="setup-input" id="setup-${p}" autocomplete="off" spellcheck="false" />
+      <div class="setup-field-note" id="setup-${p}-note"></div>`;
+    // Fixing a single provider gets a tighter, more specific prompt
+    const sub = (_setupMode === 'update' && _setupProviders.length === 1)
+      ? (t.setup_keys_sub_one || t.setup_keys_sub).replace('{provider}', _provName(_setupProviders[0]))
+      : t.setup_keys_sub;
     document.getElementById('setup-card').innerHTML = `
       <div class="setup-icon">🔑</div>
       <h2 class="setup-title">${t.setup_keys_title}</h2>
-      <p class="setup-sub">${t.setup_keys_sub}</p>
-      <label class="setup-label">${t.setup_pexels_label}</label>
-      <input class="setup-input" id="setup-pexels" autocomplete="off" spellcheck="false" />
-      <div class="setup-field-note" id="setup-pexels-note"></div>
-      <label class="setup-label">${t.setup_pixabay_label}</label>
-      <input class="setup-input" id="setup-pixabay" autocomplete="off" spellcheck="false" />
-      <div class="setup-field-note" id="setup-pixabay-note"></div>
+      <p class="setup-sub">${sub}</p>
+      ${_setupProviders.map(field).join('')}
       <button class="setup-btn" id="setup-verify-btn" onclick="setupVerifyKeys()">${t.setup_verify_btn}</button>`;
-    document.getElementById('setup-pexels').focus();
+    document.getElementById(`setup-${_setupProviders[0]}`).focus();
   }
 
   async function setupVerifyKeys() {
     const t = setupT();
-    const pexelsKey = document.getElementById('setup-pexels').value.trim();
-    const pixabayKey = document.getElementById('setup-pixabay').value.trim();
     const note = (id, ok, msg) => {
       const inp = document.getElementById(`setup-${id}`);
       const n = document.getElementById(`setup-${id}-note`);
@@ -2497,31 +2551,40 @@
       n.className = 'setup-field-note ' + (ok ? 'good' : 'bad');
       n.textContent = msg;
     };
-    if (!pexelsKey || !pixabayKey) {
-      if (!pexelsKey) note('pexels', false, t.setup_key_missing);
-      if (!pixabayKey) note('pixabay', false, t.setup_key_missing);
-      return;
+    // Gather only the fields currently shown, so a one-provider fix sends one key
+    const payload = {};
+    let missing = false;
+    for (const p of _setupProviders) {
+      const v = (document.getElementById(`setup-${p}`)?.value || '').trim();
+      if (!v) { note(p, false, t.setup_key_missing); missing = true; }
+      payload[p === 'pexels' ? 'pexelsKey' : 'pixabayKey'] = v;
     }
+    if (missing) return;
     const btn = document.getElementById('setup-verify-btn');
     btn.disabled = true;
     btn.textContent = t.setup_verifying;
     try {
       const r = await fetch('/setup-validate-keys', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pexelsKey, pixabayKey })
+        body: JSON.stringify(payload)
       }).then(res => res.json());
-      note('pexels', r.pexels, r.pexels ? t.setup_key_ok : t.setup_key_bad);
-      note('pixabay', r.pixabay, r.pixabay ? t.setup_key_ok : t.setup_key_bad);
-      if (r.pexels && r.pixabay) {
+      let allOk = true;
+      for (const p of _setupProviders) {
+        const ok = !!r[p];
+        note(p, ok, ok ? t.setup_key_ok : t.setup_key_bad);
+        if (!ok) allOk = false;
+      }
+      if (allOk) {
+        // Merge-saves: only the keys in payload are written, the other is preserved
         await fetch('/setup-complete', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userName: _setupName, pexelsKey, pixabayKey })
+          body: JSON.stringify({ userName: _setupName, ...payload })
         });
         setupStep4();
         return;
       }
     } catch (err) {
-      note('pexels', false, t.setup_net_err || err.message || 'Network error');
+      note(_setupProviders[0], false, t.setup_net_err || err.message || 'Network error');
     }
     btn.disabled = false;
     btn.textContent = t.setup_verify_btn;
@@ -2592,6 +2655,7 @@
 
   function showApiKeyPopup(name, providers) {
     if (document.getElementById('setup-overlay')) return;
+    window._healthBadProviders = (providers || []).slice();
     const t = setupT();
     const greet = name ? t.health_hey_name.replace('{name}', escapeHtml(name)) : t.health_hey_noname;
     const body = providers.length >= 2
@@ -2613,8 +2677,10 @@
 
   function showUpdateKeysDialogFromPopup() {
     const name = (window._providerHealth && window._providerHealth.userName) || _setupName || '';
+    const providers = (window._healthBadProviders && window._healthBadProviders.length)
+      ? window._healthBadProviders.slice() : ['pexels', 'pixabay'];
     document.getElementById('setup-overlay')?.remove();
-    showUpdateKeysDialog(name);
+    showUpdateKeysDialog(name, providers);
   }
 
   let _healthToastTimer = null;
@@ -2632,6 +2698,72 @@
     const host = document.getElementById('health-toast');
     if (host) host.classList.remove('show');
     if (_healthToastTimer) { clearTimeout(_healthToastTimer); _healthToastTimer = null; }
+  }
+
+  /* ── Settings → API Keys card: live status + verify-and-save (rotate keys anytime) ── */
+  async function refreshApiKeyStatus() {
+    if (!document.getElementById('settings-pexels-status')) return;
+    const t = setupT();
+    const set = (p, st) => {
+      const el = document.getElementById(`settings-${p}-status`);
+      if (!el) return;
+      if (!st || st.reason === 'missing') { el.textContent = '— ' + (t.settings_key_unset || 'not set'); el.style.color = '#94a3b8'; }
+      else if (st.ok)                     { el.textContent = '✓ ' + (t.settings_key_working || 'working'); el.style.color = '#4ade80'; }
+      else if (st.reason === 'auth')      { el.textContent = '✗ ' + (t.settings_key_invalid || 'invalid'); el.style.color = '#f87171'; }
+      else                                { el.textContent = '⚠ ' + (t.settings_key_down || 'provider down'); el.style.color = '#fbbf24'; }
+    };
+    set('pexels', null); set('pixabay', null);
+    try {
+      const h = await fetch('/provider-health').then(r => r.json());
+      set('pexels', h.pexels); set('pixabay', h.pixabay);
+    } catch {}
+  }
+
+  async function saveApiKeysFromSettings() {
+    const t = setupT();
+    const px = (document.getElementById('settings-pexels-key')?.value || '').trim();
+    const pb = (document.getElementById('settings-pixabay-key')?.value || '').trim();
+    const msg = document.getElementById('settings-keys-msg');
+    const note = (p, ok, m) => {
+      const inp = document.getElementById(`settings-${p}-key`);
+      const n = document.getElementById(`settings-${p}-note`);
+      if (inp) { inp.classList.toggle('good', ok === true); inp.classList.toggle('bad', ok === false); }
+      if (n) { n.className = 'setup-field-note ' + (ok ? 'good' : 'bad'); n.textContent = m; }
+    };
+    document.getElementById('settings-pexels-note').textContent = '';
+    document.getElementById('settings-pixabay-note').textContent = '';
+    if (!px && !pb) { msg.style.color = '#f87171'; msg.textContent = t.settings_keys_none || 'Enter at least one key to save.'; return; }
+    const payload = {};
+    if (px) payload.pexelsKey = px;
+    if (pb) payload.pixabayKey = pb;
+    const btn = document.getElementById('settings-keys-btn');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = t.setup_verifying || 'Checking…';
+    msg.style.color = '#94a3b8'; msg.textContent = '';
+    try {
+      const r = await fetch('/setup-validate-keys', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      }).then(x => x.json());
+      let allOk = true;
+      if (px) { note('pexels', !!r.pexels, r.pexels ? t.setup_key_ok : t.setup_key_bad); if (!r.pexels) allOk = false; }
+      if (pb) { note('pixabay', !!r.pixabay, r.pixabay ? t.setup_key_ok : t.setup_key_bad); if (!r.pixabay) allOk = false; }
+      if (allOk) {
+        await fetch('/setup-complete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        msg.style.color = '#4ade80'; msg.textContent = t.settings_keys_saved || 'Keys saved ✓';
+        document.getElementById('settings-pexels-key').value = '';
+        document.getElementById('settings-pixabay-key').value = '';
+        window._providerHealth = null;
+        refreshApiKeyStatus();
+        checkProviderHealth(); // clears any stale warning toast/popup
+      } else {
+        msg.style.color = '#f87171'; msg.textContent = t.settings_keys_bad || 'Some keys did not work — check the notes above.';
+      }
+    } catch (err) {
+      msg.style.color = '#f87171'; msg.textContent = t.setup_net_err || err.message || 'Network error';
+    }
+    btn.disabled = false; btn.textContent = orig;
   }
 
   // Full-screen confetti (confetti-js style): fluttering paper pieces falling continuously
@@ -3240,6 +3372,7 @@
   }
 
   async function loadSettingsUI() {
+    refreshApiKeyStatus(); // live Pexels/Pixabay key status in the API Keys card
     const settingsRes = await fetch('/settings');
     const s = await settingsRes.json();
     currentSettings = s;
@@ -10554,7 +10687,9 @@
     dock.classList.toggle('collapsed', collapsed);
     dock.classList.toggle('expanded', sdExpanded);
     const xBtn = document.getElementById('sd-expand-btn');
-    if (xBtn) xBtn.style.background = sdExpanded ? '#38bdf8' : '';
+    if (xBtn) xBtn.classList.toggle('active', sdExpanded);
+    const xCaret = document.getElementById('sd-expand-caret');
+    if (xCaret) xCaret.textContent = sdExpanded ? '▴' : '▾';
     const cBtn = document.getElementById('sd-collapse-btn');
     if (cBtn) { cBtn.textContent = collapsed ? '▴' : '▾'; cBtn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
 

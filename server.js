@@ -1330,9 +1330,14 @@ app.post('/setup-validate-keys', async (req, res) => {
 app.post('/setup-complete', (req, res) => {
     try {
         const cfg = readUserConfig();
-        cfg.userName = String(req.body.userName || '').trim().slice(0, 60);
-        cfg.pexelsApiKey = String(req.body.pexelsKey || '').trim();
-        cfg.pixabayApiKey = String(req.body.pixabayKey || '').trim();
+        const name = String(req.body.userName || '').trim().slice(0, 60);
+        const px = String(req.body.pexelsKey || '').trim();
+        const pb = String(req.body.pixabayKey || '').trim();
+        if (name) cfg.userName = name;
+        // Only overwrite a key when a value is supplied, so fixing just one provider
+        // never wipes the other provider's still-working key.
+        if (px) cfg.pexelsApiKey = px;
+        if (pb) cfg.pixabayApiKey = pb;
         cfg.setupCompletedAt = new Date().toISOString();
         writeJsonFile(USER_CONFIG_PATH, cfg);
         res.json({ ok: true });
