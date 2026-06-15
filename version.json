@@ -1,13 +1,9 @@
 {
-  "version": "1.4.23",
+  "version": "1.4.24",
   "date": "2026-06-15",
-  "notes": "Typography: new per-scene and per-text-layer font picker (under Main text / each layer) plus a language-filtered font list in Settings. Adds Geist, Hanken Grotesk (free Aeonik stand-in), Satoshi, Cal Sans, Manrope, Helvetica, Space Grotesk (EN) and LINE Seed JP, M PLUS 1, BIZ UDPGothic, IBM Plex Sans JP, Yu Gothic, Zen Maru Gothic (JA); the preview now renders the chosen font. Transform box now hugs the selected object (text/image) instead of the whole preview. EN/JA localized.",
+  "notes": "Timeline: each scene block now has a ▾ caret that expands an inline editor for that scene's items (voice/text/media/sfx) — drag a bar's right edge to change its length or its body to move its timing; caret flips to ▴ to close, and blocks stay resizable/movable. New 'All scenes / Focus scene' toggle in the timeline header to step out of single-scene editing and view every scene. (Transform box already hugs shapes/images the same way it does text.)",
   "files": [
     "index.html",
-    "server.js",
-    "src/Caption.tsx",
-    "src/Main.tsx",
-    "src/index.css",
     "version.json"
   ]
 }

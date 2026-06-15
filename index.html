@@ -665,6 +665,33 @@
     .sd-chan-toggle { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; padding: 3px 10px; border-color: var(--accent); color: var(--accent); }
     .sd-chan-toggle.active { background: #38bdf8; border-color: #38bdf8; color: #04253b; }
     .sd-chan-toggle #sd-expand-caret { font-size: 9px; opacity: .85; }
+    .sd-viewall-btn { font-weight: 700; padding: 3px 10px; }
+    .sd-viewall-btn.active { background: #38bdf8; border-color: #38bdf8; color: #04253b; }
+    /* Per-scene expand caret on each timeline block */
+    .sd-clip-caret { position: absolute; top: 2px; right: 2px; width: 16px; height: 15px; display: flex; align-items: center; justify-content: center;
+      background: rgba(2,6,23,0.6); color: #e2e8f0; border-radius: 4px; font-size: 9px; cursor: pointer; z-index: 6; line-height: 1; user-select: none; }
+    .sd-clip-caret:hover { background: #38bdf8; color: #04253b; }
+    .sd-clip.sd-clip-expanded .sd-clip-caret { background: #38bdf8; color: #04253b; }
+    /* Per-scene expanded detail editor (drag item bars) */
+    .sd-scene-details { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .sd-detail { background: rgba(148,163,184,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .sd-detail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .sd-detail-title { font-size: 11px; font-weight: 700; color: var(--text-soft); }
+    .sd-detail-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; line-height: 1; }
+    .sd-detail-close:hover { color: var(--accent); }
+    .sd-detail-rows { display: flex; flex-direction: column; gap: 5px; }
+    .sd-detail-row { display: flex; align-items: center; gap: 8px; }
+    .sd-detail-label { width: 88px; flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-detail-track { position: relative; flex: 1; min-width: 0; height: 22px; background: rgba(148,163,184,0.09); border-radius: 5px; }
+    .sd-item-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; cursor: grab; box-sizing: border-box; min-width: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
+    .sd-item-bar.fixed { cursor: default; opacity: 0.8; }
+    .sd-item-bar:not(.fixed):hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); }
+    .sd-item-bar.sd-item-dragging { box-shadow: 0 0 0 2px #38bdf8; z-index: 3; }
+    .sd-item-bar:active { cursor: grabbing; }
+    .sd-item-lbl { font-size: 9px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.5); pointer-events: none; overflow: hidden; text-overflow: ellipsis; }
+    .sd-item-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 9px; cursor: ew-resize; border-radius: 0 4px 4px 0; }
+    .sd-item-resize:hover { background: rgba(255,255,255,0.4); }
+    .sd-detail-empty { font-size: 11px; color: var(--text-dim); padding: 4px 2px; }
     .sd-body { padding: 0 12px 10px; }
     .scene-dock.collapsed .sd-body { display: none; }
     .sd-scroll { overflow-x: auto; overflow-y: hidden; }
@@ -908,6 +935,7 @@
         <span class="sd-timecode" id="sd-timecode">0.0s / 0.0s</span>
         <span class="sd-title" data-i18n="sd_timeline">🎞 Timeline</span>
         <span class="sd-meta" id="sd-meta"></span>
+        <button class="sd-zoom-btn sd-viewall-btn" id="sd-viewall-btn" onclick="sdToggleViewAll()" title="View all scenes / the full video">⊞ <span id="sd-viewall-label" data-i18n="sd_view_all">All scenes</span></button>
         <span style="flex:1"></span>
         <button class="sd-zoom-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_download" data-i18n-attr="title" title="Download rendered video">⬇</button>
         <button class="sd-zoom-btn" onclick="sdShareOpen(event)" data-i18n="sd_share" data-i18n-attr="title" title="Share">📤</button>
@@ -919,6 +947,7 @@
       </div>
       <div class="sd-body">
         <div class="sd-scroll" id="sd-scroll"><div class="sd-canvas" id="sd-canvas"></div></div>
+        <div id="sd-scene-details" class="sd-scene-details"></div>
       </div>
     </div>
   </div>
@@ -1295,6 +1324,12 @@
       sd_play: 'Play the whole video',
       sd_channels: 'Show Voice / Text / Media channels',
       sd_channels_btn: 'Channels',
+      sd_view_all: 'All scenes',
+      sd_focus_scene: 'Focus scene',
+      sd_scene_expand: 'Expand this scene to edit its items',
+      sd_scene_collapse: 'Collapse',
+      sd_scene_label: 'Scene',
+      sd_detail_empty: 'No timed items in this scene yet.',
       sd_download: 'Download rendered video',
       sd_share: 'Share',
       sd_download_title: 'Download rendered videos',
@@ -1811,6 +1846,12 @@
       sd_play: '動画全体を再生',
       sd_channels: '音声 / テキスト / メディアのチャンネルを表示',
       sd_channels_btn: 'チャンネル',
+      sd_view_all: '全シーン',
+      sd_focus_scene: 'シーンに集中',
+      sd_scene_expand: 'このシーンを展開してアイテムを編集',
+      sd_scene_collapse: '折りたたむ',
+      sd_scene_label: 'シーン',
+      sd_detail_empty: 'このシーンにはまだタイミング付きのアイテムがありません。',
       sd_download: 'レンダリング済み動画をダウンロード',
       sd_share: '共有',
       sd_download_title: 'レンダリング済み動画をダウンロード',
@@ -10715,6 +10756,7 @@
   let sdResizeState = null;    // active right-edge drag-resize gesture
   let sdResizeClickGuard = false; // swallow the click that fires right after a resize drag
   let sdExpanded = localStorage.getItem('sd-expanded-channels') === '1';
+  let sdExpandedScenes = new Set();   // scene indices expanded via their per-block caret
   let sdPlayheadTime = 0;
   const sdPlay = { playing: false, raf: null, lastTs: 0, voice: null, bgm: null, scene: -1 };
   let sdResizeTimer = null;
@@ -10763,6 +10805,11 @@
     if (xBtn) xBtn.classList.toggle('active', sdExpanded);
     const xCaret = document.getElementById('sd-expand-caret');
     if (xCaret) xCaret.textContent = sdExpanded ? '▴' : '▾';
+    const isListView = getSceneViewMode() === 'list';
+    const vBtn = document.getElementById('sd-viewall-btn');
+    if (vBtn) { vBtn.classList.toggle('active', isListView); vBtn.firstChild.textContent = isListView ? '🎬 ' : '⊞ '; }
+    const vLbl = document.getElementById('sd-viewall-label');
+    if (vLbl) vLbl.textContent = isListView ? (sdT().sd_focus_scene || 'Focus scene') : (sdT().sd_view_all || 'All scenes');
     const cBtn = document.getElementById('sd-collapse-btn');
     if (cBtn) { cBtn.textContent = collapsed ? '▴' : '▾'; cBtn.title = collapsed ? (sdT().sd_expand || 'Expand') : (sdT().sd_collapse || 'Collapse'); }
 
@@ -10791,7 +10838,8 @@
       const showNum = w >= 64;
       const showDur = w >= 96;
       const showLabel = w >= 34;
-      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
+      const caretHTML = w >= 24 ? `<div class="sd-clip-caret" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();sdToggleSceneExpand(${i})" title="${sdEsc(sdExpandedScenes.has(i) ? (sdT().sd_scene_collapse || 'Collapse') : (sdT().sd_scene_expand || 'Expand this scene'))}">${sdExpandedScenes.has(i) ? '▴' : '▾'}</div>` : '';
+      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}${sdExpandedScenes.has(i) ? ' sd-clip-expanded' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${caretHTML}${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
       curX += w;
     });
     clipsHTML += `<div class="sd-add-tile" style="left:${curX + 4}px" onclick="openModal(-1)" title="${sdEsc(sdT().btn_add_new_scene || '+ Add scene')}">＋</div>`;
@@ -10804,6 +10852,13 @@
     const meta = document.getElementById('sd-meta');
     if (meta) meta.textContent = `${total.toFixed(1)}s · ${sdSegments.length} ${sdT().sd_scenes || 'scenes'}`;
     sdUpdatePlayheadDOM();
+
+    // Per-scene expanded detail editors (drag item bars to retime/resize)
+    const detailHost = document.getElementById('sd-scene-details');
+    if (detailHost) {
+      const open = [...sdExpandedScenes].filter(i => i >= 0 && i < sdSegments.length).sort((a, b) => a - b);
+      detailHost.innerHTML = open.map(i => sdSceneDetailHTML(i)).join('');
+    }
 
     // Reserve exactly the dock's height below the scene cards
     if (panel) panel.style.paddingBottom = (dock.offsetHeight + 24) + 'px';
@@ -11051,6 +11106,157 @@
     localStorage.setItem('sd-expanded-channels', sdExpanded ? '1' : '0');
     if (sdExpanded) localStorage.setItem('sd-collapsed', '0');  // expanding implies open
     renderSceneDock();
+  }
+
+  // Step out of single-scene editing back to all scenes (and vice-versa) from the timeline
+  function sdToggleViewAll() {
+    const goingToList = getSceneViewMode() === 'storyboard';
+    setSceneViewMode(goingToList ? 'list' : 'storyboard');
+    if (sdPlay.playing) sdPause();
+    if (goingToList) window.scrollTo({ top: 0, behavior: 'smooth' });
+    renderSceneDock();
+  }
+
+  /* ── Per-scene expand: drag item bars to retime/resize a scene's layers ── */
+  function sdToggleSceneExpand(i) {
+    if (sdExpandedScenes.has(i)) sdExpandedScenes.delete(i);
+    else sdExpandedScenes.add(i);
+    renderSceneDock();
+  }
+
+  function _sdClampT(v, lo, hi, dflt) {
+    const n = Number(v);
+    if (v == null || v === '' || !Number.isFinite(n)) return dflt;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  // The editable (and read-only voice) items of a scene, with timing in seconds
+  function sdSceneItems(i) {
+    const seg = sdSegments[i] || {};
+    const dur = Math.max(0.5, Number(seg.duration) || 5);
+    const t = sdT();
+    const items = [];
+    const aDur = Number(seg.audioDuration);
+    if (Number.isFinite(aDur) && aDur > 0) {
+      items.push({ kind: 'voice', j: -1, label: '🎙 ' + (t.voice_label || 'Voice'), color: '#2563eb', start: 0, end: Math.min(aDur, dur), fixed: true });
+    }
+    if ((seg.text || '').trim()) {
+      const s = _sdClampT(seg.mainTextStartAt, 0, dur, 0);
+      items.push({ kind: 'maintext', j: -1, label: '💬 ' + (t.main_text || 'Main text'), color: '#10b981', start: s, end: _sdClampT(seg.mainTextEndAt, s, dur, dur), fixed: false });
+    }
+    (seg.extraTexts || []).forEach((et, j) => {
+      const s = _sdClampT(et?.startAt, 0, dur, 0);
+      const label = (et?.text || ('#' + (j + 1))).toString().slice(0, 14);
+      items.push({ kind: 'extra', j, label: '💬 ' + sdEsc(label), color: '#14b8a6', start: s, end: _sdClampT(et?.endAt, s, dur, dur), fixed: false });
+    });
+    const media = [
+      ...(seg.overlayImages || []).map((o, k) => ({ o, arr: 'overlayImages', k, icon: '🖼' })),
+      ...(seg.overlayVideos || []).map((o, k) => ({ o, arr: 'overlayVideos', k, icon: '🎞' })),
+      ...(seg.overlayShapes || []).map((o, k) => ({ o, arr: 'overlayShapes', k, icon: '⬛' })),
+    ];
+    media.forEach(m => {
+      const s = _sdClampT(m.o?.startAt, 0, dur, 0);
+      items.push({ kind: 'media', arr: m.arr, j: m.k, label: m.icon + ' ' + (t.sd_chan_media || 'Media'), color: '#a855f7', start: s, end: _sdClampT(m.o?.endAt, s, dur, dur), fixed: false });
+    });
+    if (seg.soundEffect && (seg.soundEffect.file || seg.soundEffect.src)) {
+      const s = _sdClampT(seg.soundEffect.startAt, 0, dur, 0);
+      items.push({ kind: 'sfx', j: -1, label: '🔊 SFX', color: '#ec4899', start: s, end: _sdClampT(seg.soundEffect.endAt, s, dur, dur), fixed: false });
+    }
+    return { dur, items };
+  }
+
+  function sdSceneDetailHTML(i) {
+    const { dur, items } = sdSceneItems(i);
+    const t = sdT();
+    const head = `<div class="sd-detail-head"><span class="sd-detail-title">▾ ${t.sd_scene_label || 'Scene'} ${i + 1} · ${dur.toFixed(1)}s</span><button class="sd-detail-close" onclick="sdToggleSceneExpand(${i})" title="${sdEsc(t.sd_scene_collapse || 'Collapse')}">▴</button></div>`;
+    const rows = items.map((it, idx) => {
+      const leftPct = (it.start / dur) * 100;
+      const widPct = Math.max(2, ((it.end - it.start) / dur) * 100);
+      const attrs = `data-kind="${it.kind}" data-j="${it.j}"${it.arr ? ` data-arr="${it.arr}"` : ''}`;
+      const handle = it.fixed ? '' : `<div class="sd-item-resize" onmousedown="sdItemDown(event,${i},${idx},'resize')"></div>`;
+      const moveDown = it.fixed ? '' : `onmousedown="sdItemDown(event,${i},${idx},'move')"`;
+      return `<div class="sd-detail-row">
+        <span class="sd-detail-label" title="${sdEsc(it.label)}">${it.label}</span>
+        <div class="sd-detail-track" data-dur="${dur}">
+          <div class="sd-item-bar${it.fixed ? ' fixed' : ''}" id="sd-item-${i}-${idx}" ${attrs} style="left:${leftPct}%;width:${widPct}%;background:${it.color}" ${moveDown} title="${it.start.toFixed(1)}–${it.end.toFixed(1)}s">
+            <span class="sd-item-lbl">${(it.end - it.start).toFixed(1)}s</span>${handle}
+          </div>
+        </div>
+      </div>`;
+    }).join('') || `<div class="sd-detail-empty">${t.sd_detail_empty || 'No timed items in this scene yet.'}</div>`;
+    return `<div class="sd-detail" data-scene="${i}">${head}<div class="sd-detail-rows">${rows}</div></div>`;
+  }
+
+  function sdItemDown(ev, i, idx, mode) {
+    ev.preventDefault(); ev.stopPropagation();
+    const bar = document.getElementById(`sd-item-${i}-${idx}`);
+    if (!bar) return;
+    const track = bar.parentElement;
+    const dur = Number(track.dataset.dur) || Math.max(0.5, Number((sdSegments[i] || {}).duration) || 5);
+    const trackW = track.getBoundingClientRect().width || 1;
+    const pps = trackW / dur;
+    const startX = ev.clientX;
+    const startS = (parseFloat(bar.style.left) / 100) * dur;
+    const widS = (parseFloat(bar.style.width) / 100) * dur;
+    bar.classList.add('sd-item-dragging');
+    const move = (e) => {
+      const dSec = (e.clientX - startX) / pps;
+      let s = startS, en = startS + widS;
+      if (mode === 'resize') {
+        en = Math.max(s + 0.2, Math.min(dur, startS + widS + dSec));
+      } else {
+        s = Math.max(0, Math.min(dur - widS, startS + dSec));
+        en = s + widS;
+      }
+      bar.style.left = (s / dur * 100) + '%';
+      bar.style.width = ((en - s) / dur * 100) + '%';
+      bar.dataset.curStart = s; bar.dataset.curEnd = en;
+      const lbl = bar.querySelector('.sd-item-lbl');
+      if (lbl) lbl.textContent = (en - s).toFixed(1) + 's';
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      bar.classList.remove('sd-item-dragging');
+      const s = parseFloat(bar.dataset.curStart), en = parseFloat(bar.dataset.curEnd);
+      if (Number.isFinite(s) && Number.isFinite(en)) sdItemPersist(i, { kind: bar.dataset.kind, j: bar.dataset.j, arr: bar.dataset.arr }, s, en);
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  }
+
+  async function sdItemPersist(i, ds, start, end) {
+    const seg = sdSegments[i];
+    if (!seg) return;
+    const dur = Math.max(0.5, Number(seg.duration) || 5);
+    const round = x => Math.round(x * 10) / 10;
+    start = round(Math.max(0, Math.min(dur, start)));
+    end = round(Math.max(start + 0.1, Math.min(dur, end)));
+    const body = { index: i };
+    if (ds.kind === 'maintext') {
+      seg.mainTextStartAt = start; seg.mainTextEndAt = end;
+      body.mainTextStartAt = start; body.mainTextEndAt = end;
+    } else if (ds.kind === 'extra') {
+      const j = parseInt(ds.j);
+      if (!seg.extraTexts || !seg.extraTexts[j]) return;
+      seg.extraTexts[j].startAt = start; seg.extraTexts[j].endAt = end;
+      body.extraTexts = seg.extraTexts;
+    } else if (ds.kind === 'media') {
+      const j = parseInt(ds.j);
+      if (!seg[ds.arr] || !seg[ds.arr][j]) return;
+      seg[ds.arr][j].startAt = start; seg[ds.arr][j].endAt = end;
+      body[ds.arr] = seg[ds.arr];
+    } else if (ds.kind === 'sfx') {
+      if (!seg.soundEffect) return;
+      seg.soundEffect.startAt = start; seg.soundEffect.endAt = end;
+      body.soundEffect = seg.soundEffect;
+    } else { return; }
+    try {
+      await fetch('/update-scene-texts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    } catch {}
+    renderSceneDock();
+    // keep the scene's card editor previews in sync if it's mounted
+    try { if (document.getElementById(`card-${i}`)) { updateExtraTextPreviewAll(i); updateTextPreview(i); } } catch {}
   }
 
   /* ──────────────── DOCK PLAYER: watch the whole video ──────────────── */
