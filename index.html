@@ -868,18 +868,9 @@
     .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
     .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
     /* Editor floors at 1024px wide (grid min on .tl-editor) and scrolls horizontally below that, so the columns keep their full size instead of shrinking. */
-    /* Top-bar layout toggle + the Timeline layout, where the whole-video timeline dominates and the editing stage shrinks */
+    /* Top-bar view-mode toggle: Scene Editor (scene-card list view) ⇄ Timeline (this full editor) */
     .tl-ed-layout { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; }
     .tl-ed-layout-lbl { font-size: 12px; color: var(--text-dim); }
-    .tl-editor.layout-timeline { grid-template-rows: auto minmax(0, 0.5fr) minmax(0, 1.15fr); }
-    .tl-editor.layout-timeline .tl-ed-timeline { display: flex; flex-direction: column; }
-    .tl-editor.layout-timeline #scene-dock { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .tl-editor.layout-timeline #scene-dock .sd-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .tl-editor.layout-timeline #scene-dock .sd-scroll { flex: 1; max-height: none !important; }
-    /* Timeline layout hides the content rail + inspector for a clean whole-video view — just a centred preview above the big timeline */
-    .tl-editor.layout-timeline .segment-card { grid-template-columns: minmax(0,1fr); }
-    .tl-editor.layout-timeline .segment-card > .tl-rail,
-    .tl-editor.layout-timeline .segment-card > div:not(.thumb-wrap):not(.tl-rail) { display: none; }
     /* ── List view: compact tabbed sections per card (the options the timeline had) ── */
     .list-mode .scene-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 12px; }
     .list-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
@@ -1467,8 +1458,8 @@
       sd_zoom_out: 'Zoom out',
       ptb_rotate_tip: 'Drag to rotate (Shift = 15° steps)',
       view_storyboard: '🎬 Storyboard',
-      view_list: '📋 List',
-      view_timeline: '🎞 Timeline',
+      view_list: 'Scene Editor',
+      view_timeline: 'Timeline',
       tl_selected_text: 'Selected: text layer',
       tl_all_controls: 'All controls',
       tl_colour: 'Colour',
@@ -2035,8 +2026,8 @@
       sd_zoom_out: 'ズームアウト',
       ptb_rotate_tip: 'ドラッグして回転（Shift = 15°刻み）',
       view_storyboard: '🎬 ストーリーボード',
-      view_list: '📋 リスト',
-      view_timeline: '🎞 タイムライン',
+      view_list: 'シーン編集',
+      view_timeline: 'タイムライン',
       tl_selected_text: '選択中: テキストレイヤー',
       tl_all_controls: 'すべての設定',
       tl_colour: '色',
@@ -12006,23 +11997,6 @@
     else home.parent.appendChild(node);
   }
 
-  // ── Editor layout toggle: "Scene Editor" (focused single scene) vs "Timeline" (whole-video) ──
-  function getEditorLayout() { return localStorage.getItem('tl-editor-layout') || 'scene'; }
-  function applyEditorLayout() {
-    const ed = tlEditorEl(); if (!ed) return;
-    const mode = getEditorLayout();
-    ed.classList.toggle('layout-timeline', mode === 'timeline');
-    ed.classList.toggle('layout-scene', mode !== 'timeline');
-    document.querySelectorAll('#tl-ed-layout .tl-ed-lbtn').forEach(b => b.classList.toggle('active', b.dataset.layout === mode));
-    if (mode === 'timeline') { sdExpanded = true; localStorage.setItem('sd-expanded-channels', '1'); }  // show all tracks
-    try { renderSceneDock(); } catch {}
-    try { if (tlEdMounted >= 0) tlSizeEditorPreview(tlEdMounted); } catch {}
-  }
-  function setEditorLayout(mode) {
-    localStorage.setItem('tl-editor-layout', mode);
-    applyEditorLayout();
-  }
-
   function openTimelineEditor() {
     const ed = tlEditorEl(); if (!ed) return;
     const dock = document.getElementById('scene-dock');
@@ -12032,7 +12006,6 @@
     document.body.classList.add('tl-editor-open');
     tlEditorMount(sbSelectedIndex);
     try { renderSceneDock(); } catch {}   // re-fit the dock to its new (in-editor) width
-    try { applyEditorLayout(); } catch {}  // apply saved Scene Editor / Timeline layout
     if (!ed._tlBound) {
       ed._tlBound = true;
       document.addEventListener('keydown', e => { if (e.key === 'Escape' && tlEditorOpen()) exitTimelineEditor(); });
@@ -12893,8 +12866,8 @@
     <span class="tl-ed-layout" id="tl-ed-layout">
       <span class="tl-ed-layout-lbl" data-i18n="tl_layout">Layout:</span>
       <span class="view-toggle">
-        <button type="button" class="tl-ed-lbtn active" data-layout="scene" onclick="setEditorLayout('scene')" data-i18n="tl_layout_scene">Scene Editor</button>
-        <button type="button" class="tl-ed-lbtn" data-layout="timeline" onclick="setEditorLayout('timeline')" data-i18n="tl_layout_timeline">Timeline</button>
+        <button type="button" class="tl-ed-lbtn" onclick="setSceneViewMode('list')" data-i18n="tl_layout_scene">Scene Editor</button>
+        <button type="button" class="tl-ed-lbtn active" onclick="setSceneViewMode('timeline')" data-i18n="tl_layout_timeline">Timeline</button>
       </span>
     </span>
     <span class="tl-ed-spacer"></span>

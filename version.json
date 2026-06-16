@@ -1,7 +1,7 @@
 {
-  "version": "1.4.44",
+  "version": "1.4.45",
   "date": "2026-06-16",
-  "notes": "Cleaner Timeline layout + clearer timeline blocks. (1) The Timeline layout now hides the content rail and the inspector, leaving a centred preview above the full-width multi-track timeline — a clean whole-video overview. Scene Editor still shows the full editing panels. (2) Timeline blocks now read as distinct CapCut-style cards: each scene clip and channel bar gets a 1px dark ring + soft drop shadow, the gap between scene clips widened from 2px to 4px, and the Voice / Text / Media track lanes are more separated (bigger gap + a slightly stronger lane background).",
+  "notes": "Fixed the Scene Editor / Timeline mapping (it was inverted). Timeline is now the full editor — content rail + preview + inspector + the timeline along the bottom — and stays the default landing. Scene Editor is the previous view: your scene cards stacked above (each editable), with the timeline dock at the bottom. The top-bar toggle (and the matching one in the Scene Editor header, relabelled to match) now switches between these two view modes; the in-editor sub-layout that hid the panels has been removed. The CapCut-style block separation in the timeline is kept.",
   "files": [
     "index.html",
     "version.json"
