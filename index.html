@@ -62,6 +62,8 @@
     .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
     .tab { padding: 8px 20px; border-radius: 8px; cursor: pointer; background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); font-size: 14px; font-weight: 500; }
     .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .tab-cta { margin-left: auto; padding: 8px 18px; border-radius: 8px; cursor: pointer; background: var(--accent); color: #fff; border: 1px solid var(--accent); font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .tab-cta:hover { filter: brightness(1.08); }
     .panel { display: none; }
     .panel.active { display: block; }
 
@@ -400,6 +402,7 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
+    .ttv-modal { width: 620px; max-height: 86vh; overflow-y: auto; text-align: left; }
     .rdm-modal { width: 560px; text-align: center; }
     #rdm-video { width: 100%; max-height: 56vh; border-radius: 12px; background: #000; margin: 8px 0; display: block; }
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; }
@@ -900,42 +903,17 @@
   </div>
 
   <div class="tabs">
-    <div class="tab" onclick="switchTab('create')">➕ Create</div>
-    <div class="tab active" onclick="switchTab('editor')">🎞 Text to Video</div>
-    <div class="tab" onclick="switchTab('scenes')">🗂 Scenes</div>
+    <div class="tab active" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
-    <!-- Timeline tab hidden — preserved for future use -->
+    <button class="tab-cta" type="button" onclick="openTextToVideoModal()" title="Paste a script → auto-generate scenes">✨ <span data-i18n="ttv_open">Text to Video</span></button>
   </div>
 
-  <!-- CREATE TAB -->
-  <div class="panel" id="tab-create">
-    <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-      <div style="font-size:13px;color:var(--text-muted);" data-i18n="create_desc">Start here: create scenes, arrange the flow, then render the video.</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <button class="btn sm" onclick="openModal(-1)" data-i18n="new_scene">➕ New Scene</button>
-        <button class="btn sm ghost" type="button" onclick="restoreProjectDraft()" data-i18n="restore_draft">↩ Restore Project Draft</button>
-        <span id="project-draft-status-create" style="font-size:11px;color:var(--text-muted);line-height:1.5;" data-i18n="no_draft">No project draft saved yet.</span>
-      </div>
-    </div>
-    <div id="create-scenes-list"><p style="color:var(--text-muted)" data-i18n="create_empty">Click "New Scene" to add your first scene.</p></div>
-
-    <div id="rerender-section" style="display:none; margin-top:24px;">
-      <div style="height:1px;background:var(--border);margin-bottom:24px;"></div>
-      <button class="btn ghost full" style="margin-bottom:12px" onclick="openModal(-1)" data-i18n="btn_add_new_scene">&#xFF0B; Add New Scene</button>
-      <button class="btn full" id="rerenderBtn" onclick="rerender()" data-i18n="btn_render">🎬 RENDER VIDEO</button>
-      <div id="rerender-status" style="margin-top:10px;font-size:14px;color:var(--text-muted);min-height:20px;" data-i18n="status_ready">Ready</div>
-      <div id="rerender-progress-container" style="margin-top:8px;background:var(--bg-card);border-radius:10px;height:8px;overflow:hidden;">
-        <div id="rerender-progress-bar" style="background:linear-gradient(90deg,#10b981,#06b6d4);width:0%;height:100%;transition:width 0.4s;"></div>
-      </div>
-      <div id="rerender-log" style="background:var(--log-bg);color:var(--log-text);padding:14px;height:200px;overflow-y:auto;border-radius:10px;margin-top:16px;font-family:monospace;font-size:12px;border:1px solid var(--border);"></div>
-    </div>
-
-    <div id="editor-log"></div>
-  </div>
-
-  <!-- TEXT TO VIDEO TAB -->
-  <div class="panel active" id="tab-editor">
+  <!-- TEXT TO VIDEO — opened as a modal from the "✨ Text to Video" button (tab bar + editor top bar) -->
+  <div class="modal-overlay" id="textToVideoModal" onclick="if(event.target===this)closeTextToVideoModal()">
+   <div class="modal ttv-modal">
+    <h3 style="margin:0 0 4px">🎞 <span data-i18n="ttv_title">Text to Video</span></h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--text-dim)" data-i18n="ttv_desc">Paste a script and auto-generate all the scenes.</p>
 
     <!-- Content Type Selector -->
     <div class="settings-section" style="margin-bottom:18px;padding:16px 18px">
@@ -970,10 +948,14 @@
     <div id="status-text" data-i18n="status_ready">Ready</div>
     <div id="progress-container"><div id="progress-bar"></div></div>
     <div id="log-window"></div>
+    <div class="modal-actions" style="justify-content:flex-end;margin-top:16px">
+      <button class="btn ghost" onclick="closeTextToVideoModal()"><span data-i18n="rdm_close">Close</span></button>
+    </div>
+   </div>
   </div>
 
-  <!-- SCENES TAB -->
-  <div class="panel" id="tab-scenes">
+  <!-- SCENES TAB (default landing — opens straight into the editor) -->
+  <div class="panel active" id="tab-scenes">
     <div class="editor-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button class="btn sm blue" onclick="loadSegments()" data-i18n="load_scenes">🔄 Load Scenes</button>
@@ -1652,6 +1634,9 @@
       script_label: 'Script',
       script_placeholder: 'Paste your formatted script here...',
       btn_start_production: '▶ Start Production',
+      ttv_open: 'Text to Video',
+      ttv_title: 'Text to Video',
+      ttv_desc: 'Paste a script and auto-generate all the scenes.',
       status_ready: 'Ready',
       // Scenes tab
       thumb_size: 'Thumbnail size:',
@@ -2215,6 +2200,9 @@
       script_label: 'スクリプト',
       script_placeholder: 'フォーマット済みスクリプトをここに貼り付けてください…',
       btn_start_production: '▶ 制作開始',
+      ttv_open: 'テキストから動画',
+      ttv_title: 'テキストから動画',
+      ttv_desc: 'スクリプトを貼り付けて、シーンを自動生成します。',
       status_ready: '準備完了',
       // Scenes tab
       thumb_size: 'サムネイルサイズ：',
@@ -2523,7 +2511,7 @@
     if (sub) sub.textContent = t.subtitle;
     // Tabs
     const tabs = document.querySelectorAll('.tab');
-    const tabKeys = ['tab_create','tab_editor','tab_scenes','tab_media','tab_settings'];
+    const tabKeys = ['tab_scenes','tab_media','tab_settings'];
     tabs.forEach((tab, i) => { if (tabKeys[i]) tab.textContent = t[tabKeys[i]]; });
     // Theme label
     const isLight = document.getElementById('theme-checkbox')?.checked;
@@ -3039,7 +3027,9 @@
   })();
 
   /* ── Tabs ── */
-  const TAB_NAMES = ['create','editor','scenes','media','settings'];
+  const TAB_NAMES = ['scenes','media','settings'];
+  function openTextToVideoModal() { document.getElementById('textToVideoModal')?.classList.add('open'); }
+  function closeTextToVideoModal() { document.getElementById('textToVideoModal')?.classList.remove('open'); }
   function switchTab(name) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
@@ -3048,7 +3038,6 @@
     _restoreVoicePreviewButton();
     document.querySelectorAll('.tab').forEach((t,i)   => t.classList.toggle('active', TAB_NAMES[i] === name));
     document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', TAB_NAMES[i] === name));
-    if (name === 'create')   { loadCreateScenes(); }
     if (name === 'scenes')   { loadSegments(); }
     if (name === 'settings') { loadSettingsUI(); }
     if (name === 'media')    { loadMediaLibrary(); }
@@ -11667,7 +11656,7 @@
   let sdDropTarget = null;
 
   function getSceneViewMode() {
-    const m = localStorage.getItem('scene-view-mode') || 'list';
+    const m = localStorage.getItem('scene-view-mode') || 'timeline';   // default landing = full-screen editor
     return m === 'storyboard' ? 'list' : m;   // Storyboard view removed → fall back to List
   }
 
@@ -12866,6 +12855,7 @@
     <button class="tl-ed-exit" onclick="exitTimelineEditor()"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="tl_exit">Exit editor</span></button>
     <span class="tl-ed-title" id="tl-ed-title"></span>
     <span class="tl-ed-spacer"></span>
+    <button class="tl-ed-btn" onclick="openTextToVideoModal()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
     <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
     <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>
   </div>

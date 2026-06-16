@@ -1,7 +1,7 @@
 {
-  "version": "1.4.40",
+  "version": "1.4.41",
   "date": "2026-06-16",
-  "notes": "Editor fixes + post-generation modal. (1) The Timeline inspector now includes Alignment (left/center/right) and a Wrap toggle — they were previously buried under '⋯ All controls'. (2) Shapes (and any text/image/video layer) can now be deleted straight from the Content rail via a ✕ button; the rail + inspector refresh so the deletion shows immediately (before, the rail kept a stale row so it looked like nothing happened). (3) Wrap already defaults to no-wrap on generation; legacy scenes saved with wrap can now be toggled off with the new inspector control. (4) Rendering now ends with a modal that previews the finished video plus Download / TikTok / Instagram, replacing the old timeline download/share icons.",
+  "notes": "Editor-first layout. The app now opens straight into the full-screen editor (default view = Timeline). Removed the redundant 'Create' tab. 'Text to Video' (paste a script → auto-generate every scene) is no longer a tab — it's a modal opened from a '✨ Text to Video' button in both the tab bar and the editor's top bar, so first-time users land in the workspace. Remaining tabs: Scenes / Media Library / Settings. (Fixed the setAppLang tab-label map that still referenced the old 5 tabs.)",
   "files": [
     "index.html",
     "version.json"
