@@ -1,7 +1,7 @@
 {
-  "version": "1.4.38",
+  "version": "1.4.39",
   "date": "2026-06-16",
-  "notes": "Removed the Download and Share icons from the Timeline dock toolbar (they sat next to the zoom controls and opened render-list / social-share popovers). Deleted the two buttons plus everything that existed only to serve them: the sdDownloadOpen / sdShareOpen handlers, the sdRefreshRenderButtons / sdApplyRenderBtnState render-gating helpers, sdCloseAllPops, the document-wide click-away listener, and the .sd-pop / .sd-btn-disabled CSS. Play, Undo, View-all, Zoom, Channels and Collapse are unchanged.",
+  "notes": "Timeline editor: moved the scene header to the top of the left Content rail. The scene number is now a plain label (the expand/collapse dropdown is gone — it made no sense in the editor) with the scene actions inline beneath it (Scene Draft, Restore, Duplicate, Up, Down, Delete), sitting above 'Content'. buildContentRail prepends this scene-info block; the original .seg-header is hidden inside .tl-editor, so the right properties column now goes straight to the clean inspector. The block is a thin UI driving the same handlers and re-indexes correctly when switching scenes.",
   "files": [
     "index.html",
     "version.json"

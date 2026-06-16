@@ -807,6 +807,14 @@
     .tl-rail { display: none; margin-bottom: 16px; }
     .timeline-mode .tl-rail { display: block; }
     .tl-rail-head { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+    /* Scene info (number + actions) at the very top of the rail, above "Content" — no collapse toggle */
+    .tl-rail-scene { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px; }
+    .tl-rail-scene-num { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 9px; }
+    .tl-rail-scene-num .seg-duration { font-weight: 400; font-size: 11px; color: var(--text-dim); margin-left: 6px; text-transform: none; letter-spacing: 0; }
+    .tl-rail-scene-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tl-rail-scene-acts button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 5px 9px; font-size: 11px; cursor: pointer; line-height: 1.25; }
+    .tl-rail-scene-acts button:hover { border-color: var(--accent); color: var(--text-main); }
+    .tl-rail-scene-acts button.danger:hover { border-color: #ef4444; color: #ef4444; }
     .tl-layer { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; margin-bottom: 6px; font-size: 13px; color: var(--text-soft); cursor: pointer; background: var(--bg-input); }
     .tl-layer:hover { border-color: var(--border-mid); color: var(--text-main); }
     .tl-layer.active { border-color: var(--accent); background: var(--bg-card); color: var(--text-main); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -840,6 +848,8 @@
     .tl-editor .segment-card > .thumb-wrap { order: 2; position: relative; justify-self: center; align-self: center; }
     .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; min-height: 0; overflow-y: auto; }
     .tl-editor .seg-caption, .tl-editor .seg-vo { display: none; }
+    /* The scene header (number + collapse toggle + actions) is replaced by the rail's scene-info block */
+    .tl-editor .seg-header { display: none; }
     .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
     .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
     @media (max-width: 1100px) { .tl-editor .segment-card { grid-template-columns: 200px minmax(0,1fr) 264px; gap: 12px; } }
@@ -11777,9 +11787,22 @@
       return `<div class="tl-layer${active ? ' active' : ''}" onclick="tlSelectLayer(${i},'${L.type}',${L.idx})"><span class="tl-layer-ico">${L.icon}</span><span class="tl-layer-name">${escapeHtml(L.name)}</span>${mv}</div>`;
     }).join('');
     const adds = `<div class="tl-rail-adds"><button onclick="tlAddText(${i})">＋ ${t.tl_add_text || 'Text'}</button><button onclick="tlAddShape(${i})">＋ ${t.tl_add_shape || 'Shape'}</button><button onclick="tlAddImage(${i})">＋ ${t.tl_add_image || 'Image'}</button><button onclick="tlChangeMedia(${i})">⇄ ${t.tl_change_media || 'Media'}</button></div>`;
+    // Scene info atop the rail, above "Content": a plain scene-number label (no collapse dropdown) plus the
+    // scene actions, inline. Buttons drive the same handlers as the now-hidden card header (.seg-header).
+    const durTxt = card.querySelector(`#seg-dur-${i}`)?.textContent?.trim() || '';
+    const sceneInfo = `<div class="tl-rail-scene">`
+      + `<span class="tl-rail-scene-num">${t.scene_label || 'Scene'} ${i + 1}${durTxt ? `<span class="seg-duration">${durTxt}</span>` : ''}</span>`
+      + `<div class="tl-rail-scene-acts">`
+      + `<button onclick="saveSceneDraft(${i})">${t.btn_scene_draft || '💾 Scene Draft'}</button>`
+      + `<button onclick="restoreSceneDraft(${i})">${t.btn_restore || '↩ Restore'}</button>`
+      + `<button onclick="duplicateScene(${i})">${t.btn_duplicate || '📋 Duplicate'}</button>`
+      + `<button onclick="moveScene(${i},'up')">${t.btn_up || '↑ Up'}</button>`
+      + `<button onclick="moveScene(${i},'down')">${t.btn_down || '↓ Down'}</button>`
+      + `<button class="danger" onclick="deleteScene(${i})">${t.btn_delete || '🗑 Delete'}</button>`
+      + `</div></div>`;
     const div = document.createElement('div');
     div.className = 'tl-rail';
-    div.innerHTML = `<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`;
+    div.innerHTML = `${sceneInfo}<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`;
     // Insert as the card's FIRST child so the editor's 3-column grid can place it as the
     // left "Content" column (preview = centre, properties/inspector = right).
     card.insertBefore(div, card.firstChild);
