@@ -687,7 +687,7 @@
     .sd-tick-label { position: absolute; top: 0; font-size: 9px; color: var(--text-dim); font-family: monospace; transform: translateX(-50%); white-space: nowrap; pointer-events: none; }
     .sd-tick-label:first-of-type { transform: none; }
     .sd-clips { position: relative; height: 46px; }
-    .sd-clip { position: absolute; top: 2px; bottom: 2px; border-radius: 7px; overflow: hidden; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background-size: cover; background-position: center; transition: border-color 0.12s; }
+    .sd-clip { position: absolute; top: 2px; bottom: 2px; border-radius: 7px; overflow: hidden; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; background-size: cover; background-position: center; box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3); transition: border-color 0.12s, box-shadow 0.12s; }
     .sd-clip:hover { border-color: rgba(255,255,255,0.45); }
     .sd-clip.current { border-color: #38bdf8; }
     .sd-clip-shade { position: absolute; inset: 0; display: flex; align-items: center; gap: 4px; padding: 0 6px; background: rgba(2,6,23,0.25); }
@@ -707,9 +707,9 @@
     #sd-resize-tip.at-floor { border-color: #f59e0b; color: #fbbf24; }
     /* ── Expanded channel view + player ── */
     .scene-dock.expanded .sd-scroll { overflow-y: auto; max-height: min(46vh, 380px); }
-    .sd-chan { position: relative; height: 24px; margin-top: 3px; background: rgba(148,163,184,0.06); border-radius: 5px; }
+    .sd-chan { position: relative; height: 24px; margin-top: 6px; background: rgba(148,163,184,0.10); border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(148,163,184,0.10); }
     .sd-chan-label { position: sticky; left: 2px; display: inline-block; font-size: 9px; font-weight: 700; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-top: 3px; z-index: 5; pointer-events: none; white-space: nowrap; }
-    .sd-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: 0.88; }
+    .sd-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: 0.88; box-shadow: 0 0 0 1px rgba(0,0,0,0.4); }
     .sd-bar:hover { opacity: 1; box-shadow: 0 0 0 1px rgba(255,255,255,0.5) inset; }
     .sd-bar-edit { cursor: grab; }
     .sd-bar-edit:active { cursor: grabbing; }
@@ -876,6 +876,10 @@
     .tl-editor.layout-timeline #scene-dock { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .tl-editor.layout-timeline #scene-dock .sd-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     .tl-editor.layout-timeline #scene-dock .sd-scroll { flex: 1; max-height: none !important; }
+    /* Timeline layout hides the content rail + inspector for a clean whole-video view — just a centred preview above the big timeline */
+    .tl-editor.layout-timeline .segment-card { grid-template-columns: minmax(0,1fr); }
+    .tl-editor.layout-timeline .segment-card > .tl-rail,
+    .tl-editor.layout-timeline .segment-card > div:not(.thumb-wrap):not(.tl-rail) { display: none; }
     /* ── List view: compact tabbed sections per card (the options the timeline had) ── */
     .list-mode .scene-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 12px; }
     .list-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
@@ -11072,7 +11076,7 @@
       const showNum = w >= 64;
       const showDur = w >= 96;
       const showLabel = w >= 34;
-      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 1}px;width:${Math.max(5, w - 2)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
+      clipsHTML += `<div class="sd-clip${i === sdCurrentIndex ? ' current' : ''}" id="sd-clip-${i}" draggable="true" data-index="${i}" style="left:${curX + 2}px;width:${Math.max(4, w - 4)}px;${sdBgStyle(seg, i)}" onclick="sdJump(${i})" title="#${i + 1} · ${dur.toFixed(1)}s — ${sdEsc(raw)}"><div class="sd-clip-shade">${showNum ? `<span class="sd-clip-num">#${i + 1}</span>` : ''}${showLabel ? `<span class="sd-clip-label" id="sd-label-${i}">${sdEsc(raw)}</span>` : ''}${showDur ? `<span class="sd-clip-dur">${dur.toFixed(1)}s</span>` : ''}</div>${w >= 18 ? `<div class="sd-resize" draggable="false" onmousedown="sdResizeDown(event,${i})" title="${sdEsc(sdT().sd_resize_tip || 'Drag to change scene length')}"></div>` : ''}</div>`;
       curX += w;
     });
     clipsHTML += `<div class="sd-add-tile" style="left:${curX + 4}px" onclick="openModal(-1)" title="${sdEsc(sdT().btn_add_new_scene || '+ Add scene')}">＋</div>`;

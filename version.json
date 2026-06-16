@@ -1,7 +1,7 @@
 {
-  "version": "1.4.43",
+  "version": "1.4.44",
   "date": "2026-06-16",
-  "notes": "Timeline editor minimum width. The full-screen editor no longer shrinks below 1024px wide — if the window is narrower, the editor holds at 1024px and scrolls horizontally instead of cramming its columns. Done with grid-template-columns: minmax(1024px,1fr) + overflow-x:auto on .tl-editor; the old ≤1100px responsive column-shrink was removed so the layout keeps full size right down to the 1024px floor. Applies to both Scene Editor and Timeline layouts.",
+  "notes": "Cleaner Timeline layout + clearer timeline blocks. (1) The Timeline layout now hides the content rail and the inspector, leaving a centred preview above the full-width multi-track timeline — a clean whole-video overview. Scene Editor still shows the full editing panels. (2) Timeline blocks now read as distinct CapCut-style cards: each scene clip and channel bar gets a 1px dark ring + soft drop shadow, the gap between scene clips widened from 2px to 4px, and the Voice / Text / Media track lanes are more separated (bigger gap + a slightly stronger lane background).",
   "files": [
     "index.html",
     "version.json"
