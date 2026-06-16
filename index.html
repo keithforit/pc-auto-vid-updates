@@ -3308,6 +3308,7 @@
   }
   function addEditorLog(msg) {
     const el = document.getElementById('editor-log');
+    if (!el) { try { console.log('[editor]', msg); } catch {} return; }   // #editor-log lived in the removed Create tab
     el.style.display='block'; el.innerHTML+=`> ${msg}<br>`; el.scrollTop=el.scrollHeight;
   }
 
@@ -10417,6 +10418,7 @@
 
   function addRerenderLog(msg) {
     const w = document.getElementById('rerender-log');
+    if (!w) { try { console.log('[render]', msg); } catch {} return; }   // #rerender-log lived in the removed Create tab
     const cls = msg.includes('❌') ? 'error' : msg.includes('✅') ? 'success' : '';
     w.innerHTML += `<div class="log-line${cls?' '+cls:''}">> ${msg}</div>`;
     w.scrollTop = w.scrollHeight;
@@ -10516,8 +10518,8 @@
       addScenesRerenderLog(doneMsg);
     } else {
       rerenderActive = false;
-      document.getElementById('rerender-progress-bar').style.width = '100%';
-      document.getElementById('rerender-status').textContent = doneMsg;
+      const pb = document.getElementById('rerender-progress-bar'); if (pb) pb.style.width = '100%';
+      const st = document.getElementById('rerender-status'); if (st) st.textContent = doneMsg;
       const btn = document.getElementById('rerenderBtn');
       if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
       addRerenderLog(doneMsg);

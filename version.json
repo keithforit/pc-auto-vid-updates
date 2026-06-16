@@ -1,7 +1,7 @@
 {
-  "version": "1.4.45",
+  "version": "1.4.46",
   "date": "2026-06-16",
-  "notes": "Fixed the Scene Editor / Timeline mapping (it was inverted). Timeline is now the full editor — content rail + preview + inspector + the timeline along the bottom — and stays the default landing. Scene Editor is the previous view: your scene cards stacked above (each editable), with the timeline dock at the bottom. The top-bar toggle (and the matching one in the Scene Editor header, relabelled to match) now switches between these two view modes; the in-editor sub-layout that hid the panels has been removed. The CapCut-style block separation in the timeline is kept.",
+  "notes": "Fix: adding a new scene didn't show up. Removing the Create tab (v1.4.41) deleted the #editor-log element, but addEditorLog() still called el.style.display on it — so it threw inside confirmAddScene() right before the loadSegments() refresh. The scene was created on the backend but the editor/timeline never re-rendered, so it looked like nothing happened (and it left invisible blank scenes behind). Made addEditorLog null-safe, and likewise hardened addRerenderLog() and the render-done fallback branch, which referenced the same removed Create-tab elements (#rerender-log / #rerender-progress-bar / #rerender-status). Adding a scene now refreshes correctly.",
   "files": [
     "index.html",
     "version.json"
