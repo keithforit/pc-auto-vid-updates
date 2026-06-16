@@ -1,7 +1,7 @@
 {
-  "version": "1.4.39",
+  "version": "1.4.40",
   "date": "2026-06-16",
-  "notes": "Timeline editor: moved the scene header to the top of the left Content rail. The scene number is now a plain label (the expand/collapse dropdown is gone — it made no sense in the editor) with the scene actions inline beneath it (Scene Draft, Restore, Duplicate, Up, Down, Delete), sitting above 'Content'. buildContentRail prepends this scene-info block; the original .seg-header is hidden inside .tl-editor, so the right properties column now goes straight to the clean inspector. The block is a thin UI driving the same handlers and re-indexes correctly when switching scenes.",
+  "notes": "Editor fixes + post-generation modal. (1) The Timeline inspector now includes Alignment (left/center/right) and a Wrap toggle — they were previously buried under '⋯ All controls'. (2) Shapes (and any text/image/video layer) can now be deleted straight from the Content rail via a ✕ button; the rail + inspector refresh so the deletion shows immediately (before, the rail kept a stale row so it looked like nothing happened). (3) Wrap already defaults to no-wrap on generation; legacy scenes saved with wrap can now be toggled off with the new inspector control. (4) Rendering now ends with a modal that previews the finished video plus Download / TikTok / Instagram, replacing the old timeline download/share icons.",
   "files": [
     "index.html",
     "version.json"

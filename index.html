@@ -400,6 +400,11 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
+    .rdm-modal { width: 560px; text-align: center; }
+    #rdm-video { width: 100%; max-height: 56vh; border-radius: 12px; background: #000; margin: 8px 0; display: block; }
+    .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; }
+    .rdm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .rdm-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 16px; }
     .modal h3 { margin: 0 0 18px; font-size: 16px; color: var(--text-main); }
     .modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
     .modal input, .modal textarea { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: sans-serif; }
@@ -801,6 +806,11 @@
     .tl-insp-styles { display: flex; gap: 8px; margin-top: 6px; }
     .tl-style { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
     .tl-style.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
+    .tl-aligns { display: flex; gap: 8px; }
+    .tl-align { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; line-height: 1; }
+    .tl-align.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
+    .tl-wrap { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+    .tl-wrap.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
     /* ── Built-in timeline editor: in Timeline mode the tracks dock INTO the page (not a floating popup) ── */
     .timeline-mode #scene-dock { position: static; left: auto; right: auto; bottom: auto; width: auto; margin: 18px 0 0; border-radius: 14px; border-bottom: 1px solid var(--border); box-shadow: none; z-index: auto; }
     /* ── Content rail (left column): the scene's layers + add-media, CapCut-style ── */
@@ -823,6 +833,8 @@
     .tl-layer-move { display: flex; gap: 1px; flex-shrink: 0; }
     .tl-layer-move button { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; line-height: 1; padding: 2px 3px; border-radius: 4px; }
     .tl-layer-move button:hover { color: var(--text-main); background: var(--bg-card); }
+    .tl-layer-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; line-height: 1; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; }
+    .tl-layer-del:hover { color: #ef4444; background: var(--bg-card); }
     .tl-rail-adds { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px; }
     .tl-rail-adds button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
     .tl-rail-adds button:hover { border-color: var(--accent); color: var(--text-main); }
@@ -1470,6 +1482,9 @@
       tl_box: 'Box',
       tl_glow: 'Glow',
       tl_plain: 'Plain',
+      tl_align: 'Align',
+      tl_wrap: 'Wrap',
+      tl_wrap_tip: 'Wrap long text onto multiple lines (off = auto-shrink to one line)',
       new_scene: '➕ New Scene',
       restore_draft: '↩ Restore Draft',
       no_draft: 'No draft saved yet.',
@@ -1602,6 +1617,7 @@
       tl_change_media: 'Media',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
+      tl_delete_layer: 'Delete layer',
       tl_exit: 'Exit editor',
       tl_add_scene: 'Scene',
       tl_scene: 'Scene',
@@ -1919,6 +1935,9 @@
       lv_render_btn: '🎬 Render Full Video',
       lv_stop_btn: '⏹ Stop',
       lv_download_btn: '⬇ Download Final Video',
+      rdm_title: 'Your video is ready',
+      rdm_download: 'Download',
+      rdm_close: 'Close',
       lv_no_splits: 'No split points set. Mark splits in the Editor tab first.',
       lv_detecting: 'Detecting…',
       lv_detected_count: (n) => `Found ${n} split point(s).`,
@@ -2025,6 +2044,9 @@
       tl_box: 'ボックス',
       tl_glow: 'グロー',
       tl_plain: 'プレーン',
+      tl_align: '整列',
+      tl_wrap: '折り返し',
+      tl_wrap_tip: '長いテキストを複数行に折り返す（オフ＝1行に自動縮小）',
       new_scene: '➕ 新規シーン',
       restore_draft: '↩ ドラフトを復元',
       no_draft: 'ドラフトはまだ保存されていません。',
@@ -2157,6 +2179,7 @@
       tl_change_media: 'メディア',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
+      tl_delete_layer: 'レイヤーを削除',
       tl_exit: 'エディターを終了',
       tl_add_scene: 'シーン',
       tl_scene: 'シーン',
@@ -2475,6 +2498,9 @@
       lv_render_btn: '🎬 フル動画をレンダリング',
       lv_stop_btn: '⏹ 停止',
       lv_download_btn: '⬇ 最終動画をダウンロード',
+      rdm_title: '動画が完成しました',
+      rdm_download: 'ダウンロード',
+      rdm_close: '閉じる',
       lv_no_splits: '分割点が設定されていません。まずエディタータブでマークを付けてください。',
       lv_detecting: '検出中…',
       lv_detected_count: (n) => `${n}件の分割点が見つかりました。`,
@@ -10498,7 +10524,34 @@
       if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
       addRerenderLog(doneMsg);
     }
+    // Generation finished → show the finished video in a modal with download / share options.
+    try { showRenderDoneModal(data.file); } catch (e) { console.warn('render-done modal:', e); }
   });
+
+  /* ── Render-complete modal: preview the finished video + download / share ── */
+  let rdmCurrentFile = '';
+  function showRenderDoneModal(file) {
+    if (!file) return;
+    rdmCurrentFile = file;
+    const url = `/renders/${encodeURIComponent(file)}`;
+    const vid = document.getElementById('rdm-video');
+    const dl = document.getElementById('rdm-download');
+    const fn = document.getElementById('rdm-filename');
+    if (vid) { vid.src = url; try { vid.load(); } catch {} }
+    if (dl) { dl.href = url; dl.setAttribute('download', file); }
+    if (fn) fn.textContent = file;
+    document.getElementById('renderDoneModal')?.classList.add('open');
+  }
+  function closeRenderDoneModal() {
+    const vid = document.getElementById('rdm-video');
+    if (vid) { try { vid.pause(); } catch {} vid.removeAttribute('src'); try { vid.load(); } catch {} }
+    document.getElementById('renderDoneModal')?.classList.remove('open');
+  }
+  function rdmShare(target) {
+    // No direct API posting yet — open the platform's upload page; the user uploads the downloaded file.
+    const urls = { tiktok: 'https://www.tiktok.com/tiktokstudio/upload', instagram: 'https://www.instagram.com/' };
+    window.open(urls[target] || '/', '_blank');
+  }
 
   /* ── Rich scene timeline interactions ── */
   let stlDragState = null;
@@ -11715,11 +11768,18 @@
     const font = v('main-font', seg.font || 'noto');
     const size = parseInt(v('fontsize', seg.fontSize || 70)) || 70;
     const color = (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff').toLowerCase();
+    const alignBtns = [...card.querySelectorAll(`#alignrow-${i} .pos-btn`)];
+    const align = alignBtns.length ? (['left', 'center', 'right'][alignBtns.findIndex(b => b.classList.contains('active'))] || 'center') : (seg.textAlign || 'center');
+    const npEl = document.getElementById(`tpreview-${i}`);
+    const wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
     const curStyle = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.textStyle || 'box';
     const t = (I18N[window._appLang || 'en'] || I18N.en);
     const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('');
     const styleChips = [['box', t.tl_box || 'Box'], ['glow', t.tl_glow || 'Glow'], ['plain', t.tl_plain || 'Plain']]
       .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
+    const aligns = [['left', 'fa-align-left'], ['center', 'fa-align-center'], ['right', 'fa-align-right']]
+      .map(([a, ic]) => `<button type="button" class="tl-align${a === align ? ' active' : ''}" data-a="${a}" title="${a.charAt(0).toUpperCase() + a.slice(1)}" onclick="tlInspAlign(${i},'${a}')"><i class="fas ${ic}"></i></button>`).join('');
+    const wrapBtn = `<button type="button" class="tl-wrap${wrapOn ? ' active' : ''}" title="${t.tl_wrap_tip || 'Wrap long text onto multiple lines'}" onclick="tlInspWrap(${i})">${t.tl_wrap || 'Wrap'}</button>`;
     const div = document.createElement('div');
     div.className = 'tl-inspector';
     div.innerHTML = `
@@ -11728,7 +11788,9 @@
       <div class="tl-insp-row"><label>${t.label_font ? t.label_font.replace(':', '') : 'Font'}</label>${fontSelectHTML(`tl-font-${i}`, font, `tlInspFont(${i})`)}</div>
       <div class="tl-insp-row"><label>${t.tl_colour || 'Colour'}</label><div class="tl-swatches">${swatches}</div></div>
       <div class="tl-insp-row"><label>${t.tl_size || 'Size'}</label><input type="range" class="tl-insp-size" id="tl-size-${i}" min="20" max="200" step="2" value="${size}" oninput="tlInspSize(${i})" /></div>
-      <div class="tl-insp-styles">${styleChips}</div>`;
+      <div class="tl-insp-styles">${styleChips}</div>
+      <div class="tl-insp-row" style="margin-top:14px"><label>${t.tl_align || 'Align'}</label><div class="tl-aligns">${aligns}</div></div>
+      <div class="tl-insp-row"><label>${t.tl_wrap || 'Wrap'}</label>${wrapBtn}</div>`;
     const firstAcc = card.querySelector('details.scene-accordion');
     if (firstAcc) firstAcc.parentNode.insertBefore(div, card.querySelector('.scene-tabs') || firstAcc);
   }
@@ -11745,6 +11807,16 @@
     document.querySelectorAll(`#card-${i} .tl-style`).forEach(b => b.classList.toggle('active', b.dataset.s === s));
   }
   function tlInspToggleAll(i) { document.getElementById(`card-${i}`)?.classList.toggle('tl-show-all'); }
+  function tlInspAlign(i, a) {
+    try { setTextAlign(i, a); } catch {}
+    document.querySelectorAll(`#card-${i} .tl-align`).forEach(b => b.classList.toggle('active', b.dataset.a === a));
+  }
+  function tlInspWrap(i) {
+    try { toggleTextNoWrap(i); } catch {}
+    const np = document.getElementById(`tpreview-${i}`);
+    const wrapOn = np ? (np.dataset.nowrap !== '1') : false;
+    document.querySelector(`#card-${i} .tl-wrap`)?.classList.toggle('active', wrapOn);
+  }
 
   // ── Content rail (Timeline / CapCut view): the scene's layers + add-media ──
   // A thin UI over the existing per-layer controls (single source of truth): clicking a
@@ -11776,6 +11848,7 @@
     const counts = {};
     layers.forEach(L => { counts[L.type] = (counts[L.type] || 0) + 1; });
     const reorderable = { extra: 1, shape: 1, image: 1 };
+    const removable = { extra: 1, shape: 1, image: 1, video: 1 };  // background + main text are not removable
     const rows = layers.map(L => {
       const active = (tlSelLayer.type === L.type && tlSelLayer.idx === L.idx);
       let mv = '';
@@ -11784,7 +11857,10 @@
         const dn = L.idx < counts[L.type] - 1 ? `<button title="${t.tl_move_down || 'Move down'}" onclick="event.stopPropagation();tlMoveLayer(${i},'${L.type}',${L.idx},1)">▼</button>` : '<button style="visibility:hidden">▼</button>';
         mv = `<span class="tl-layer-move">${up}${dn}</span>`;
       }
-      return `<div class="tl-layer${active ? ' active' : ''}" onclick="tlSelectLayer(${i},'${L.type}',${L.idx})"><span class="tl-layer-ico">${L.icon}</span><span class="tl-layer-name">${escapeHtml(L.name)}</span>${mv}</div>`;
+      const del = removable[L.type]
+        ? `<button class="tl-layer-del" title="${t.tl_delete_layer || 'Delete layer'}" onclick="event.stopPropagation();tlDeleteLayer(${i},'${L.type}',${L.idx})">✕</button>`
+        : '';
+      return `<div class="tl-layer${active ? ' active' : ''}" onclick="tlSelectLayer(${i},'${L.type}',${L.idx})"><span class="tl-layer-ico">${L.icon}</span><span class="tl-layer-name">${escapeHtml(L.name)}</span>${mv}${del}</div>`;
     }).join('');
     const adds = `<div class="tl-rail-adds"><button onclick="tlAddText(${i})">＋ ${t.tl_add_text || 'Text'}</button><button onclick="tlAddShape(${i})">＋ ${t.tl_add_shape || 'Shape'}</button><button onclick="tlAddImage(${i})">＋ ${t.tl_add_image || 'Image'}</button><button onclick="tlChangeMedia(${i})">⇄ ${t.tl_change_media || 'Media'}</button></div>`;
     // Scene info atop the rail, above "Content": a plain scene-number label (no collapse dropdown) plus the
@@ -11882,6 +11958,25 @@
     } else return;
     tlSelLayer = { type, idx: ni };
     buildContentRail(card, i);
+  }
+
+  // Delete a layer straight from the Content rail (✕). Drives the same remove handlers as the
+  // per-layer controls, then refocuses the main text and rebuilds the rail + inspector so the
+  // list reflects the deletion immediately (the old flow left a stale row, looking like nothing happened).
+  async function tlDeleteLayer(i, type, idx) {
+    const card = document.getElementById(`card-${i}`);
+    try {
+      if (type === 'extra') await removeExtraText(i, idx);
+      else if (type === 'shape') await removeShape(i, idx);
+      else if (type === 'image') await removeOverlay(i, idx);
+      else if (type === 'video') await removeOverlayVideo(i, idx);
+      else return;
+    } catch (e) { console.warn('tlDeleteLayer:', e); }
+    tlSelLayer = { type: 'main', idx: 0 };
+    if (card) {
+      try { buildContentRail(card, i); } catch {}
+      try { buildTimelineInspector(card, i); } catch {}
+    }
   }
 
   // ── Full-screen Timeline editor: move the selected card + dock into a fixed shell ──
@@ -12776,6 +12871,24 @@
   </div>
   <div class="tl-ed-stage" id="tl-ed-stage"></div>
   <div class="tl-ed-timeline" id="tl-ed-timeline"></div>
+</div>
+
+<!-- Render-complete modal: preview the finished video, then download / share -->
+<div class="modal-overlay" id="renderDoneModal" onclick="if(event.target===this)closeRenderDoneModal()">
+  <div class="modal rdm-modal">
+    <h3>✅ <span data-i18n="rdm_title">Your video is ready</span></h3>
+    <video id="rdm-video" controls playsinline preload="metadata"></video>
+    <div class="rdm-filename" id="rdm-filename"></div>
+    <div class="rdm-actions">
+      <a class="btn blue" id="rdm-download" download href="#"><i class="fa-solid fa-download"></i> <span data-i18n="rdm_download">Download</span></a>
+      <button class="btn ghost" onclick="rdmShare('tiktok')">🎵 TikTok</button>
+      <button class="btn ghost" onclick="rdmShare('instagram')">📷 Instagram</button>
+    </div>
+    <div class="rdm-note" data-i18n="sd_share_note">Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.</div>
+    <div class="modal-actions" style="justify-content:center;margin-top:18px">
+      <button class="btn ghost" onclick="closeRenderDoneModal()"><span data-i18n="rdm_close">Close</span></button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
