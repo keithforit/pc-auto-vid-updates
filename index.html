@@ -842,7 +842,7 @@
     .tl-rail-adds button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
     .tl-rail-adds button:hover { border-color: var(--accent); color: var(--text-main); }
     /* ── Full-screen Timeline editor (CapCut / Filmora-style workspace) ── */
-    .tl-editor { position: fixed; inset: 0; z-index: 1200; background: var(--bg-page); display: none; grid-template-rows: auto minmax(0,1fr) auto; }
+    .tl-editor { position: fixed; inset: 0; z-index: 1200; background: var(--bg-page); display: none; grid-template-columns: minmax(1024px, 1fr); grid-template-rows: auto minmax(0,1fr) auto; overflow-x: auto; overflow-y: hidden; }
     .tl-editor.open { display: grid; }
     body.tl-editor-open { overflow: hidden; }
     .tl-ed-topbar { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
@@ -867,7 +867,7 @@
     .tl-editor .seg-header { display: none; }
     .tl-editor .tl-ed-timeline #scene-dock { position: static; margin: 0; width: auto; border: none; border-radius: 0; box-shadow: none; left: auto; right: auto; bottom: auto; }
     .tl-editor .tl-ed-timeline .scene-dock .sd-header { border-radius: 0; }
-    @media (max-width: 1100px) { .tl-editor .segment-card { grid-template-columns: 200px minmax(0,1fr) 264px; gap: 12px; } }
+    /* Editor floors at 1024px wide (grid min on .tl-editor) and scrolls horizontally below that, so the columns keep their full size instead of shrinking. */
     /* Top-bar layout toggle + the Timeline layout, where the whole-video timeline dominates and the editing stage shrinks */
     .tl-ed-layout { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; }
     .tl-ed-layout-lbl { font-size: 12px; color: var(--text-dim); }

@@ -1,7 +1,7 @@
 {
-  "version": "1.4.42",
+  "version": "1.4.43",
   "date": "2026-06-16",
-  "notes": "Editor layout toggle. The full-screen editor now has a 'Layout: Scene Editor / Timeline' switch in the top bar, right of 'Scene X/N'. Scene Editor (default) is the focused single-scene workspace (content rail + big preview + inspector + compact timeline). Timeline promotes the whole-video multi-track timeline to fill the screen — all scenes plus the Voice / Text / Media channels — for arranging, reordering and trimming, with a compact preview on top. The choice persists in localStorage and applies on every editor open.",
+  "notes": "Timeline editor minimum width. The full-screen editor no longer shrinks below 1024px wide — if the window is narrower, the editor holds at 1024px and scrolls horizontally instead of cramming its columns. Done with grid-template-columns: minmax(1024px,1fr) + overflow-x:auto on .tl-editor; the old ≤1100px responsive column-shrink was removed so the layout keeps full size right down to the 1024px floor. Applies to both Scene Editor and Timeline layouts.",
   "files": [
     "index.html",
     "version.json"
