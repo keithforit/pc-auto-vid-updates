@@ -716,14 +716,6 @@
     .sd-play-btn:hover { border-color: #38bdf8; color: #38bdf8; }
     .sd-play-btn.playing { background: #38bdf8; color: #04121f; border-color: #38bdf8; }
     .sd-timecode { font-size: 12px; font-family: monospace; color: var(--text-soft); min-width: 96px; text-align: center; white-space: nowrap; }
-    /* ── Download / Share popovers ── */
-    .sd-pop { position: absolute; bottom: calc(100% + 8px); right: 8px; z-index: 950; width: 320px; max-height: 340px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-mid); border-radius: 12px; box-shadow: 0 10px 34px rgba(0,0,0,0.5); padding: 12px; }
-    .sd-pop h4 { margin: 0 0 8px; font-size: 13px; color: var(--text); }
-    .sd-pop .sd-pop-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin: 6px 0; }
-    .sd-pop-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; text-decoration: none; color: var(--text-soft); font-size: 12px; cursor: pointer; background: var(--bg-input); }
-    .sd-pop-item:hover { border-color: var(--accent); color: var(--text); }
-    .sd-pop-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sd-pop-item .dim { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
     /* ── Preview transform box (select text/item → resize + rotate) ── */
     .ptb-box { position: absolute; z-index: 60; pointer-events: none; border: 1.5px solid #38bdf8; box-shadow: 0 0 0 1px rgba(2,6,23,0.5); border-radius: 2px; }
     .ptb-h { position: absolute; width: 11px; height: 11px; background: #fff; border: 2px solid #38bdf8; border-radius: 3px; pointer-events: auto; box-sizing: border-box; }
@@ -856,8 +848,6 @@
     .list-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
     .list-mode .scene-accordion summary { display: none; }
     .list-mode .scene-accordion-body { padding: 0; }
-    /* Dock Download/Share disabled until a video exists */
-    .sd-btn-disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -1004,8 +994,6 @@
         <button class="sd-zoom-btn sd-undo-btn" id="sd-undo-btn" onclick="sdUndo()" style="display:none" data-i18n="sd_undo" data-i18n-attr="title" title="Undo last timeline edit">↶ <span data-i18n="sd_undo_btn">Undo</span></button>
         <button class="sd-zoom-btn sd-viewall-btn" id="sd-viewall-btn" onclick="sdToggleViewAll()" title="View all scenes / the full video">⊞ <span id="sd-viewall-label" data-i18n="sd_view_all">All scenes</span></button>
         <span style="flex:1"></span>
-        <button class="sd-zoom-btn sd-btn-disabled" id="sd-download-btn" onclick="sdDownloadOpen(event)" data-i18n="sd_need_render" data-i18n-attr="title" title="Generate a video first"><i class="fa-solid fa-download"></i></button>
-        <button class="sd-zoom-btn sd-btn-disabled" id="sd-share-btn" onclick="sdShareOpen(event)" data-i18n="sd_need_render" data-i18n-attr="title" title="Generate a video first"><i class="fa-solid fa-share-nodes"></i></button>
         <button class="sd-zoom-btn" onclick="sdZoom(-1)" data-i18n="sd_zoom_out" data-i18n-attr="title" title="Zoom out">−</button>
         <input type="range" id="sd-zoom-slider" class="sd-zoom-slider" min="2" max="300" step="1" value="20" oninput="sdZoomSlider(this.value)" data-i18n="sd_zoom_slider" data-i18n-attr="title" title="Zoom timeline (or scroll over it)" />
         <button class="sd-zoom-btn" onclick="sdZoom(1)" data-i18n="sd_zoom_in" data-i18n-attr="title" title="Zoom in">＋</button>
@@ -10485,7 +10473,6 @@
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     const doneMsg = _lt.log_done_saved(data.file);
     _renderRunning = false;
-    try { sdRefreshRenderButtons(true); } catch {}   // a video now exists → enable Download / Share
     if (scenesRerenderActive) {
       scenesRerenderActive = false;
       document.getElementById('scenes-rerender-progress-bar').style.width = '100%';
@@ -11037,8 +11024,6 @@
     // dock is in-flow (built in), so no overlay padding is needed.
     if (panel) panel.style.paddingBottom = (getSceneViewMode() === 'timeline') ? '' : (dock.offsetHeight + 24) + 'px';
 
-    try { sdApplyRenderBtnState(); } catch {}
-    if (sdHasRenders === null) { try { sdRefreshRenderButtons(); } catch {} }
     sdSetupObserver();
   }
 
@@ -11604,89 +11589,6 @@
     document.addEventListener('mouseup', () => { scrubbing = false; });
   })();
 
-  /* ──────────────── DOWNLOAD + SHARE ──────────────── */
-  function sdCloseAllPops() {
-    document.querySelectorAll('.sd-pop').forEach(p => p.remove());
-  }
-
-  // Download / Share only work once a video has been generated — gate them on a render existing.
-  let sdHasRenders = null;
-  function sdApplyRenderBtnState() {
-    const need = sdT().sd_need_render || 'Generate a video first';
-    [['sd-download-btn', sdT().sd_download || 'Download rendered video'],
-     ['sd-share-btn', sdT().sd_share || 'Share']].forEach(([id, onTitle]) => {
-      const b = document.getElementById(id);
-      if (!b) return;
-      b.classList.toggle('sd-btn-disabled', !sdHasRenders);
-      b.title = sdHasRenders ? onTitle : need;
-    });
-  }
-  async function sdRefreshRenderButtons(force) {
-    if (sdHasRenders !== null && !force) { sdApplyRenderBtnState(); return; }
-    try { const files = await fetch('/renders-list').then(r => r.json()); sdHasRenders = Array.isArray(files) && files.length > 0; }
-    catch { sdHasRenders = false; }
-    sdApplyRenderBtnState();
-  }
-
-  async function sdDownloadOpen(e) {
-    e.stopPropagation();
-    if (!sdHasRenders) { sdRefreshRenderButtons(); return; }   // disabled until a render exists
-    const dock = document.getElementById('scene-dock');
-    const wasOpen = !!document.getElementById('sd-pop-download');
-    sdCloseAllPops();
-    if (wasOpen || !dock) return;
-    const t = sdT();
-    const pop = document.createElement('div');
-    pop.className = 'sd-pop';
-    pop.id = 'sd-pop-download';
-    pop.innerHTML = `<h4>⬇ ${t.sd_download_title || 'Download rendered videos'}</h4><div class="sd-pop-note">…</div>`;
-    dock.appendChild(pop);
-    try {
-      const files = await fetch('/renders-list').then(r => r.json());
-      const head = `<h4>⬇ ${t.sd_download_title || 'Download rendered videos'}</h4>`;
-      if (!Array.isArray(files) || !files.length) {
-        pop.innerHTML = head + `<div class="sd-pop-note">${t.sd_no_renders || 'No rendered videos yet. Render from the Text to Video tab first.'}</div>`;
-        return;
-      }
-      pop.innerHTML = head + files.slice(0, 12).map(f =>
-        `<a class="sd-pop-item" href="/renders/${encodeURIComponent(f.name)}" download><span>🎬</span><span class="grow">${sdEsc(f.name)}</span><span class="dim">${f.sizeMB} MB · ${f.date}</span></a>`
-      ).join('') + `<div class="sd-pop-note">${t.sd_render_hint || 'New renders are created from the Text to Video tab.'}</div>`;
-    } catch (err) {
-      pop.innerHTML = `<div class="sd-pop-note">⚠️ ${err.message || err}</div>`;
-    }
-  }
-
-  async function sdShareOpen(e) {
-    e.stopPropagation();
-    if (!sdHasRenders) { sdRefreshRenderButtons(); return; }   // disabled until a render exists
-    const dock = document.getElementById('scene-dock');
-    const wasOpen = !!document.getElementById('sd-pop-share');
-    sdCloseAllPops();
-    if (wasOpen || !dock) return;
-    const t = sdT();
-    const pop = document.createElement('div');
-    pop.className = 'sd-pop';
-    pop.id = 'sd-pop-share';
-    let latestLink = '';
-    try {
-      const files = await fetch('/renders-list').then(r => r.json());
-      if (Array.isArray(files) && files.length) {
-        latestLink = `<a class="sd-pop-item" href="/renders/${encodeURIComponent(files[0].name)}" download><span>⬇</span><span class="grow">${t.sd_share_latest || 'Download latest render'}: ${sdEsc(files[0].name)}</span></a>`;
-      }
-    } catch {}
-    pop.innerHTML = `<h4>📤 ${t.sd_share_title || 'Share'}</h4>`
-      + latestLink
-      + `<div class="sd-pop-item" onclick="window.open('https://www.tiktok.com/tiktokstudio/upload','_blank')"><span>🎵</span><span class="grow">${t.sd_share_tiktok || 'Open TikTok Studio upload'}</span><span class="dim">↗</span></div>`
-      + `<div class="sd-pop-item" onclick="window.open('https://www.instagram.com/','_blank')"><span>📷</span><span class="grow">${t.sd_share_instagram || 'Open Instagram'}</span><span class="dim">↗</span></div>`
-      + `<div class="sd-pop-note">${t.sd_share_note || 'Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.'}</div>`;
-    dock.appendChild(pop);
-  }
-
-  // Click-away closes popovers
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.sd-pop') && !e.target.closest('.sd-zoom-btn')) sdCloseAllPops();
-  });
-
   window.addEventListener('resize', () => {
     clearTimeout(sdResizeTimer);
     sdResizeTimer = setTimeout(() => {
@@ -11723,7 +11625,6 @@
     document.getElementById('view-btn-list')?.classList.toggle('active', mode === 'list');
     document.getElementById('view-btn-timeline')?.classList.toggle('active', timeline);
     if (!timeline) { try { closeTimelineEditor(); } catch {} }   // leaving Timeline → restore card + dock
-    try { sdRefreshRenderButtons(); } catch {}
     if (!sdSegments.length) return;
     if (singleScene) {
       sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
