@@ -842,6 +842,12 @@
     .tl-rail-adds { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px; }
     .tl-rail-adds button { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
     .tl-rail-adds button:hover { border-color: var(--accent); color: var(--text-main); }
+    /* The right panel is driven solely by the left rail now; hide the section tab-strip so you
+       can't wander to sections unrelated to what you clicked on the left. */
+    .tl-editor .scene-tabs { display: none !important; }
+    /* Scene-level settings group in the rail (Audio / Animation / Timeline) — not content layers,
+       but they still need a home on the left so the right panel stays scoped to the selection. */
+    .tl-rail-head-scene { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
     /* ── Full-screen Timeline editor (CapCut / Filmora-style workspace) ── */
     .tl-editor { position: fixed; inset: 0; z-index: 1200; background: var(--bg-page); display: none; grid-template-columns: minmax(1024px, 1fr); grid-template-rows: auto minmax(0,1fr) auto; overflow-x: auto; overflow-y: hidden; }
     .tl-editor.open { display: grid; }
@@ -1601,6 +1607,10 @@
       tl_add_shape: 'Shape',
       tl_add_image: 'Image',
       tl_change_media: 'Media',
+      tl_scene_settings: 'Scene settings',
+      tl_audio: 'Audio / voiceover',
+      tl_animation: 'Scene animation',
+      tl_timeline: 'Timeline',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
       tl_delete_layer: 'Delete layer',
@@ -2169,6 +2179,10 @@
       tl_add_shape: 'シェイプ',
       tl_add_image: '画像',
       tl_change_media: 'メディア',
+      tl_scene_settings: 'シーン設定',
+      tl_audio: '音声 / ナレーション',
+      tl_animation: 'シーンアニメーション',
+      tl_timeline: 'タイムライン',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
       tl_delete_layer: 'レイヤーを削除',
@@ -11807,7 +11821,12 @@
     try { setMainTextStyle(i, s); } catch {}
     document.querySelectorAll(`#card-${i} .tl-style`).forEach(b => b.classList.toggle('active', b.dataset.s === s));
   }
-  function tlInspToggleAll(i) { document.getElementById(`card-${i}`)?.classList.toggle('tl-show-all'); }
+  function tlInspToggleAll(i) {
+    const card = document.getElementById(`card-${i}`);
+    if (!card) return;
+    const showAll = card.classList.toggle('tl-show-all');
+    if (showAll) { try { tlActivateSection(card, 'main_text_label'); } catch {} }  // reveal the full main-text controls
+  }
   function tlInspAlign(i, a) {
     try { setTextAlign(i, a); } catch {}
     document.querySelectorAll(`#card-${i} .tl-align`).forEach(b => b.classList.toggle('active', b.dataset.a === a));
@@ -11878,9 +11897,22 @@
       + `<button onclick="duplicateScene(${i})">${t.btn_duplicate || '📋 Duplicate'}</button>`
       + `<button class="danger" onclick="deleteScene(${i})">${t.btn_delete || '🗑 Delete'}</button>`
       + `</div></div>`;
+    // Scene-level settings (point 6 + point 5): sections that aren't content layers but still need
+    // a home on the left so the right panel can be scoped to the selection. Clicking a row opens
+    // its section on the right — including the detailed per-scene Timeline.
+    const sceneSecs = [
+      { type: 'audio', icon: '🔊', name: t.tl_audio || 'Audio / voiceover' },
+      { type: 'animation', icon: '✨', name: t.tl_animation || 'Scene animation' },
+      { type: 'timeline', icon: '📊', name: t.tl_timeline || 'Timeline' },
+    ];
+    const sceneRows = sceneSecs.map(L => {
+      const active = (tlSelLayer.type === L.type);
+      return `<div class="tl-layer tl-layer-scene${active ? ' active' : ''}" onclick="tlSelectLayer(${i},'${L.type}',0)"><span class="tl-layer-ico">${L.icon}</span><span class="tl-layer-name">${escapeHtml(L.name)}</span></div>`;
+    }).join('');
     const div = document.createElement('div');
     div.className = 'tl-rail';
-    div.innerHTML = `${sceneInfo}<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`;
+    div.innerHTML = `${sceneInfo}<div class="tl-rail-head">▦ ${t.tl_content || 'Content'}</div>${rows}${adds}`
+      + `<div class="tl-rail-head tl-rail-head-scene">⚙ ${t.tl_scene_settings || 'Scene settings'}</div>${sceneRows}`;
     // Insert as the card's FIRST child so the editor's 3-column grid can place it as the
     // left "Content" column (preview = centre, properties/inspector = right).
     card.insertBefore(div, card.firstChild);
@@ -11910,7 +11942,12 @@
   }
 
   function tlRevealLayer(card, i, type, idx) {
-    const sectionKey = (type === 'media') ? 'bg_video' : (type === 'extra') ? 'main_text_label' : 'overlays';
+    const sectionKey = (type === 'media') ? 'bg_video'
+      : (type === 'extra') ? 'main_text_label'
+      : (type === 'audio') ? 'voice'
+      : (type === 'animation') ? 'scene_animation'
+      : (type === 'timeline') ? 'timeline'
+      : 'overlays';
     const acc = tlActivateSection(card, sectionKey);
     let item = null;
     if (type === 'extra') item = card.querySelectorAll(`#extratexts-${i} .extra-text-block`)[idx];
