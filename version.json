@@ -1,7 +1,7 @@
 {
-  "version": "1.4.49",
+  "version": "1.4.50",
   "date": "2026-06-17",
-  "notes": "Timeline view fixes. (Bug 1) The text inspector was missing position controls — selecting the main text gave no way to move it. Added a Position row (horizontal left/center/right + vertical top/center/bottom) to the inspector, driving the same handlers as the full controls (single source of truth); 'All controls' still has the rest. (Bug 3) Clicking a Scene-settings section (e.g. Audio) used scrollIntoView(center), which centered the tall panel and pushed its header off-screen — it read as 'stuck at the bottom'. Now the right column resets to the top so the selected section starts at the top; specific items still scroll into view.",
+  "notes": "Fix: the ▶ Preview (play) button on the scene preview did nothing on Safari/iOS — no sound. The scene's voice/SFX/BGM audio was created and play()'d AFTER awaits (settings load, voice-URL fetch), so it was outside the click's user-gesture and Safari silently blocked it (the error was swallowed). Now the audio elements are created and primed (a tiny silent clip) synchronously inside the click gesture, then their real source is set and played — so playback is allowed. Verified no regression in Chromium (voiceover still plays). Note: the background video always autoplays muted on loop; ▶ plays the scene's voiceover + re-runs the text animations.",
   "files": [
     "index.html",
     "version.json"

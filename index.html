@@ -5359,13 +5359,14 @@
     return data.url || '';
   }
 
-  async function createSceneVoicePreviewAudio(i, mode = 'full', muted = false) {
+  async function createSceneVoicePreviewAudio(i, mode = 'full', muted = false, audioEl = null) {
     const customAudio = getCustomAudioFilename(i);
     const baseUrl = customAudio
       ? `/public/voiceovers/${encodeURIComponent(customAudio)}`
       : await fetchGeneratedVoicePreviewUrl(i, mode);
     if (!baseUrl) return null;
-    const audio = new Audio(`${baseUrl}?t=${Date.now()}`);
+    const audio = audioEl || new Audio();   // reuse a gesture-primed element when given (Safari autoplay)
+    audio.src = `${baseUrl}?t=${Date.now()}`;
     audio.preload = 'auto';
     audio.volume = getVoicePreviewVolume(i, muted);
     return audio;
@@ -5456,6 +5457,13 @@
     }
   }
 
+  // A short valid silent clip — playing it inside a user gesture "unlocks" an <audio> element so a
+  // later play() (after awaits) isn't blocked by the Safari/iOS autoplay policy.
+  const _SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIA+AAABAAgAZGF0YQAAAAA=';
+  function _primeAudioEl(a) {
+    try { a.src = _SILENT_WAV; const p = a.play(); if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); } catch {}
+    return a;
+  }
   async function toggleThumbnailAudio(i) {
     if (activeThumbnailPreview?.sceneIndex === i) {
       stopThumbnailAudioPreview();
@@ -5465,6 +5473,11 @@
     updateThumbnailAudioButtons(i, false, false);
     const playBtn = document.getElementById(`thumb-audio-play-${i}`);
     if (playBtn) { playBtn.disabled = true; playBtn.textContent = '…'; }
+    // Create + prime the audio elements NOW, inside the click gesture. The play() calls below run
+    // after awaits (settings + voice fetch), by which point Safari/iOS would block them (silent fail).
+    const voiceEl = _primeAudioEl(new Audio());
+    const sfxEl = _primeAudioEl(new Audio());
+    const bgmEl = _primeAudioEl(new Audio());
     try {
       stopAudioElement(currentVoicePreviewAudio);
       currentVoicePreviewAudio = null;
@@ -5479,21 +5492,21 @@
       if (bgMusicSettings.backgroundMusicRandom !== false) await ensureMusicFilesLoaded();
       const bgMusicFile = getSelectedBackgroundMusicFilenameFromSettings(bgMusicSettings);
       if (bgMusicFile && getSceneBgmEnabled(i)) {
-        const bgMusicAudio = new Audio(`/public/music/${encodeURIComponent(bgMusicFile)}?t=${Date.now()}`);
-        bgMusicAudio.preload = 'auto';
-        bgMusicAudio.loop = true;
-        bgMusicAudio.volume = getSceneBgmPreviewVolume(i, false);
-        previewState.bgMusicAudio = bgMusicAudio;
-        try { await bgMusicAudio.play(); } catch (err) { console.warn('Thumbnail background music preview failed:', err); }
+        bgmEl.src = `/public/music/${encodeURIComponent(bgMusicFile)}?t=${Date.now()}`;
+        bgmEl.preload = 'auto';
+        bgmEl.loop = true;
+        bgmEl.volume = getSceneBgmPreviewVolume(i, false);
+        previewState.bgMusicAudio = bgmEl;
+        try { await bgmEl.play(); } catch (err) { console.warn('Thumbnail background music preview failed:', err); }
       }
-      const voiceAudio = await createSceneVoicePreviewAudio(i, 'full', false);
+      const voiceAudio = await createSceneVoicePreviewAudio(i, 'full', false, voiceEl);
       if (voiceAudio) previewState.voiceAudio = voiceAudio;
       const sfxFile = document.getElementById(`sfxsrc-${i}`)?.value?.trim();
       if (sfxFile) {
-        const sfxAudio = new Audio(`/public/sfx/${encodeURIComponent(sfxFile)}?t=${Date.now()}`);
-        sfxAudio.preload = 'auto';
-        sfxAudio.volume = getSfxPreviewVolume(i, false);
-        previewState.sfxAudio = sfxAudio;
+        sfxEl.src = `/public/sfx/${encodeURIComponent(sfxFile)}?t=${Date.now()}`;
+        sfxEl.preload = 'auto';
+        sfxEl.volume = getSfxPreviewVolume(i, false);
+        previewState.sfxAudio = sfxEl;
       }
       if (!previewState.voiceAudio && !previewState.sfxAudio && !previewState.bgMusicAudio) {
         throw new Error('This scene does not have any voice, sound effect, or background music audio to preview yet.');
