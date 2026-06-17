@@ -1,7 +1,7 @@
 {
-  "version": "1.4.50",
+  "version": "1.4.51",
   "date": "2026-06-17",
-  "notes": "Fix: the ▶ Preview (play) button on the scene preview did nothing on Safari/iOS — no sound. The scene's voice/SFX/BGM audio was created and play()'d AFTER awaits (settings load, voice-URL fetch), so it was outside the click's user-gesture and Safari silently blocked it (the error was swallowed). Now the audio elements are created and primed (a tiny silent clip) synchronously inside the click gesture, then their real source is set and played — so playback is allowed. Verified no regression in Chromium (voiceover still plays). Note: the background video always autoplays muted on loop; ▶ plays the scene's voiceover + re-runs the text animations.",
+  "notes": "Timeline view polish. (1) Text position fix: the position buttons put text into free-position mode (block anchored by its CENTRE), so 'left'/'right' pushed wide text off the preview. They now use the in-bounds flex snap (clear textX/textY), matching how the render (Caption.tsx) lays out non-free text — text stays on-board. In-memory model kept in sync so re-renders don't revert. (2) Custom colour: added an extra swatch after the presets that opens the OS colour picker for any colour. (3) Column separation: the Timeline editor's left (Content) and right (properties) columns are now distinct CapCut-style panels (card background, border, rounded) so the three areas read as separate blocks. (4) Localisation: confirmed all Timeline-editor text is EN+JA; localised the position-button tooltips and added the custom-colour label.",
   "files": [
     "index.html",
     "version.json"

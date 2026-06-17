@@ -805,6 +805,8 @@
     .tl-swatches { display: flex; gap: 10px; }
     .tl-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; }
     .tl-swatch.active { border-color: var(--text-main); }
+    .tl-swatch-custom { position: relative; overflow: hidden; background: conic-gradient(from 0.25turn, #ef4444, #f59e0b, #22c55e, #3b82f6, #ec4899, #ef4444); }
+    .tl-swatch-custom input[type="color"] { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); opacity: 0; cursor: pointer; border: none; padding: 0; }
     .tl-insp-size { flex: 1; accent-color: #38bdf8; }
     .tl-insp-styles { display: flex; gap: 8px; margin-top: 6px; }
     .tl-style { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
@@ -868,9 +870,9 @@
     .tl-editor .segment-card { display: grid !important; grid-template-columns: 232px minmax(0,1fr) 322px; gap: 18px; background: transparent; border: none; box-shadow: none; padding: 0; align-items: stretch; max-width: 1500px; margin: 0 auto; height: 100%; }
     /* Each column is height-capped to the stage and scrolls on its own, so revealing tall
        controls in one column never moves the preview in the centre. */
-    .tl-editor .segment-card > .tl-rail { order: 1; margin: 0; min-height: 0; overflow-y: auto; }
+    .tl-editor .segment-card > .tl-rail { order: 1; margin: 0; min-height: 0; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 13px; }
     .tl-editor .segment-card > .thumb-wrap { order: 2; position: relative; justify-self: center; align-self: center; }
-    .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; min-height: 0; overflow-y: auto; }
+    .tl-editor .segment-card > div:not(.thumb-wrap):not(.tl-rail) { order: 3; min-height: 0; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
     .tl-editor .seg-caption, .tl-editor .seg-vo { display: none; }
     /* The scene header (number + collapse toggle + actions) is replaced by the rail's scene-info block */
     .tl-editor .seg-header { display: none; }
@@ -1614,6 +1616,7 @@
       tl_animation: 'Scene animation',
       tl_timeline: 'Timeline',
       tl_position: 'Position',
+      tl_custom_colour: 'Custom colour',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
       tl_delete_layer: 'Delete layer',
@@ -2187,6 +2190,7 @@
       tl_animation: 'シーンアニメーション',
       tl_timeline: 'タイムライン',
       tl_position: '位置',
+      tl_custom_colour: 'カスタムカラー',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
       tl_delete_layer: 'レイヤーを削除',
@@ -8290,29 +8294,35 @@
     updateTextPreview(i);
   }
 
-  // Illustrator-style: snap X only, preserve current Y
+  // Snap to a grid position using the in-bounds flex layout. (Free-drag anchors the block by its
+  // CENTRE, so a wide block snapped to left/right spilled off the edge — that was the bug.)
+  function _exitFreePos(i) {
+    const el = document.getElementById(`tpreview-${i}`);
+    if (el) el.dataset.freepos = '0';
+    const freeRow = document.getElementById(`freepos-row-${i}`);
+    if (freeRow) freeRow.style.display = 'none';
+  }
   async function setTextHPos(i, hPos) {
-    const newX     = _hSnap[hPos] ?? 50;
-    const currentY = _currentY(i);
     document.querySelectorAll(`#hposrow-${i} .pos-btn`).forEach(b =>
       b.classList.toggle('active', b.dataset.hpos === hPos));
-    _applyAlignPos(i, newX, currentY);
+    _exitFreePos(i);              // snap uses the flex layout that keeps text on-board
+    const seg = sdSegments[i]; if (seg) { seg.textHPosition = hPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
+    updateTextPreview(i);
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ index: i, textHPosition: hPos, textX: newX, textY: currentY })
+      body: JSON.stringify({ index: i, textHPosition: hPos, textX: null, textY: null })
     });
   }
 
-  // Illustrator-style: snap Y only, preserve current X
   async function setTextVPos(i, vPos) {
-    const newY     = _vSnap[vPos] ?? 50;
-    const currentX = _currentX(i);
     document.querySelectorAll(`#vposrow-${i} .pos-btn`).forEach(b =>
       b.classList.toggle('active', b.dataset.vpos === vPos));
-    _applyAlignPos(i, currentX, newY);
+    _exitFreePos(i);              // snap uses the flex layout that keeps text on-board
+    const seg = sdSegments[i]; if (seg) { seg.textPosition = vPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
+    updateTextPreview(i);
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ index: i, textPosition: vPos, textX: currentX, textY: newY })
+      body: JSON.stringify({ index: i, textPosition: vPos, textX: null, textY: null })
     });
   }
 
@@ -11806,7 +11816,9 @@
     const wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
     const curStyle = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.textStyle || 'box';
     const t = (I18N[window._appLang || 'en'] || I18N.en);
-    const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('');
+    const isPresetColor = TL_SWATCHES.includes(color);
+    const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('')
+      + `<label class="tl-swatch tl-swatch-custom${isPresetColor ? '' : ' active'}" title="${t.tl_custom_colour || 'Custom colour'}"${isPresetColor ? '' : ` style="background:${color}"`}><input type="color" value="${color}" oninput="tlInspColor(${i}, this.value)"></label>`;
     const styleChips = [['box', t.tl_box || 'Box'], ['glow', t.tl_glow || 'Glow'], ['plain', t.tl_plain || 'Plain']]
       .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
     const aligns = [['left', 'fa-align-left'], ['center', 'fa-align-center'], ['right', 'fa-align-right']]
@@ -11817,8 +11829,10 @@
     const vpos = (card.querySelector(`#vposrow-${i} .pos-btn.active`)?.dataset.vpos) || seg.textPosition || 'center';
     const _svgH = { left:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="1.5" height="14" rx=".5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="6.25" y="0" width="1.5" height="14" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', right:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="12.5" y="0" width="1.5" height="14" rx=".5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>' };
     const _svgV = { top:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="1.5" rx=".5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="6.25" width="14" height="1.5" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', bottom:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="12.5" width="14" height="1.5" rx=".5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>' };
-    const hposBtns = ['left','center','right'].map(p => `<button type="button" class="tl-hpos${p===hpos?' active':''}" data-p="${p}" title="${p}" onclick="tlInspHPos(${i},'${p}')">${_svgH[p]}</button>`).join('');
-    const vposBtns = ['top','center','bottom'].map(p => `<button type="button" class="tl-vpos${p===vpos?' active':''}" data-p="${p}" title="${p}" onclick="tlInspVPos(${i},'${p}')">${_svgV[p]}</button>`).join('');
+    const _hTitle = { left: t.pos_align_left, center: t.pos_h_center, right: t.pos_align_right };
+    const _vTitle = { top: t.pos_align_top, center: t.pos_v_center, bottom: t.pos_align_bottom };
+    const hposBtns = ['left','center','right'].map(p => `<button type="button" class="tl-hpos${p===hpos?' active':''}" data-p="${p}" title="${_hTitle[p] || p}" onclick="tlInspHPos(${i},'${p}')">${_svgH[p]}</button>`).join('');
+    const vposBtns = ['top','center','bottom'].map(p => `<button type="button" class="tl-vpos${p===vpos?' active':''}" data-p="${p}" title="${_vTitle[p] || p}" onclick="tlInspVPos(${i},'${p}')">${_svgV[p]}</button>`).join('');
     const wrapBtn = `<button type="button" class="tl-wrap${wrapOn ? ' active' : ''}" title="${t.tl_wrap_tip || 'Wrap long text onto multiple lines'}" onclick="tlInspWrap(${i})">${t.tl_wrap || 'Wrap'}</button>`;
     const div = document.createElement('div');
     div.className = 'tl-inspector';
@@ -11842,7 +11856,10 @@
   function tlInspSize(i) { const el = document.getElementById(`fontsize-${i}`); if (el) { el.value = document.getElementById(`tl-size-${i}`).value; saveMainTextMeta(i); } }
   function tlInspColor(i, c) {
     const el = document.getElementById(`textco-${i}`); if (el) { el.value = c; saveMainColors(i); }
-    document.querySelectorAll(`#card-${i} .tl-swatch`).forEach(s => s.classList.toggle('active', s.dataset.c === c));
+    const lc = (c || '').toLowerCase();
+    document.querySelectorAll(`#card-${i} .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
+    const custom = document.querySelector(`#card-${i} .tl-swatch-custom`);
+    if (custom) { const preset = TL_SWATCHES.includes(lc); custom.classList.toggle('active', !preset); custom.style.background = preset ? '' : c; }
   }
   function tlInspStyle(i, s) {
     try { setMainTextStyle(i, s); } catch {}
