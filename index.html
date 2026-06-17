@@ -806,7 +806,8 @@
     .tl-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; }
     .tl-swatch.active { border-color: var(--text-main); }
     /* linear-gradient first as a guaranteed-visible fallback (some Safari builds drop the conic form) */
-    .tl-swatch-custom { background: linear-gradient(135deg, #ef4444, #f59e0b 22%, #facc15 38%, #22c55e 55%, #3b82f6 72%, #a855f7 86%, #ec4899); background: conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #3b82f6, #a855f7, #ec4899, #ef4444); }
+    /* Custom-colour swatch: a "+" (always visible, even if gradients are unsupported) over a rainbow. */
+    .tl-swatch-custom { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.75); border-color: rgba(255,255,255,0.5); background: linear-gradient(135deg, #ef4444, #f59e0b 22%, #facc15 38%, #22c55e 55%, #3b82f6 72%, #a855f7 86%, #ec4899); background: conic-gradient(#ef4444, #f59e0b, #facc15, #22c55e, #3b82f6, #a855f7, #ec4899, #ef4444); }
     .tl-swatch-custom:hover { transform: scale(1.08); }
     .tl-back { display: none; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 12px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
     .tl-back:hover { color: var(--text-main); border-color: var(--accent); }
@@ -11836,7 +11837,7 @@
     const _swRow = (curVal, fn, which, rowKey) => {
       const preset = TL_SWATCHES.includes(curVal);
       const presets = TL_SWATCHES.map(c => `<span class="tl-swatch${c === curVal ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="${fn}(${i},'${c}')"></span>`).join('');
-      const cust = `<span class="tl-swatch tl-swatch-custom${preset ? '' : ' active'}" title="${t.tl_custom_colour || 'Custom colour'}" onclick="tlPickColor(${i},'${which}')"></span>`;
+      const cust = `<span class="tl-swatch tl-swatch-custom${preset ? '' : ' active'}" title="${t.tl_custom_colour || 'Custom colour'}" onclick="tlPickColor(${i},'${which}')">+</span>`;
       return `<div class="tl-swatches" data-crow="${rowKey}">${presets}${cust}</div>`;
     };
     const textSwatches = _swRow(color, 'tlInspColor', 'text', 'text');

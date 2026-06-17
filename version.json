@@ -1,7 +1,7 @@
 {
-  "version": "1.4.55",
+  "version": "1.4.56",
   "date": "2026-06-17",
-  "notes": "Fix: the rainbow 'custom colour' swatch was invisible on Safari. It used conic-gradient(from 0.25turn, …); some Safari builds drop that form, leaving a transparent (invisible) circle. Added a linear-gradient rainbow as a guaranteed-visible fallback (with conic still applied where supported), and the custom swatch now always shows the rainbow (a ring marks it when a custom colour is active) so it reads clearly as 'pick any colour' on both the Colour and Glow rows.",
+  "notes": "Custom-colour swatch made unmistakable: the end swatch on the Colour (and Glow) row is now a circle with a white '+' and a light ring, so it's always visible — even if the rainbow gradient isn't supported, the '+' (plain text) and border still render. Clicking it opens the OS colour picker (transient <input type=color>). This replaces relying on a gradient alone, which wasn't showing on Safari.",
   "files": [
     "index.html",
     "version.json"
