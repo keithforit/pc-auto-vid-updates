@@ -5,7 +5,11 @@
 import fs from 'fs';
 import axios from 'axios';
 
-const PEXELS_API_KEY = 'LWphJge0sxbSJIxWxiLmZLO4i1bzt3YgkbEnwo3jBD1miVpCoGBjTChO';
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+if (!PEXELS_API_KEY) {
+  console.error('❌ Set PEXELS_API_KEY in your environment (e.g. a .env file) before running this script.');
+  process.exit(1);
+}
 
 const segments = [
   {

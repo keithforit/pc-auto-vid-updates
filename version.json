@@ -1,9 +1,9 @@
 {
-  "version": "1.4.59",
+  "version": "1.4.60",
   "date": "2026-06-17",
-  "notes": "Custom-colour swatch: the '+' is now drawn as two geometrically-centred bars (CSS pseudo-elements) instead of a font glyph, so it sits dead-centre in the circle on every browser.",
+  "notes": "Build/dev script now reads the Pexels API key from the environment instead of a hardcoded value. The app itself never bundles API keys — each user enters their own Pexels/Pixabay keys on first run (saved locally in UserConfig.json), and those persist across updates.",
   "files": [
-    "index.html",
+    "build-japanese-content.mjs",
     "version.json"
   ]
 }
