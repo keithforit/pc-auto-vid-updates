@@ -1,9 +1,9 @@
 {
-  "version": "1.4.60",
+  "version": "1.4.61",
   "date": "2026-06-17",
-  "notes": "Build/dev script now reads the Pexels API key from the environment instead of a hardcoded value. The app itself never bundles API keys — each user enters their own Pexels/Pixabay keys on first run (saved locally in UserConfig.json), and those persist across updates.",
+  "notes": "Renderer no longer depends on src/MusicList.json — the 'random background music' pool is now defined inline in src/Main.tsx (the 7 tracks in public/music/). One less stray file, and the render builds without it. Note: random mode now picks from all those tracks (the old list effectively only had island-by-mbb.mp3); edit defaultMusicList in Main.tsx to change the pool. Picking a specific track in the editor is unaffected.",
   "files": [
-    "build-japanese-content.mjs",
+    "src/Main.tsx",
     "version.json"
   ]
 }

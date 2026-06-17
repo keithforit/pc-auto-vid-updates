@@ -1,7 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, Sequence, Audio, staticFile, useVideoConfig, useCurrentFrame, interpolate, Easing } from 'remotion';
 import segments from './Content.json';
-import musicList from './MusicList.json';
 import videoSettings from './VideoSettings.json';
 import { Caption } from './Caption';
 import { Background } from './Background';
@@ -111,7 +110,17 @@ export const Main: React.FC = () => {
     let currentFrame = 0;
     const { fps } = useVideoConfig();
     const settings: any = videoSettings || {};
-    const defaultMusicList = Array.isArray(musicList) ? musicList.filter(Boolean) : [];
+    // Built-in pool for "random" background music (files live in public/music/). Replaces the old
+    // src/MusicList.json import — edit this array to change which tracks random mode can pick.
+    const defaultMusicList = [
+        'adventures-by-a-himitsu.mp3',
+        'bgmusic.mp3',
+        'i-like-you-by-sakura-girl.mp3',
+        'island-by-mbb.mp3',
+        'last-summer-by-ikson.mp3',
+        'life-of-riley-by-kevin-macleod.mp3',
+        'velvet-sky-by-declan-dp.mp3',
+    ];
     const selectedMusicFile = settings.backgroundMusicUseCustom && settings.backgroundMusicCustomFile
         ? settings.backgroundMusicCustomFile
         : settings.backgroundMusicRandom === false
