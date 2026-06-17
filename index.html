@@ -1626,6 +1626,7 @@
       tl_exit: 'Exit editor',
       tl_add_scene: 'Scene',
       tl_layout: 'Layout:',
+      tl_language: 'Language:',
       tl_layout_scene: 'Scene Editor',
       tl_layout_timeline: 'Timeline',
       tl_scene: 'Scene',
@@ -2201,6 +2202,7 @@
       tl_exit: 'エディターを終了',
       tl_add_scene: 'シーン',
       tl_layout: 'レイアウト:',
+      tl_language: '言語:',
       tl_layout_scene: 'シーン編集',
       tl_layout_timeline: 'タイムライン',
       tl_scene: 'シーン',
@@ -2542,6 +2544,9 @@
     // Active button highlight
     document.getElementById('lang-en')?.classList.toggle('active', lang === 'en');
     document.getElementById('lang-ja')?.classList.toggle('active', lang === 'ja');
+    // Timeline-editor top-bar language toggle (mirrors the main switcher)
+    document.getElementById('tl-ed-lang-en')?.classList.toggle('active', lang === 'en');
+    document.getElementById('tl-ed-lang-ja')?.classList.toggle('active', lang === 'ja');
     // Subtitle
     const sub = document.getElementById('app-subtitle');
     if (sub) sub.textContent = t.subtitle;
@@ -13044,6 +13049,13 @@
       </span>
     </span>
     <span class="tl-ed-spacer"></span>
+    <span class="tl-ed-layout" id="tl-ed-lang">
+      <span class="tl-ed-layout-lbl" data-i18n="tl_language">Language:</span>
+      <span class="view-toggle">
+        <button type="button" class="tl-ed-lbtn active" id="tl-ed-lang-en" onclick="setAppLang('en')">EN</button>
+        <button type="button" class="tl-ed-lbtn" id="tl-ed-lang-ja" onclick="setAppLang('ja')">日本語</button>
+      </span>
+    </span>
     <button class="tl-ed-btn" onclick="openTextToVideoModal()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
     <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
     <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>
