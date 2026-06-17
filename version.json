@@ -1,7 +1,7 @@
 {
-  "version": "1.4.46",
-  "date": "2026-06-16",
-  "notes": "Fix: adding a new scene didn't show up. Removing the Create tab (v1.4.41) deleted the #editor-log element, but addEditorLog() still called el.style.display on it — so it threw inside confirmAddScene() right before the loadSegments() refresh. The scene was created on the backend but the editor/timeline never re-rendered, so it looked like nothing happened (and it left invisible blank scenes behind). Made addEditorLog null-safe, and likewise hardened addRerenderLog() and the render-done fallback branch, which referenced the same removed Create-tab elements (#rerender-log / #rerender-progress-bar / #rerender-status). Adding a scene now refreshes correctly.",
+  "version": "1.4.47",
+  "date": "2026-06-17",
+  "notes": "Timeline view (time view) UX pass — left content rail. (1) Scene number is now large/bold (19px) so it reads as the heading of the rail. (2) Delete affordances are red by default: the per-layer ✕ and the scene 🗑 Delete button (previously grey, only red on hover). (3) Removed the scene-level ↑ Up / ↓ Down reorder buttons from the Timeline rail — scene reordering still lives in the Scene Editor card and the bottom timeline (drag), so it doesn't belong here. (4) Layer list now stacks foreground→background like CapCut: main text + overlays on top, Background / media at the bottom (was media-first).",
   "files": [
     "index.html",
     "version.json"
