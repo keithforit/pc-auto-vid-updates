@@ -1,7 +1,7 @@
 {
-  "version": "1.4.52",
+  "version": "1.4.53",
   "date": "2026-06-17",
-  "notes": "Fix: colour swatches/picker in the Timeline inspector didn't visibly change text in Glow style. The colour control always wrote the text colour (textco), but Glow shows the glow-text colour (glowtextco) — so picks were invisible. The inspector colour control (presets + custom picker) now writes the field that's actually visible for the active style: Glow → glowtextco, every other style → textco. The initial swatch highlight reads the same style-appropriate field, and switching style rebuilds the swatches so the highlight follows. Verified: Glow + red/purple updates the visible text; Plain + green updates it too.",
+  "notes": "Timeline inspector colour + navigation. (1) Custom colour picker now renders reliably: the rainbow 'custom' swatch is a span (the old <label> + nested <input type=color> didn't show on Safari) and it opens the OS colour picker via a transient input. (2) Second colour row: when the style is Glow, a 'Glow' row appears below 'Colour' for the glow (outline) colour — the two rows are independent (Colour → glow-text, Glow → glow colour). (3) 'All controls' now has a Back button to return to the clean inspector. Note: Box-style background is still a fixed semi-transparent black in the renderer, so a 'Box colour' control needs a dedicated render field — not included here.",
   "files": [
     "index.html",
     "version.json"

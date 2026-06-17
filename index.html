@@ -805,8 +805,10 @@
     .tl-swatches { display: flex; gap: 10px; }
     .tl-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-sizing: border-box; }
     .tl-swatch.active { border-color: var(--text-main); }
-    .tl-swatch-custom { position: relative; overflow: hidden; background: conic-gradient(from 0.25turn, #ef4444, #f59e0b, #22c55e, #3b82f6, #ec4899, #ef4444); }
-    .tl-swatch-custom input[type="color"] { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); opacity: 0; cursor: pointer; border: none; padding: 0; }
+    .tl-swatch-custom { background: conic-gradient(from 0.25turn, #ef4444, #f59e0b, #22c55e, #3b82f6, #ec4899, #ef4444); }
+    .tl-back { display: none; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 12px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
+    .tl-back:hover { color: var(--text-main); border-color: var(--accent); }
+    .timeline-mode .segment-card.tl-show-all .tl-back { display: inline-flex; }
     .tl-insp-size { flex: 1; accent-color: #38bdf8; }
     .tl-insp-styles { display: flex; gap: 8px; margin-top: 6px; }
     .tl-style { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
@@ -1617,6 +1619,7 @@
       tl_timeline: 'Timeline',
       tl_position: 'Position',
       tl_custom_colour: 'Custom colour',
+      tl_back: 'Back',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
       tl_delete_layer: 'Delete layer',
@@ -2191,6 +2194,7 @@
       tl_timeline: 'タイムライン',
       tl_position: '位置',
       tl_custom_colour: 'カスタムカラー',
+      tl_back: '戻る',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
       tl_delete_layer: 'レイヤーを削除',
@@ -11820,9 +11824,20 @@
     const wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
     const curStyle = _styleForColor;
     const t = (I18N[window._appLang || 'en'] || I18N.en);
-    const isPresetColor = TL_SWATCHES.includes(color);
-    const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('')
-      + `<label class="tl-swatch tl-swatch-custom${isPresetColor ? '' : ' active'}" title="${t.tl_custom_colour || 'Custom colour'}"${isPresetColor ? '' : ` style="background:${color}"`}><input type="color" value="${color}" oninput="tlInspColor(${i}, this.value)"></label>`;
+    // A swatch row = 7 presets + a custom swatch that opens the OS colour picker. Span-based so it
+    // renders reliably (incl. Safari); the picker opens from a transient input in tlPickColor().
+    const _swRow = (curVal, fn, which, rowKey) => {
+      const preset = TL_SWATCHES.includes(curVal);
+      const presets = TL_SWATCHES.map(c => `<span class="tl-swatch${c === curVal ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="${fn}(${i},'${c}')"></span>`).join('');
+      const cust = `<span class="tl-swatch tl-swatch-custom${preset ? '' : ' active'}" title="${t.tl_custom_colour || 'Custom colour'}"${preset ? '' : ` style="background:${curVal}"`} onclick="tlPickColor(${i},'${which}')"></span>`;
+      return `<div class="tl-swatches" data-crow="${rowKey}">${presets}${cust}</div>`;
+    };
+    const textSwatches = _swRow(color, 'tlInspColor', 'text', 'text');
+    // Second colour = the style's accent. Glow → the glow (outline) colour.
+    const accentColor = (curStyle === 'glow') ? (v('glowco', '') || seg.glowColorOverride || seg.glowColor || '#00ffff').toLowerCase() : '';
+    const accentRow = (curStyle === 'glow')
+      ? `<div class="tl-insp-row"><label>${t.tl_glow || 'Glow'}</label>${_swRow(accentColor, 'tlInspAccent', 'accent', 'accent')}</div>`
+      : '';
     const styleChips = [['box', t.tl_box || 'Box'], ['glow', t.tl_glow || 'Glow'], ['plain', t.tl_plain || 'Plain']]
       .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
     const aligns = [['left', 'fa-align-left'], ['center', 'fa-align-center'], ['right', 'fa-align-right']]
@@ -11844,7 +11859,8 @@
       <div class="tl-insp-head"><span>🎛 ${t.tl_selected_text || 'Selected: text layer'}</span><button type="button" class="tl-insp-more" onclick="tlInspToggleAll(${i})">⋯ ${t.tl_all_controls || 'All controls'}</button></div>
       <textarea class="tl-insp-text" id="tl-text-${i}" rows="2" oninput="tlInspText(${i})" onblur="saveMainTextContent(${i})">${escapeHtml(text)}</textarea>
       <div class="tl-insp-row"><label>${t.label_font ? t.label_font.replace(':', '') : 'Font'}</label>${fontSelectHTML(`tl-font-${i}`, font, `tlInspFont(${i})`)}</div>
-      <div class="tl-insp-row"><label>${t.tl_colour || 'Colour'}</label><div class="tl-swatches">${swatches}</div></div>
+      <div class="tl-insp-row"><label>${t.tl_colour || 'Colour'}</label>${textSwatches}</div>
+      ${accentRow}
       <div class="tl-insp-row"><label>${t.tl_size || 'Size'}</label><input type="range" class="tl-insp-size" id="tl-size-${i}" min="20" max="200" step="2" value="${size}" oninput="tlInspSize(${i})" /></div>
       <div class="tl-insp-styles">${styleChips}</div>
       <div class="tl-insp-row" style="margin-top:14px"><label>${t.tl_align || 'Align'}</label><div class="tl-aligns">${aligns}</div></div>
@@ -11853,6 +11869,16 @@
       <div class="tl-insp-row"><label>${t.tl_wrap || 'Wrap'}</label>${wrapBtn}</div>`;
     const firstAcc = card.querySelector('details.scene-accordion');
     if (firstAcc) firstAcc.parentNode.insertBefore(div, card.querySelector('.scene-tabs') || firstAcc);
+    // Back button — only visible in "All controls" (tl-show-all); returns to the clean inspector.
+    card.querySelector('.tl-back')?.remove();
+    if (firstAcc) {
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'tl-back';
+      back.innerHTML = `← ${t.tl_back || 'Back'}`;
+      back.onclick = () => tlInspBack(i);
+      div.parentNode.insertBefore(back, div);
+    }
   }
 
   function tlInspText(i) { const el = document.getElementById(`maintext-${i}`); if (el) { el.value = document.getElementById(`tl-text-${i}`).value; onMainTextInput(i); } }
@@ -11865,9 +11891,45 @@
     const el = document.getElementById(`${style === 'glow' ? 'glowtextco' : 'textco'}-${i}`);
     if (el) { el.value = c; saveMainColors(i); }
     const lc = (c || '').toLowerCase();
-    document.querySelectorAll(`#card-${i} .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
-    const custom = document.querySelector(`#card-${i} .tl-swatch-custom`);
+    document.querySelectorAll(`#card-${i} [data-crow="text"] .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
+    const custom = document.querySelector(`#card-${i} [data-crow="text"] .tl-swatch-custom`);
     if (custom) { const preset = TL_SWATCHES.includes(lc); custom.classList.toggle('active', !preset); custom.style.background = preset ? '' : c; }
+  }
+  // Accent colour = the style's secondary colour (Glow → the glow/outline colour).
+  function tlInspAccent(i, c) {
+    const card = document.getElementById(`card-${i}`);
+    const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
+    if (style === 'glow') { const el = document.getElementById(`glowco-${i}`); if (el) { el.value = c; saveMainColors(i); } }
+    const lc = (c || '').toLowerCase();
+    document.querySelectorAll(`#card-${i} [data-crow="accent"] .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
+    const custom = document.querySelector(`#card-${i} [data-crow="accent"] .tl-swatch-custom`);
+    if (custom) { const preset = TL_SWATCHES.includes(lc); custom.classList.toggle('active', !preset); custom.style.background = preset ? '' : c; }
+  }
+  // Open the OS colour picker via a transient input (reliable in Safari; the visible swatch is a span).
+  function tlPickColor(i, which) {
+    const card = document.getElementById(`card-${i}`);
+    const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
+    const cur = which === 'accent'
+      ? (document.getElementById(`glowco-${i}`)?.value || '#00ffff')
+      : (document.getElementById(`${style === 'glow' ? 'glowtextco' : 'textco'}-${i}`)?.value || '#ffffff');
+    const apply = which === 'accent' ? tlInspAccent : tlInspColor;
+    const inp = document.createElement('input');
+    inp.type = 'color';
+    inp.value = /^#[0-9a-fA-F]{6}$/.test(cur) ? cur : '#ffffff';
+    inp.style.cssText = 'position:fixed;left:12px;bottom:12px;width:1px;height:1px;opacity:0;border:none;padding:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.addEventListener('input', () => apply(i, inp.value));
+    inp.addEventListener('change', () => { apply(i, inp.value); setTimeout(() => inp.remove(), 200); });
+    inp.click();
+  }
+  // Return from "All controls" to the clean inspector.
+  function tlInspBack(i) {
+    const card = document.getElementById(`card-${i}`);
+    if (!card) return;
+    card.classList.remove('tl-show-all');
+    tlSelLayer = { type: 'main', idx: 0 };
+    try { buildTimelineInspector(card, i); } catch {}
+    try { buildContentRail(card, i); } catch {}
   }
   function tlInspStyle(i, s) {
     try { setMainTextStyle(i, s); } catch {}
