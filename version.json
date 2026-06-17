@@ -1,7 +1,7 @@
 {
-  "version": "1.4.58",
+  "version": "1.4.59",
   "date": "2026-06-17",
-  "notes": "Timeline inspector colour rows trimmed to fit on one line: each row now has 6 presets + the custom '+' swatch (7 total). The Colour row drops green; the Glow row drops black. With 7 per row they sit inline (no wrapping). Per-row palettes (TEXT_SWATCHES / GLOW_SWATCHES).",
+  "notes": "Custom-colour swatch: the '+' is now drawn as two geometrically-centred bars (CSS pseudo-elements) instead of a font glyph, so it sits dead-centre in the circle on every browser.",
   "files": [
     "index.html",
     "version.json"

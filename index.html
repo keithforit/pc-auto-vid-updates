@@ -814,7 +814,11 @@
     .tl-swatch-custom::-webkit-color-swatch-wrapper { padding: 0; }
     .tl-swatch-custom::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; }
     .tl-swatch-custom::-moz-color-swatch { border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; }
-    .tl-custom-plus { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; line-height: 1; text-shadow: 0 1px 3px rgba(0,0,0,0.95); pointer-events: none; }
+    /* "+" drawn as two geometrically-centred bars (font glyphs don't centre reliably) */
+    .tl-custom-plus { position: absolute; inset: 0; pointer-events: none; }
+    .tl-custom-plus::before, .tl-custom-plus::after { content: ''; position: absolute; top: 50%; left: 50%; background: #fff; border-radius: 1px; box-shadow: 0 0 2px rgba(0,0,0,0.9); }
+    .tl-custom-plus::before { width: 10px; height: 2px; transform: translate(-50%, -50%); }
+    .tl-custom-plus::after { width: 2px; height: 10px; transform: translate(-50%, -50%); }
     .tl-back { display: none; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 12px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
     .tl-back:hover { color: var(--text-main); border-color: var(--accent); }
     .timeline-mode .segment-card.tl-show-all .tl-back { display: inline-flex; }
@@ -11842,7 +11846,7 @@
     // renders reliably (incl. Safari); the picker opens from a transient input in tlPickColor().
     const _swRow = (curVal, fn, which, rowKey, palette) => {
       const presets = palette.map(c => `<span class="tl-swatch${c === curVal ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="${fn}(${i},'${c}')"></span>`).join('');
-      const cust = `<span class="tl-swatch-customwrap" title="${t.tl_custom_colour || 'Custom colour'}"><input type="color" class="tl-swatch-custom" value="${/^#[0-9a-f]{6}$/i.test(curVal) ? curVal : '#ffffff'}" oninput="${fn}(${i}, this.value)" onchange="${fn}(${i}, this.value)" /><span class="tl-custom-plus">+</span></span>`;
+      const cust = `<span class="tl-swatch-customwrap" title="${t.tl_custom_colour || 'Custom colour'}"><input type="color" class="tl-swatch-custom" value="${/^#[0-9a-f]{6}$/i.test(curVal) ? curVal : '#ffffff'}" oninput="${fn}(${i}, this.value)" onchange="${fn}(${i}, this.value)" /><span class="tl-custom-plus"></span></span>`;
       return `<div class="tl-swatches" data-crow="${rowKey}">${presets}${cust}</div>`;
     };
     // Colour row drops green, Glow row drops black → 6 presets + the custom swatch = 7 per row, on one line.
