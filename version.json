@@ -1,7 +1,7 @@
 {
-  "version": "1.4.57",
+  "version": "1.4.58",
   "date": "2026-06-17",
-  "notes": "Fix the custom-colour picker for real. Root cause: the colour row (label + 8 swatches) was wider than the ~290px properties panel, so the 8th 'custom' swatch overflowed and was clipped off the edge — you only ever saw the 7 presets, and the 'last' one was actually the black preset. Two fixes: (1) .tl-swatches now flex-wraps, so the custom swatch wraps onto its own line and is always in-panel; (2) the custom swatch IS a real <input type=color> (with a '+' overlay that's pointer-events:none), so a direct click opens the native macOS picker — Safari only opens colour pickers on a real click, not a scripted one, which is why the earlier version did nothing. Applies to both the Colour and Glow rows.",
+  "notes": "Timeline inspector colour rows trimmed to fit on one line: each row now has 6 presets + the custom '+' swatch (7 total). The Colour row drops green; the Glow row drops black. With 7 per row they sit inline (no wrapping). Per-row palettes (TEXT_SWATCHES / GLOW_SWATCHES).",
   "files": [
     "index.html",
     "version.json"
