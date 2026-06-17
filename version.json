@@ -1,7 +1,7 @@
 {
-  "version": "1.4.54",
+  "version": "1.4.55",
   "date": "2026-06-17",
-  "notes": "Timeline view: added a Language switcher to the editor top bar (just left of 'Text to Video') — 'Language: EN | 日本語'. It calls the same setAppLang() as the main switcher, so switching re-localises the whole editor (rail, inspector, tabs, dock) live; the new toggle's active state mirrors the top-right switcher. Localised the label (Language: / 言語:).",
+  "notes": "Fix: the rainbow 'custom colour' swatch was invisible on Safari. It used conic-gradient(from 0.25turn, …); some Safari builds drop that form, leaving a transparent (invisible) circle. Added a linear-gradient rainbow as a guaranteed-visible fallback (with conic still applied where supported), and the custom swatch now always shows the rainbow (a ring marks it when a custom colour is active) so it reads clearly as 'pick any colour' on both the Colour and Glow rows.",
   "files": [
     "index.html",
     "version.json"
