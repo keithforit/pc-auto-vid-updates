@@ -812,6 +812,8 @@
     .tl-aligns { display: flex; gap: 8px; }
     .tl-align { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; line-height: 1; }
     .tl-align.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
+    .tl-hpos, .tl-vpos { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 6px 12px; cursor: pointer; line-height: 0; display: inline-flex; align-items: center; }
+    .tl-hpos.active, .tl-vpos.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
     .tl-wrap { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
     .tl-wrap.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
     /* ── Built-in timeline editor: in Timeline mode the tracks dock INTO the page (not a floating popup) ── */
@@ -1611,6 +1613,7 @@
       tl_audio: 'Audio / voiceover',
       tl_animation: 'Scene animation',
       tl_timeline: 'Timeline',
+      tl_position: 'Position',
       tl_move_up: 'Move up',
       tl_move_down: 'Move down',
       tl_delete_layer: 'Delete layer',
@@ -2183,6 +2186,7 @@
       tl_audio: '音声 / ナレーション',
       tl_animation: 'シーンアニメーション',
       tl_timeline: 'タイムライン',
+      tl_position: '位置',
       tl_move_up: '上へ',
       tl_move_down: '下へ',
       tl_delete_layer: 'レイヤーを削除',
@@ -11794,6 +11798,14 @@
       .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
     const aligns = [['left', 'fa-align-left'], ['center', 'fa-align-center'], ['right', 'fa-align-right']]
       .map(([a, ic]) => `<button type="button" class="tl-align${a === align ? ' active' : ''}" data-a="${a}" title="${a.charAt(0).toUpperCase() + a.slice(1)}" onclick="tlInspAlign(${i},'${a}')"><i class="fas ${ic}"></i></button>`).join('');
+    // Block position (where the text sits in the frame) — was missing from this inspector, so the
+    // only way to reposition text was the full controls. Drives the same handlers (single source of truth).
+    const hpos = (card.querySelector(`#hposrow-${i} .pos-btn.active`)?.dataset.hpos) || seg.textHPosition || 'center';
+    const vpos = (card.querySelector(`#vposrow-${i} .pos-btn.active`)?.dataset.vpos) || seg.textPosition || 'center';
+    const _svgH = { left:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="1.5" height="14" rx=".5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="6.25" y="0" width="1.5" height="14" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', right:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="12.5" y="0" width="1.5" height="14" rx=".5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>' };
+    const _svgV = { top:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="1.5" rx=".5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="6.25" width="14" height="1.5" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', bottom:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="12.5" width="14" height="1.5" rx=".5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>' };
+    const hposBtns = ['left','center','right'].map(p => `<button type="button" class="tl-hpos${p===hpos?' active':''}" data-p="${p}" title="${p}" onclick="tlInspHPos(${i},'${p}')">${_svgH[p]}</button>`).join('');
+    const vposBtns = ['top','center','bottom'].map(p => `<button type="button" class="tl-vpos${p===vpos?' active':''}" data-p="${p}" title="${p}" onclick="tlInspVPos(${i},'${p}')">${_svgV[p]}</button>`).join('');
     const wrapBtn = `<button type="button" class="tl-wrap${wrapOn ? ' active' : ''}" title="${t.tl_wrap_tip || 'Wrap long text onto multiple lines'}" onclick="tlInspWrap(${i})">${t.tl_wrap || 'Wrap'}</button>`;
     const div = document.createElement('div');
     div.className = 'tl-inspector';
@@ -11805,6 +11817,8 @@
       <div class="tl-insp-row"><label>${t.tl_size || 'Size'}</label><input type="range" class="tl-insp-size" id="tl-size-${i}" min="20" max="200" step="2" value="${size}" oninput="tlInspSize(${i})" /></div>
       <div class="tl-insp-styles">${styleChips}</div>
       <div class="tl-insp-row" style="margin-top:14px"><label>${t.tl_align || 'Align'}</label><div class="tl-aligns">${aligns}</div></div>
+      <div class="tl-insp-row"><label>${t.tl_position || 'Position'}</label><div class="tl-aligns">${hposBtns}</div></div>
+      <div class="tl-insp-row"><label></label><div class="tl-aligns">${vposBtns}</div></div>
       <div class="tl-insp-row"><label>${t.tl_wrap || 'Wrap'}</label>${wrapBtn}</div>`;
     const firstAcc = card.querySelector('details.scene-accordion');
     if (firstAcc) firstAcc.parentNode.insertBefore(div, card.querySelector('.scene-tabs') || firstAcc);
@@ -11830,6 +11844,14 @@
   function tlInspAlign(i, a) {
     try { setTextAlign(i, a); } catch {}
     document.querySelectorAll(`#card-${i} .tl-align`).forEach(b => b.classList.toggle('active', b.dataset.a === a));
+  }
+  function tlInspHPos(i, p) {
+    try { setTextHPos(i, p); } catch {}
+    document.querySelectorAll(`#card-${i} .tl-hpos`).forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  }
+  function tlInspVPos(i, p) {
+    try { setTextVPos(i, p); } catch {}
+    document.querySelectorAll(`#card-${i} .tl-vpos`).forEach(b => b.classList.toggle('active', b.dataset.p === p));
   }
   function tlInspWrap(i) {
     try { toggleTextNoWrap(i); } catch {}
@@ -11954,8 +11976,16 @@
     else if (type === 'shape') item = card.querySelectorAll(`#shapes-${i} .shape-block`)[idx];
     else if (type === 'image') item = document.getElementById(`overlay-list-${i}`)?.children[idx];
     else if (type === 'video') item = document.getElementById(`overlay-video-list-${i}`)?.children[idx];
-    const target = item || acc;
-    if (target) setTimeout(() => { try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {} }, 30);
+    // Always reveal the panel from its top. Centering a tall section (e.g. Audio) scrolled its
+    // header off-screen, so it looked like the panel was stuck at the bottom of the column.
+    setTimeout(() => {
+      try {
+        let scroller = acc || item;   // the right column = the card child that actually scrolls
+        while (scroller && scroller.parentElement && scroller.parentElement !== card) scroller = scroller.parentElement;
+        if (scroller && scroller.parentElement === card) scroller.scrollTop = 0;
+        if (item) item.scrollIntoView({ block: 'nearest' });
+      } catch {}
+    }, 30);
   }
 
   async function tlAddText(i) {

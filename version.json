@@ -1,7 +1,7 @@
 {
-  "version": "1.4.48",
+  "version": "1.4.49",
   "date": "2026-06-17",
-  "notes": "Timeline view — right panel is now driven solely by the left rail. (5) Clicking an item on the left opens only its related section on the right; the wandering section tab-strip is hidden in the editor. (6) Added a 'Scene settings' group to the left rail — Audio / voiceover, Scene animation, and Timeline — so sections that aren't content layers still have a home and the per-scene Timeline opens its detailed view on the right when clicked (kept, since the bottom timeline handles global timing). 'All controls' on the text inspector now reveals the full main-text section.",
+  "notes": "Timeline view fixes. (Bug 1) The text inspector was missing position controls — selecting the main text gave no way to move it. Added a Position row (horizontal left/center/right + vertical top/center/bottom) to the inspector, driving the same handlers as the full controls (single source of truth); 'All controls' still has the rest. (Bug 3) Clicking a Scene-settings section (e.g. Audio) used scrollIntoView(center), which centered the tall panel and pushed its header off-screen — it read as 'stuck at the bottom'. Now the right column resets to the top so the selected section starts at the top; specific items still scroll into view.",
   "files": [
     "index.html",
     "version.json"
