@@ -11809,12 +11809,16 @@
     const text = v('maintext', seg.text || '');
     const font = v('main-font', seg.font || 'noto');
     const size = parseInt(v('fontsize', seg.fontSize || 70)) || 70;
-    const color = (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff').toLowerCase();
+    // The visible text colour depends on the style: Glow shows the glow-text colour, everything else the text colour.
+    const _styleForColor = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.mainTextStyleOverride || seg.textStyle || 'box';
+    const color = (_styleForColor === 'glow'
+      ? (v('glowtextco', '') || seg.glowTextColorOverride || seg.glowTextColor || '#ffffff')
+      : (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff')).toLowerCase();
     const alignBtns = [...card.querySelectorAll(`#alignrow-${i} .pos-btn`)];
     const align = alignBtns.length ? (['left', 'center', 'right'][alignBtns.findIndex(b => b.classList.contains('active'))] || 'center') : (seg.textAlign || 'center');
     const npEl = document.getElementById(`tpreview-${i}`);
     const wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
-    const curStyle = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.textStyle || 'box';
+    const curStyle = _styleForColor;
     const t = (I18N[window._appLang || 'en'] || I18N.en);
     const isPresetColor = TL_SWATCHES.includes(color);
     const swatches = TL_SWATCHES.map(c => `<span class="tl-swatch${c === color ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="tlInspColor(${i},'${c}')"></span>`).join('')
@@ -11855,7 +11859,11 @@
   function tlInspFont(i) { const el = document.getElementById(`main-font-${i}`); if (el) { el.value = document.getElementById(`tl-font-${i}`).value; saveMainFont(i); } }
   function tlInspSize(i) { const el = document.getElementById(`fontsize-${i}`); if (el) { el.value = document.getElementById(`tl-size-${i}`).value; saveMainTextMeta(i); } }
   function tlInspColor(i, c) {
-    const el = document.getElementById(`textco-${i}`); if (el) { el.value = c; saveMainColors(i); }
+    const card = document.getElementById(`card-${i}`);
+    // Write the field that's actually visible for the current style (Glow → glow-text colour, else text colour).
+    const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
+    const el = document.getElementById(`${style === 'glow' ? 'glowtextco' : 'textco'}-${i}`);
+    if (el) { el.value = c; saveMainColors(i); }
     const lc = (c || '').toLowerCase();
     document.querySelectorAll(`#card-${i} .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
     const custom = document.querySelector(`#card-${i} .tl-swatch-custom`);
@@ -11863,7 +11871,9 @@
   }
   function tlInspStyle(i, s) {
     try { setMainTextStyle(i, s); } catch {}
-    document.querySelectorAll(`#card-${i} .tl-style`).forEach(b => b.classList.toggle('active', b.dataset.s === s));
+    // Rebuild so the colour swatches re-highlight for the new style's colour field (Glow vs others).
+    const card = document.getElementById(`card-${i}`);
+    if (card) { try { buildTimelineInspector(card, i); } catch {} }
   }
   function tlInspToggleAll(i) {
     const card = document.getElementById(`card-${i}`);
