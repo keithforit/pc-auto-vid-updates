@@ -914,8 +914,8 @@
     <div class="app-toolbar-right">
       <!-- Language switcher -->
       <div class="lang-switcher" id="lang-switcher" title="Switch language">
-        <button class="lang-btn active" id="lang-en" onclick="setAppLang('en')">EN</button>
-        <button class="lang-btn" id="lang-ja" onclick="setAppLang('ja')">日本語</button>
+        <button class="lang-btn active" id="lang-en" onclick="switchLang('en')">EN</button>
+        <button class="lang-btn" id="lang-ja" onclick="switchLang('ja')">日本語</button>
       </div>
       <!-- Theme toggle -->
       <div class="theme-toggle" title="Toggle theme">
@@ -1618,6 +1618,8 @@
       label_stroke: 'Stroke:',
       label_stroke_size: 'Stroke size:',
       label_glow_size: 'Glow size:',
+      label_box_r: 'Box r:',
+      label_block_r: 'Block r:',
       btn_upload_image: '🖼 Upload image',
       btn_upload_video_overlay: '🎬 Upload video overlay',
       btn_add_shape: '+ Add shape',
@@ -2199,6 +2201,8 @@
       label_stroke: '境界線:',
       label_stroke_size: '境界線の太さ:',
       label_glow_size: 'グローサイズ:',
+      label_box_r: 'ボックス角:',
+      label_block_r: 'ブロック角:',
       btn_upload_image: '🖼 画像をアップロード',
       btn_upload_video_overlay: '🎬 動画オーバーレイをアップロード',
       btn_add_shape: '+ シェイプを追加',
@@ -2676,6 +2680,19 @@
         try { tlUpdateEditorTitle(ci); } catch {}
       }
     } catch {}
+  }
+
+  // Explicit user language switch. setAppLang re-translates the static chrome + data-i18n elements,
+  // but many dynamic scene-card labels are built with bare ${t.xxx} (no data-i18n) and stay frozen at
+  // their build-time language. Rebuilding the loaded scenes re-resolves every label in the new language.
+  async function switchLang(lang) {
+    setAppLang(lang);
+    try {
+      if (Array.isArray(sdSegments) && sdSegments.length
+          && document.getElementById('tab-scenes')?.classList.contains('active')) {
+        await loadSegments(0);   // rebuild the cards (and the open Timeline editor) in the new language
+      }
+    } catch (e) { console.warn('switchLang rebuild:', e); }
   }
 
   /* ── Load media library on startup so brand swatches are ready ── */
@@ -8110,12 +8127,12 @@
                      value="${etGlowSize}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'glowsize')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">Box r:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_box_r}</span>
               <input type="number" class="num-input" id="et-boxradius-${i}-${j}" min="0" max="100" step="1"
                      value="${etBoxRadius}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'boxradius')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">Block r:</span>
+              <span class="ctrl-row-label" style="min-width:auto">${t.label_block_r}</span>
               <input type="number" class="num-input" id="et-blockradius-${i}-${j}" min="0" max="100" step="1"
                      value="${etBlockRadius}" placeholder="${t.auto}" onchange="saveExtraText(${i})" style="width:46px" />
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraNum(${i},${j},'blockradius')" title="Clear override">✕</button>
@@ -13230,8 +13247,8 @@
     <span class="tl-ed-layout" id="tl-ed-lang">
       <span class="tl-ed-layout-lbl" data-i18n="tl_language">Language:</span>
       <span class="view-toggle">
-        <button type="button" class="tl-ed-lbtn active" id="tl-ed-lang-en" onclick="setAppLang('en')">EN</button>
-        <button type="button" class="tl-ed-lbtn" id="tl-ed-lang-ja" onclick="setAppLang('ja')">日本語</button>
+        <button type="button" class="tl-ed-lbtn active" id="tl-ed-lang-en" onclick="switchLang('en')">EN</button>
+        <button type="button" class="tl-ed-lbtn" id="tl-ed-lang-ja" onclick="switchLang('ja')">日本語</button>
       </span>
     </span>
     <button class="tl-ed-btn" onclick="openTextToVideoModal()">✨ <span data-i18n="ttv_open">Text to Video</span></button>

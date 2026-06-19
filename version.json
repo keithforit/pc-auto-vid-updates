@@ -1,7 +1,7 @@
 {
-  "version": "1.4.65",
+  "version": "1.4.66",
   "date": "2026-06-19",
-  "notes": "New text layers now get the SAME clean inspector as the main text. In the Timeline editor, selecting the main text showed the clean CapCut inspector (font, colour, glow, size, style, align, position, wrap), but selecting an added text layer dumped you into the raw accordion instead. buildTimelineInspector is now layer-aware: selecting an extra text layer builds the identical clean inspector, wired through to that layer's fields via layer-aware tlInsp* handlers (which dispatch to the existing setExtra*/saveExtraText for extra layers, unchanged for main). 'All controls' / 'Back' keep the selected layer. Main text behaviour is unchanged.",
+  "notes": "Fix incomplete Japanese localization when switching language. Many scene-card labels (Align H/V, Text align, Text style, Show at/Hide at, Font, Glow, Stroke, Block BG, Exact volume, Blur, etc.) are built with bare ${t.xxx} and no data-i18n attribute, so setAppLang never re-translated them — they stayed frozen at their build-time (English) language. Added switchLang(): the language toggles (main switcher + Timeline editor) now re-translate the static chrome AND rebuild the loaded scene cards via loadSegments, so every dynamic label re-resolves in the new language (editor stays on the selected scene/layer). Also gave the hardcoded 'Box r:' / 'Block r:' radius labels real i18n keys (label_box_r / label_block_r). Verified EN→JA→EN round-trip leaves zero untranslated labels across all card sections.",
   "files": [
     "index.html",
     "version.json"
