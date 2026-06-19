@@ -11889,22 +11889,49 @@
   function buildTimelineInspector(card, i) {
     card.querySelector('.tl-inspector')?.remove();
     if (getSceneViewMode() !== 'timeline' || !card) return;
-    const v = (id, dflt) => { const el = document.getElementById(`${id}-${i}`); return el ? el.value : dflt; };
-    const seg = sdSegments[i] || {};
-    const text = v('maintext', seg.text || '');
-    const font = v('main-font', seg.font || 'noto');
-    const size = parseInt(v('fontsize', seg.fontSize || 70)) || 70;
-    // The visible text colour depends on the style: Glow shows the glow-text colour, everything else the text colour.
-    const _styleForColor = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.mainTextStyleOverride || seg.textStyle || 'box';
-    const color = (_styleForColor === 'glow'
-      ? (v('glowtextco', '') || seg.glowTextColorOverride || seg.glowTextColor || '#ffffff')
-      : (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff')).toLowerCase();
-    const alignBtns = [...card.querySelectorAll(`#alignrow-${i} .pos-btn`)];
-    const align = alignBtns.length ? (['left', 'center', 'right'][alignBtns.findIndex(b => b.classList.contains('active'))] || 'center') : (seg.textAlign || 'center');
-    const npEl = document.getElementById(`tpreview-${i}`);
-    const wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
-    const curStyle = _styleForColor;
     const t = (I18N[window._appLang || 'en'] || I18N.en);
+    const seg = sdSegments[i] || {};
+    // The clean inspector now serves whichever text layer is selected — the main text OR an extra
+    // text layer — so a new text layer gets the exact same controls. Extra layers read their current
+    // values from the live accordion DOM (getExtraTexts) and drive the same controls via layer-aware
+    // tlInsp* handlers that write through to the extra-text fields.
+    const isExtra = tlSelLayer.type === 'extra';
+    const exJ = isExtra ? tlSelLayer.idx : -1;
+    let text, font, size, curStyle, color, accentColor, align, hpos, vpos, wrapOn, layerName;
+    if (isExtra) {
+      const et = (typeof getExtraTexts === 'function' ? (getExtraTexts(i)[exJ] || {}) : {});
+      text = et.text || '';
+      font = et.font || seg.font || 'noto';
+      size = parseInt(et.fontSize) || 70;
+      curStyle = et.textStyle || seg.textStyle || 'box';
+      // Extra colours are per-layer overrides (blank = inherit the scene's): show the override if set, else the scene colour.
+      color = ((curStyle === 'glow' ? (et.glowTextColorOverride || seg.glowTextColor) : (et.textColorOverride || seg.textColor)) || '#ffffff').toLowerCase();
+      accentColor = (curStyle === 'glow') ? ((et.glowColorOverride || seg.glowColor || '#00ffff').toLowerCase()) : '';
+      align = et.textAlign || 'center';
+      hpos = et.textHPosition || 'center';
+      vpos = et.position || 'center';
+      wrapOn = et.noWrap === false;
+      layerName = `${t.tl_text_layer || 'Text'} ${exJ + 2}`;
+    } else {
+      const v = (id, dflt) => { const el = document.getElementById(`${id}-${i}`); return el ? el.value : dflt; };
+      text = v('maintext', seg.text || '');
+      font = v('main-font', seg.font || 'noto');
+      size = parseInt(v('fontsize', seg.fontSize || 70)) || 70;
+      // The visible text colour depends on the style: Glow shows the glow-text colour, everything else the text colour.
+      const _styleForColor = (card.querySelector('.style-text-btn.active')?.dataset.style) || seg.mainTextStyleOverride || seg.textStyle || 'box';
+      color = (_styleForColor === 'glow'
+        ? (v('glowtextco', '') || seg.glowTextColorOverride || seg.glowTextColor || '#ffffff')
+        : (v('textco', '') || seg.textColorOverride || seg.textColor || '#ffffff')).toLowerCase();
+      const alignBtns = [...card.querySelectorAll(`#alignrow-${i} .pos-btn`)];
+      align = alignBtns.length ? (['left', 'center', 'right'][alignBtns.findIndex(b => b.classList.contains('active'))] || 'center') : (seg.textAlign || 'center');
+      const npEl = document.getElementById(`tpreview-${i}`);
+      wrapOn = npEl ? (npEl.dataset.nowrap !== '1') : (seg.textNoWrap === false);
+      curStyle = _styleForColor;
+      accentColor = (curStyle === 'glow') ? (v('glowco', '') || seg.glowColorOverride || seg.glowColor || '#00ffff').toLowerCase() : '';
+      hpos = (card.querySelector(`#hposrow-${i} .pos-btn.active`)?.dataset.hpos) || seg.textHPosition || 'center';
+      vpos = (card.querySelector(`#vposrow-${i} .pos-btn.active`)?.dataset.vpos) || seg.textPosition || 'center';
+      layerName = t.tl_main_text || 'Main text';
+    }
     // A swatch row = 7 presets + a custom swatch that opens the OS colour picker. Span-based so it
     // renders reliably (incl. Safari); the picker opens from a transient input in tlPickColor().
     const _swRow = (curVal, fn, which, rowKey, palette) => {
@@ -11916,8 +11943,7 @@
     const TEXT_SWATCHES = ['#ffffff', '#ef4444', '#3b82f6', '#f59e0b', '#ec4899', '#000000'];
     const GLOW_SWATCHES = ['#ffffff', '#ef4444', '#3b82f6', '#f59e0b', '#22c55e', '#ec4899'];
     const textSwatches = _swRow(color, 'tlInspColor', 'text', 'text', TEXT_SWATCHES);
-    // Second colour = the style's accent. Glow → the glow (outline) colour.
-    const accentColor = (curStyle === 'glow') ? (v('glowco', '') || seg.glowColorOverride || seg.glowColor || '#00ffff').toLowerCase() : '';
+    // Second colour = the style's accent (Glow → the glow/outline colour); computed per layer above.
     const accentRow = (curStyle === 'glow')
       ? `<div class="tl-insp-row"><label>${t.tl_glow || 'Glow'}</label>${_swRow(accentColor, 'tlInspAccent', 'accent', 'accent', GLOW_SWATCHES)}</div>`
       : '';
@@ -11925,10 +11951,7 @@
       .map(([s, lbl]) => `<button type="button" class="tl-style${s === curStyle ? ' active' : ''}" data-s="${s}" onclick="tlInspStyle(${i},'${s}')">${lbl}</button>`).join('');
     const aligns = [['left', 'fa-align-left'], ['center', 'fa-align-center'], ['right', 'fa-align-right']]
       .map(([a, ic]) => `<button type="button" class="tl-align${a === align ? ' active' : ''}" data-a="${a}" title="${a.charAt(0).toUpperCase() + a.slice(1)}" onclick="tlInspAlign(${i},'${a}')"><i class="fas ${ic}"></i></button>`).join('');
-    // Block position (where the text sits in the frame) — was missing from this inspector, so the
-    // only way to reposition text was the full controls. Drives the same handlers (single source of truth).
-    const hpos = (card.querySelector(`#hposrow-${i} .pos-btn.active`)?.dataset.hpos) || seg.textHPosition || 'center';
-    const vpos = (card.querySelector(`#vposrow-${i} .pos-btn.active`)?.dataset.vpos) || seg.textPosition || 'center';
+    // Block position (where the text sits in the frame); hpos/vpos are computed per layer above.
     const _svgH = { left:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="1.5" height="14" rx=".5"/><rect x="2" y="3" width="7" height="8" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="6.25" y="0" width="1.5" height="14" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', right:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="12.5" y="0" width="1.5" height="14" rx=".5"/><rect x="5" y="3" width="7" height="8" rx="1"/></svg>' };
     const _svgV = { top:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="1.5" rx=".5"/><rect x="3" y="2" width="8" height="7" rx="1"/></svg>', center:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="6.25" width="14" height="1.5" rx=".5"/><rect x="3" y="3" width="8" height="8" rx="1"/></svg>', bottom:'<svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="12.5" width="14" height="1.5" rx=".5"/><rect x="3" y="5" width="8" height="7" rx="1"/></svg>' };
     const _hTitle = { left: t.pos_align_left, center: t.pos_h_center, right: t.pos_align_right };
@@ -11939,8 +11962,8 @@
     const div = document.createElement('div');
     div.className = 'tl-inspector';
     div.innerHTML = `
-      <div class="tl-insp-head"><span>🎛 ${t.tl_selected_text || 'Selected: text layer'}</span><button type="button" class="tl-insp-more" onclick="tlInspToggleAll(${i})">⋯ ${t.tl_all_controls || 'All controls'}</button></div>
-      <textarea class="tl-insp-text" id="tl-text-${i}" rows="2" oninput="tlInspText(${i})" onblur="saveMainTextContent(${i})">${escapeHtml(text)}</textarea>
+      <div class="tl-insp-head"><span>🎛 ${escapeHtml(layerName)}</span><button type="button" class="tl-insp-more" onclick="tlInspToggleAll(${i})">⋯ ${t.tl_all_controls || 'All controls'}</button></div>
+      <textarea class="tl-insp-text" id="tl-text-${i}" rows="2" oninput="tlInspText(${i})" onblur="tlInspTextBlur(${i})">${escapeHtml(text)}</textarea>
       <div class="tl-insp-row"><label>${t.label_font ? t.label_font.replace(':', '') : 'Font'}</label>${fontSelectHTML(`tl-font-${i}`, font, `tlInspFont(${i})`)}</div>
       <div class="tl-insp-row"><label>${t.tl_colour || 'Colour'}</label>${textSwatches}</div>
       ${accentRow}
@@ -11964,15 +11987,52 @@
     }
   }
 
-  function tlInspText(i) { const el = document.getElementById(`maintext-${i}`); if (el) { el.value = document.getElementById(`tl-text-${i}`).value; onMainTextInput(i); } }
-  function tlInspFont(i) { const el = document.getElementById(`main-font-${i}`); if (el) { el.value = document.getElementById(`tl-font-${i}`).value; saveMainFont(i); } }
-  function tlInspSize(i) { const el = document.getElementById(`fontsize-${i}`); if (el) { el.value = document.getElementById(`tl-size-${i}`).value; saveMainTextMeta(i); } }
+  function tlInspText(i) {
+    const val = document.getElementById(`tl-text-${i}`)?.value ?? '';
+    if (tlSelLayer.type === 'extra') {
+      const el = document.getElementById(`et-input-${i}-${tlSelLayer.idx}`);
+      if (el) { el.value = val; try { updateExtraTextPreviewAll(i); } catch {} }
+    } else {
+      const el = document.getElementById(`maintext-${i}`); if (el) { el.value = val; onMainTextInput(i); }
+    }
+  }
+  // Persist the text on blur — main text, or the selected extra layer.
+  function tlInspTextBlur(i) {
+    if (tlSelLayer.type === 'extra') { try { saveExtraText(i); } catch {} }
+    else { try { saveMainTextContent(i); } catch {} }
+  }
+  function tlInspFont(i) {
+    const val = document.getElementById(`tl-font-${i}`)?.value;
+    if (tlSelLayer.type === 'extra') {
+      const el = document.getElementById(`et-font-${i}-${tlSelLayer.idx}`);
+      if (el) { el.value = val; saveExtraText(i); }
+    } else {
+      const el = document.getElementById(`main-font-${i}`); if (el) { el.value = val; saveMainFont(i); }
+    }
+  }
+  function tlInspSize(i) {
+    const val = document.getElementById(`tl-size-${i}`)?.value;
+    if (tlSelLayer.type === 'extra') {
+      const el = document.getElementById(`et-fontsize-${i}-${tlSelLayer.idx}`);
+      if (el) { el.value = val; saveExtraText(i); }
+    } else {
+      const el = document.getElementById(`fontsize-${i}`); if (el) { el.value = val; saveMainTextMeta(i); }
+    }
+  }
   function tlInspColor(i, c) {
     const card = document.getElementById(`card-${i}`);
-    // Write the field that's actually visible for the current style (Glow → glow-text colour, else text colour).
-    const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
-    const el = document.getElementById(`${style === 'glow' ? 'glowtextco' : 'textco'}-${i}`);
-    if (el) { el.value = c; saveMainColors(i); }
+    if (tlSelLayer.type === 'extra') {
+      const j = tlSelLayer.idx;
+      const style = (document.querySelector(`#et-stylerow-${i}-${j} .pos-btn.active`)?.dataset.style)
+        || sdSegments[i]?.extraTexts?.[j]?.textStyle || sdSegments[i]?.textStyle || 'box';
+      const el = document.getElementById(`et-${style === 'glow' ? 'glowtextco' : 'textco'}-${i}-${j}`);
+      if (el) { el.value = c; el.dataset.hasOverride = '1'; el.dataset.cleared = '0'; saveExtraText(i); }
+    } else {
+      // Write the field that's actually visible for the current style (Glow → glow-text colour, else text colour).
+      const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
+      const el = document.getElementById(`${style === 'glow' ? 'glowtextco' : 'textco'}-${i}`);
+      if (el) { el.value = c; saveMainColors(i); }
+    }
     const lc = (c || '').toLowerCase();
     document.querySelectorAll(`#card-${i} [data-crow="text"] .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
     const custom = document.querySelector(`#card-${i} [data-crow="text"] .tl-swatch-custom`);
@@ -11981,8 +12041,13 @@
   // Accent colour = the style's secondary colour (Glow → the glow/outline colour).
   function tlInspAccent(i, c) {
     const card = document.getElementById(`card-${i}`);
-    const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
-    if (style === 'glow') { const el = document.getElementById(`glowco-${i}`); if (el) { el.value = c; saveMainColors(i); } }
+    if (tlSelLayer.type === 'extra') {
+      const el = document.getElementById(`et-glowco-${i}-${tlSelLayer.idx}`);
+      if (el) { el.value = c; el.dataset.hasOverride = '1'; el.dataset.cleared = '0'; saveExtraText(i); }
+    } else {
+      const style = (card?.querySelector('.style-text-btn.active')?.dataset.style) || sdSegments[i]?.mainTextStyleOverride || sdSegments[i]?.textStyle || 'box';
+      if (style === 'glow') { const el = document.getElementById(`glowco-${i}`); if (el) { el.value = c; saveMainColors(i); } }
+    }
     const lc = (c || '').toLowerCase();
     document.querySelectorAll(`#card-${i} [data-crow="accent"] .tl-swatch:not(.tl-swatch-custom)`).forEach(s => s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
     const custom = document.querySelector(`#card-${i} [data-crow="accent"] .tl-swatch-custom`);
@@ -12005,17 +12070,17 @@
     inp.addEventListener('change', () => { apply(i, inp.value); setTimeout(() => inp.remove(), 200); });
     inp.click();
   }
-  // Return from "All controls" to the clean inspector.
+  // Return from "All controls" to the clean inspector — keep the currently-selected layer.
   function tlInspBack(i) {
     const card = document.getElementById(`card-${i}`);
     if (!card) return;
     card.classList.remove('tl-show-all');
-    tlSelLayer = { type: 'main', idx: 0 };
     try { buildTimelineInspector(card, i); } catch {}
     try { buildContentRail(card, i); } catch {}
   }
   function tlInspStyle(i, s) {
-    try { setMainTextStyle(i, s); } catch {}
+    if (tlSelLayer.type === 'extra') { try { setExtraStyle(i, tlSelLayer.idx, s); } catch {} }
+    else { try { setMainTextStyle(i, s); } catch {} }
     // Rebuild so the colour swatches re-highlight for the new style's colour field (Glow vs others).
     const card = document.getElementById(`card-${i}`);
     if (card) { try { buildTimelineInspector(card, i); } catch {} }
@@ -12024,25 +12089,40 @@
     const card = document.getElementById(`card-${i}`);
     if (!card) return;
     const showAll = card.classList.toggle('tl-show-all');
-    if (showAll) { try { tlActivateSection(card, 'main_text_label'); } catch {} }  // reveal the full main-text controls
+    if (showAll) {
+      try { tlActivateSection(card, 'main_text_label'); } catch {}  // text layers live in the main-text section
+      if (tlSelLayer.type === 'extra') {
+        const blk = card.querySelectorAll(`#extratexts-${i} .extra-text-block`)[tlSelLayer.idx];
+        setTimeout(() => { try { blk?.scrollIntoView({ block: 'nearest' }); } catch {} }, 30);
+      }
+    }
   }
   function tlInspAlign(i, a) {
-    try { setTextAlign(i, a); } catch {}
+    if (tlSelLayer.type === 'extra') { try { setExtraAlign(i, tlSelLayer.idx, a); } catch {} }
+    else { try { setTextAlign(i, a); } catch {} }
     document.querySelectorAll(`#card-${i} .tl-align`).forEach(b => b.classList.toggle('active', b.dataset.a === a));
   }
   function tlInspHPos(i, p) {
-    try { setTextHPos(i, p); } catch {}
+    if (tlSelLayer.type === 'extra') { try { setExtraHPos(i, tlSelLayer.idx, p); } catch {} }
+    else { try { setTextHPos(i, p); } catch {} }
     document.querySelectorAll(`#card-${i} .tl-hpos`).forEach(b => b.classList.toggle('active', b.dataset.p === p));
   }
   function tlInspVPos(i, p) {
-    try { setTextVPos(i, p); } catch {}
+    if (tlSelLayer.type === 'extra') { try { setExtraVPos(i, tlSelLayer.idx, p); } catch {} }
+    else { try { setTextVPos(i, p); } catch {} }
     document.querySelectorAll(`#card-${i} .tl-vpos`).forEach(b => b.classList.toggle('active', b.dataset.p === p));
   }
   function tlInspWrap(i) {
-    try { toggleTextNoWrap(i); } catch {}
-    const np = document.getElementById(`tpreview-${i}`);
-    const wrapOn = np ? (np.dataset.nowrap !== '1') : false;
-    document.querySelector(`#card-${i} .tl-wrap`)?.classList.toggle('active', wrapOn);
+    if (tlSelLayer.type === 'extra') {
+      try { toggleExtraNoWrap(i, tlSelLayer.idx); } catch {}
+      const et = (typeof getExtraTexts === 'function' ? (getExtraTexts(i)[tlSelLayer.idx] || {}) : {});
+      document.querySelector(`#card-${i} .tl-wrap`)?.classList.toggle('active', et.noWrap === false);
+    } else {
+      try { toggleTextNoWrap(i); } catch {}
+      const np = document.getElementById(`tpreview-${i}`);
+      const wrapOn = np ? (np.dataset.nowrap !== '1') : false;
+      document.querySelector(`#card-${i} .tl-wrap`)?.classList.toggle('active', wrapOn);
+    }
   }
 
   // ── Content rail (Timeline / CapCut view): the scene's layers + add-media ──
@@ -12129,7 +12209,8 @@
     tlSelLayer = { type, idx };
     const card = document.getElementById(`card-${i}`);
     if (!card) return;
-    if (type === 'main') {
+    if (type === 'main' || type === 'extra') {
+      // Text layers (main + extra) share the same clean inspector — a new text layer gets identical controls.
       card.classList.remove('tl-show-all');
       try { buildTimelineInspector(card, i); } catch {}
     } else {

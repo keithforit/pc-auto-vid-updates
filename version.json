@@ -1,7 +1,7 @@
 {
-  "version": "1.4.64",
+  "version": "1.4.65",
   "date": "2026-06-19",
-  "notes": "Kill the ~1.5s lag before the 'Get started' empty state appears. loadSegments() retries once after 1500ms when it sees no scenes — needed for post-generation reloads (Content.json is briefly empty mid-build), but pointless on a cold page load or right after a delete, where empty is authoritative. Now the startup auto-load passes retries=0 when it already knows there are no scenes, and deleteScene/clearAllScenes do the same, so the empty state shows in ~15-30ms instead of ~1535ms. Measured: 1535ms -> 16ms on load, 33ms on delete-to-empty.",
+  "notes": "New text layers now get the SAME clean inspector as the main text. In the Timeline editor, selecting the main text showed the clean CapCut inspector (font, colour, glow, size, style, align, position, wrap), but selecting an added text layer dumped you into the raw accordion instead. buildTimelineInspector is now layer-aware: selecting an extra text layer builds the identical clean inspector, wired through to that layer's fields via layer-aware tlInsp* handlers (which dispatch to the existing setExtra*/saveExtraText for extra layers, unchanged for main). 'All controls' / 'Back' keep the selected layer. Main text behaviour is unchanged.",
   "files": [
     "index.html",
     "version.json"
