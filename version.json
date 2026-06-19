@@ -1,7 +1,7 @@
 {
-  "version": "1.4.63",
+  "version": "1.4.64",
   "date": "2026-06-19",
-  "notes": "Fix stray '>' rendering under the voiceover field in the Create Scene modal. The blank-scene section had a typo'd closing tag (</div>>), so the extra '>' leaked out as visible text right below the voiceover textarea. Removed the stray character.",
+  "notes": "Kill the ~1.5s lag before the 'Get started' empty state appears. loadSegments() retries once after 1500ms when it sees no scenes — needed for post-generation reloads (Content.json is briefly empty mid-build), but pointless on a cold page load or right after a delete, where empty is authoritative. Now the startup auto-load passes retries=0 when it already knows there are no scenes, and deleteScene/clearAllScenes do the same, so the empty state shows in ~15-30ms instead of ~1535ms. Measured: 1535ms -> 16ms on load, 33ms on delete-to-empty.",
   "files": [
     "index.html",
     "version.json"

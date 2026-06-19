@@ -2689,8 +2689,12 @@
     // Initialize createDraftStarted so "New Scene" doesn't wipe existing scenes
     // Also pre-load scenes so the Scenes tab shows content immediately without a manual refresh
     fetch('/segments').then(r => r.json()).then(segs => {
-      if (Array.isArray(segs) && segs.length > 0) createDraftStarted = true;
-      loadSegments(); // always render — shows the "Get started" empty state when there are no scenes
+      const hasScenes = Array.isArray(segs) && segs.length > 0;
+      if (hasScenes) createDraftStarted = true;
+      // Cold load: this result is authoritative (no generation is in flight), so skip loadSegments'
+      // 1.5s empty-retry when there are no scenes — otherwise the "Get started" state shows after a
+      // visible ~1.5s lag. The retry still applies to post-generation reloads that call loadSegments().
+      loadSegments(hasScenes ? 1 : 0);
     }).catch(() => {});
     checkFirstRunSetup();
   });
@@ -7124,8 +7128,10 @@
     try {
       const res = await fetch('/delete-scene',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})});
       addEditorLog(res.ok ? `🗑 Scene ${i+1} deleted` : `❌ Could not delete Scene ${i+1}`);
-      // Await the reloads so consecutive deletes never overlap (each click sees fresh indices)
-      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+      // Await the reloads so consecutive deletes never overlap (each click sees fresh indices).
+      // retries=0: the post-delete state is authoritative, so skip the 1.5s empty-retry (no lag
+      // before the "Get started" state when the last scene is removed).
+      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments(0);
       if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
     } finally { _sceneMutationBusy = false; }
   }
@@ -7139,7 +7145,7 @@
     try {
       const res = await fetch('/clear-scenes',{method:'POST'});
       addEditorLog(res.ok ? '🗑 All scenes deleted' : '❌ Could not delete scenes');
-      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments(0); // empty is authoritative — no retry lag
       if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
     } finally { _sceneMutationBusy = false; }
   }
