@@ -1130,6 +1130,16 @@ app.post('/delete-scene', (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Atomically remove every scene. Used by the "Delete all" button so a bulk clear
+// is one write instead of N racey per-index deletes (which could leave stragglers).
+app.post('/clear-scenes', (req, res) => {
+    try {
+        fs.writeFileSync('./src/Content.json', JSON.stringify([], null, 2));
+        mapSceneDraftIndices(() => null); // drop every scene→draft association
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/move-scene', (req, res) => {
     try {
         const { index, direction } = req.body;

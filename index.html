@@ -995,6 +995,7 @@
           <button type="button" id="view-btn-list" onclick="setSceneViewMode('list')" data-i18n="view_list">📋 List</button>
           <button type="button" id="view-btn-timeline" onclick="setSceneViewMode('timeline')" data-i18n="view_timeline">🎞 Timeline</button>
         </span>
+        <button class="btn sm ghost" type="button" id="clear-scenes-btn" onclick="clearAllScenes()" data-i18n="delete_all_scenes" title="Delete every scene" style="display:none;color:#f87171;border-color:#7f1d1d;">🗑 Delete all</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--text-dim);white-space:nowrap;" data-i18n="thumb_size">Thumbnail size:</span>
@@ -1550,6 +1551,11 @@
       modal_caption_placeholder: 'Optional on-screen text...',
       modal_vo_placeholder: 'Text that will be spoken aloud...',
       btn_add_new_scene: '＋ Add Scene',
+      btn_create_scene: '＋ Create scene',
+      empty_title: 'Get started',
+      empty_sub: 'No scenes yet. Create your first scene to start building your video.',
+      delete_all_scenes: '🗑 Delete all',
+      confirm_clear_all_scenes: 'Delete ALL scenes? This cannot be undone.',
       // Timeline
       timeline_title: 'Timeline',
       scene_label: 'Scene',
@@ -2126,6 +2132,11 @@
       modal_caption_placeholder: 'オプションの画面テキスト...',
       modal_vo_placeholder: '読み上げられるテキスト...',
       btn_add_new_scene: '＋ シーンを追加',
+      btn_create_scene: '＋ シーンを作成',
+      empty_title: 'はじめましょう',
+      empty_sub: 'シーンがまだありません。最初のシーンを作成して動画を作り始めましょう。',
+      delete_all_scenes: '🗑 すべて削除',
+      confirm_clear_all_scenes: 'すべてのシーンを削除しますか？この操作は元に戻せません。',
       // Timeline
       timeline_title: 'タイムライン',
       scene_label: 'シーン',
@@ -2678,10 +2689,8 @@
     // Initialize createDraftStarted so "New Scene" doesn't wipe existing scenes
     // Also pre-load scenes so the Scenes tab shows content immediately without a manual refresh
     fetch('/segments').then(r => r.json()).then(segs => {
-      if (Array.isArray(segs) && segs.length > 0) {
-        createDraftStarted = true;
-        loadSegments();
-      }
+      if (Array.isArray(segs) && segs.length > 0) createDraftStarted = true;
+      loadSegments(); // always render — shows the "Get started" empty state when there are no scenes
     }).catch(() => {});
     checkFirstRunSetup();
   });
@@ -6618,7 +6627,14 @@
     row.className='add-scene-row';
     row.innerHTML=`<div class="line"></div><button onclick="openModal(${afterIndex})">＋ Add scene here</button><div class="line"></div>`;
     return row;
-  }  async function loadSegments(retries = 1) {
+  }
+  // Monotonic render token. Each loadSegments() call claims the latest slot; if a newer
+  // call starts while this one is awaiting the network, the stale call bails before it can
+  // overwrite the DOM. Without this, rapid deletes race and a stale render redraws a card
+  // that was just removed ("delete all leaves one").
+  let _loadSegmentsGen = 0;
+  async function loadSegments(retries = 1) {
+    const myGen = ++_loadSegmentsGen;
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
     stopAudioElement(currentVoicePreviewAudio);
@@ -6632,16 +6648,19 @@
       try { await ensureCurrentSettingsLoaded(true); } catch(e) { console.warn('ensureCurrentSettings failed:', e); }
       const res  = await fetch(`/segments?t=${Date.now()}`, { cache: 'no-store' });
       const segs = await res.json();
+      if (myGen !== _loadSegmentsGen) return; // a newer loadSegments() superseded this one — abandon the stale render
       if (!Array.isArray(segs) || !segs.length) {
         if (retries > 0 && res.ok) {
           setTimeout(() => loadSegments(0), 1500);
           return;
         }
         list.innerHTML='';
+        const t0 = (I18N[window._appLang||'en']||I18N.en);
         const empty = document.createElement('div');
-        empty.style.cssText = 'padding:20px 0;display:flex;flex-direction:column;align-items:center;gap:12px;';
-        empty.innerHTML = `<p style="color:#475569;margin:0">No segments found. Generate a video first.</p><button class="btn sm" onclick="openModal(-1)" data-i18n-btn="btn_add_new_scene">${(I18N[window._appLang||'en']||I18N.en).btn_add_new_scene}</button>`;
+        empty.style.cssText = 'padding:56px 0;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;';
+        empty.innerHTML = `<div style="font-size:42px;line-height:1;margin-bottom:4px">🎬</div><p style="color:var(--text-main);margin:0;font-size:19px;font-weight:700">${t0.empty_title}</p><p style="color:var(--text-muted);margin:0 0 10px;font-size:13px;max-width:320px">${t0.empty_sub}</p><button class="btn" onclick="openModal(-1)" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
         list.appendChild(empty);
+        document.getElementById('clear-scenes-btn')?.style.setProperty('display', 'none');
         sdSegments = [];
         try { renderSceneDock(); applySceneViewMode(); } catch {}
         await refreshDraftStatus();
@@ -6675,6 +6694,7 @@
       addBtn.style.cssText = 'margin-top:16px;';
       addBtn.innerHTML = `<button class="btn ghost full" onclick="openModal(-1)" data-i18n-btn="btn_add_new_scene">${(I18N[window._appLang||'en']||I18N.en).btn_add_new_scene}</button>`;
       list.appendChild(addBtn);
+      document.getElementById('clear-scenes-btn')?.style.setProperty('display', '');
       // Re-apply language translations to newly rendered scene card elements
       setAppLang(window._appLang || 'en');
       // Update global BGM button to reflect current scenes state
@@ -7094,12 +7114,34 @@
   }
 
   /* Delete */
+  // Shared in-flight latch: a scene index is only valid until the next re-render, so a second
+  // delete fired before the first finishes would carry a stale index. Drop overlapping mutations.
+  let _sceneMutationBusy = false;
   async function deleteScene(i) {
+    if (_sceneMutationBusy) return;
     if(!confirm((I18N[window._appLang||'en']||I18N.en).confirm_delete_scene(i+1))) return;
-    await fetch('/delete-scene',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})});
-    addEditorLog(`🗑 Scene ${i+1} deleted`);
-    if (document.getElementById('tab-scenes')?.classList.contains('active')) loadSegments();
-    if (document.getElementById('tab-create')?.classList.contains('active')) loadCreateScenes();
+    _sceneMutationBusy = true;
+    try {
+      const res = await fetch('/delete-scene',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})});
+      addEditorLog(res.ok ? `🗑 Scene ${i+1} deleted` : `❌ Could not delete Scene ${i+1}`);
+      // Await the reloads so consecutive deletes never overlap (each click sees fresh indices)
+      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+      if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
+    } finally { _sceneMutationBusy = false; }
+  }
+
+  // Remove every scene in one atomic server write — reliable "delete all" that can't leave stragglers.
+  async function clearAllScenes() {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    if (_sceneMutationBusy) return;
+    if(!confirm(t.confirm_clear_all_scenes)) return;
+    _sceneMutationBusy = true;
+    try {
+      const res = await fetch('/clear-scenes',{method:'POST'});
+      addEditorLog(res.ok ? '🗑 All scenes deleted' : '❌ Could not delete scenes');
+      if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+      if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
+    } finally { _sceneMutationBusy = false; }
   }
 
   async function duplicateScene(i) {
@@ -11752,7 +11794,21 @@
     document.getElementById('view-btn-list')?.classList.toggle('active', mode === 'list');
     document.getElementById('view-btn-timeline')?.classList.toggle('active', timeline);
     if (!timeline) { try { closeTimelineEditor(); } catch {} }   // leaving Timeline → restore card + dock
-    if (!sdSegments.length) return;
+    if (!sdSegments.length) {
+      // No scenes left. Discard any orphaned scene card the editor still holds, otherwise Timeline
+      // view keeps showing the last deleted scene ("leaves one").
+      try { document.querySelectorAll('#tl-ed-stage .segment-card').forEach(c => c.remove()); } catch {}
+      if (timeline) {
+        // Stay in Timeline view and show the "Get started" prompt INSIDE the editor stage — don't
+        // bounce the user out to the Scene-Editor layout just because they emptied their scenes.
+        try { openTimelineEditor(); renderTimelineEmptyState(); } catch (e) { console.warn('timeline empty state:', e); }
+      } else {
+        // Other layouts: close the editor so the #segments-list "Get started" message shows through.
+        try { closeTimelineEditor(); } catch {}
+      }
+      document.getElementById('tl-ed-clear-btn')?.style.setProperty('display', 'none');
+      return;
+    }
     if (singleScene) {
       sbSelectedIndex = Math.max(0, Math.min(sbSelectedIndex, sdSegments.length - 1));
       sbApplySelection();
@@ -11762,6 +11818,7 @@
       localStorage.setItem('sd-collapsed', '0');
       try { renderSceneDock(); } catch {}
       try { openTimelineEditor(); } catch (e) { console.warn('timeline editor:', e); }
+      document.getElementById('tl-ed-clear-btn')?.style.setProperty('display', '');
     } else {
       document.querySelectorAll('#segments-list .segment-card.sb-selected').forEach(c => sbClearCardOverrides(c));
       try { applyListTabs(); } catch {}        // compact tabbed sections per card (List view)
@@ -12219,12 +12276,31 @@
     });
   }
 
+  // "Get started" prompt shown inside the Timeline editor stage when there are no scenes, so the
+  // user stays in Timeline view instead of being dropped back to the Scene-Editor layout.
+  function renderTimelineEmptyState() {
+    const stage = document.getElementById('tl-ed-stage'); if (!stage) return;
+    stage.querySelectorAll('.segment-card').forEach(c => c.remove());   // no scene should remain
+    const t0 = (I18N[window._appLang||'en']||I18N.en);
+    let empty = document.getElementById('tl-ed-empty');
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'tl-ed-empty';
+      empty.style.cssText = 'height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;';
+      stage.appendChild(empty);
+    }
+    empty.innerHTML = `<div style="font-size:46px;line-height:1;margin-bottom:4px">🎬</div><p style="color:var(--text-main);margin:0;font-size:21px;font-weight:700">${t0.empty_title}</p><p style="color:var(--text-muted);margin:0 0 14px;font-size:14px;max-width:360px">${t0.empty_sub}</p><button class="btn" onclick="tlEditorAddScene()" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
+    const title = document.getElementById('tl-ed-title');
+    if (title) title.textContent = '';
+  }
+
   function tlEditorMount(i) {
     if (!tlEditorOpen()) return;
     const stage = document.getElementById('tl-ed-stage'); if (!stage) return;
     const card = document.getElementById('card-' + i);
     tlStageClear(card);                       // remove any stale / other cards first
     if (!card) { tlEdMounted = -1; return; }
+    document.getElementById('tl-ed-empty')?.remove();   // a real scene is mounting — drop the get-started prompt
     if (card.parentElement !== stage) tlMoveNode(card, stage);
     tlEdMounted = i;
     tlSizeEditorPreview(i);
@@ -13073,6 +13149,7 @@
     </span>
     <button class="tl-ed-btn" onclick="openTextToVideoModal()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
     <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
+    <button class="tl-ed-btn" id="tl-ed-clear-btn" onclick="clearAllScenes()" title="Delete every scene" style="color:#f87171;border-color:#7f1d1d;"><span data-i18n="delete_all_scenes">🗑 Delete all</span></button>
     <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>
   </div>
   <div class="tl-ed-stage" id="tl-ed-stage"></div>

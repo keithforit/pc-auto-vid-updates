@@ -1,9 +1,10 @@
 {
-  "version": "1.4.61",
-  "date": "2026-06-17",
-  "notes": "Renderer no longer depends on src/MusicList.json — the 'random background music' pool is now defined inline in src/Main.tsx (the 7 tracks in public/music/). One less stray file, and the render builds without it. Note: random mode now picks from all those tracks (the old list effectively only had island-by-mbb.mp3); edit defaultMusicList in Main.tsx to change the pool. Picking a specific track in the editor is unaffected.",
+  "version": "1.4.62",
+  "date": "2026-06-19",
+  "notes": "Fix 'delete all scenes leaves one' + add a proper empty state. The leftover was a UI orphan: in Timeline view the current scene's card lives in a full-screen editor overlay, and emptying the scenes never tore it down, so it kept showing the last deleted scene. Now: deleting the last scene clears that orphan; Timeline view stays put and shows a 'Get started — create your first scene' prompt INSIDE the editor stage (topbar/Exit/Generate intact); List/Scene-Editor view shows the same prompt in the panel. Also hardened deletion: loadSegments() now has a render-generation guard so a stale overlapping render can't redraw a deleted card; deleteScene awaits the reload, checks res.ok, and shares an in-flight latch so fast double-clicks can't storm stale indices. Added an atomic 'Delete all' button (scenes toolbar + Timeline editor topbar) backed by a new POST /clear-scenes endpoint that writes [] in one shot.",
   "files": [
-    "src/Main.tsx",
+    "index.html",
+    "server.js",
     "version.json"
   ]
 }
