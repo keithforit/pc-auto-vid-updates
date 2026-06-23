@@ -1,9 +1,10 @@
 {
-  "version": "1.4.68",
+  "version": "1.4.69",
   "date": "2026-06-23",
-  "notes": "Add a friendly randomised welcome toast on startup. When setup is already done, checkFirstRunSetup now shows a greeting using the name captured during first-run setup (served by /setup-status as userName) — e.g. 'Hey Keith, how are you today?'. When no name was saved it falls back to a name-less variant ('Hey, ...'). Messages are randomised from a pool of 8 per language and fully localised (EN + JA: '{name}さん、...' with no opener when anonymous). The toast is a bottom-centre pill (z-index above all chrome so it clears the Timeline editor header), auto-dismisses after 6.5s, has a manual close, and shows once per browser session (sessionStorage 'welcome-shown') so reloads don't re-nag. Entrance uses a forced reflow rather than requestAnimationFrame so it animates reliably even when rAF is throttled. Name is rendered via textContent (user input, never innerHTML).",
+  "notes": "Text to Video: warn before starting a batch when VOICEVOX is the chosen voice but isn't running, and enlarge the script box. (1) The #s1 script textarea was capped at 80px by '.modal textarea' — too small for a full script, especially multi-line Japanese; added a scoped rule taking it to 320px (still resizable). (2) startBatch() is now async and pre-flights: when currentSettings.voice === 'voicevox' and the engine isn't reachable, it shows a localised warning modal and aborts unless the user picks 'Start anyway' — so no more silent audio failures from forgetting to open VOICEVOX. New GET /voicevox-status endpoint pings http://localhost:50021/version (2.5s timeout) and returns {running}. The check is skipped for non-VOICEVOX voices and never blocks if the pre-check itself errors. Fully localised (EN + JA): vv_warn_title / vv_warn_body / vv_warn_cancel / vv_warn_proceed. Verified EN+JA modals, Cancel aborts (no start-batch emitted), Start anyway proceeds, and the happy path (VOICEVOX up) skips the warning.",
   "files": [
     "index.html",
+    "server.js",
     "version.json"
   ]
 }

@@ -967,6 +967,17 @@ app.get('/voicevox-speakers', async (req, res) => {
     }
 });
 
+// Fast health check the UI uses to warn before a batch when VOICEVOX is the chosen voice but not up.
+app.get('/voicevox-status', async (req, res) => {
+    try {
+        const axios = require('axios');
+        await axios.get('http://localhost:50021/version', { timeout: 2500 });
+        res.json({ running: true });
+    } catch {
+        res.json({ running: false });
+    }
+});
+
 function normalizePreviewText(text = '') {
     return String(text).replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }

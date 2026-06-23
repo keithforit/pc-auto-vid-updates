@@ -412,6 +412,8 @@
     .modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
     .modal input, .modal textarea { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: sans-serif; }
     .modal textarea { height: 80px; resize: vertical; }
+    /* Text-to-Video script box: room for a full multi-line script (esp. Japanese) */
+    .ttv-modal textarea#s1 { min-height: 280px; height: 320px; }
     .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
     .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
     .editor-actions { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -1731,6 +1733,10 @@
       no_mp3: "No uploaded MP3. This scene will use generated voice.",
       character: "Character",
       voicevox_hint: "For Japanese VOICEVOX scenes, type a character name to switch voices.",
+      vv_warn_title: "⚠️ VOICEVOX isn't running",
+      vv_warn_body: "This project's voice is set to VOICEVOX, but it doesn't look like it's running at localhost:50021. Open the VOICEVOX app first — without it, the voiceovers can't be generated.",
+      vv_warn_cancel: "Cancel",
+      vv_warn_proceed: "Start anyway",
       speed: "Speed",
       pitch: "Pitch",
       volume: "Volume",
@@ -2326,6 +2332,10 @@
       no_mp3: "アップロードされたMP3はありません。このシーンでは生成音声を使用します。",
       character: "キャラクター",
       voicevox_hint: "日本語のVOICEVOXシーンでは、キャラクター名を入力して声を切り替えます。",
+      vv_warn_title: "⚠️ VOICEVOXが起動していません",
+      vv_warn_body: "このプロジェクトの音声はVOICEVOXに設定されていますが、localhost:50021で起動していないようです。先にVOICEVOXアプリを起動してください。起動していないと音声を生成できません。",
+      vv_warn_cancel: "キャンセル",
+      vv_warn_proceed: "このまま開始",
       speed: "速度",
       pitch: "ピッチ",
       volume: "音量",
@@ -3488,11 +3498,19 @@
     }
   }
 
-  function startBatch() {
+  async function startBatch() {
     if (_batchRunning) {
       socket.emit('cancel-batch');
       return;
     }
+    // VOICEVOX is a separate local app. If this project's voice is set to VOICEVOX but it isn't
+    // running, every scene's audio fails — so warn (and let the user bail) before the batch starts.
+    try {
+      await ensureCurrentSettingsLoaded();
+      if (currentSettings && currentSettings.voice === 'voicevox' && !(await isVoicevoxRunning())) {
+        if (!(await confirmVoicevoxWarning())) return;
+      }
+    } catch (e) { console.warn('VOICEVOX pre-check skipped:', e); }
     const logWindow = document.getElementById('log-window');
     const scripts = [document.getElementById('s1').value];
     const contentType = document.querySelector('input[name="content-type"]:checked')?.value || 'stock';
@@ -3502,6 +3520,39 @@
     document.getElementById('status-text').textContent = _lt.log_running;
     document.getElementById('progress-bar').style.width = '0%';
     socket.emit('start-batch', { scripts, contentType, lang: window._appLang||'en', providerOrder: window._stockProviderOrder || ['pexels','pixabay'] });
+  }
+
+  // Is the local VOICEVOX engine reachable? Used to warn before a batch that needs it.
+  async function isVoicevoxRunning() {
+    try {
+      const r = await fetch('/voicevox-status', { cache: 'no-store' });
+      const d = await r.json();
+      return !!d.running;
+    } catch { return false; }   // can't even reach the check → treat as down (safer to warn)
+  }
+
+  // Localised "VOICEVOX isn't running" warning. Resolves true to proceed anyway, false to cancel.
+  function confirmVoicevoxWarning() {
+    return new Promise(resolve => {
+      const t = (I18N[window._appLang||'en']||I18N.en);
+      const ov = document.createElement('div');
+      ov.className = 'modal-overlay open';
+      ov.style.zIndex = '10050';
+      ov.innerHTML = `
+        <div class="modal" style="max-width:440px;text-align:left">
+          <h3 style="margin:0 0 10px">${t.vv_warn_title}</h3>
+          <p style="margin:0 0 18px;font-size:13px;color:var(--text-muted);line-height:1.6">${t.vv_warn_body}</p>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn ghost" id="vv-warn-proceed" type="button">${t.vv_warn_proceed}</button>
+            <button class="btn" id="vv-warn-cancel" type="button">${t.vv_warn_cancel}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+      const done = v => { ov.remove(); resolve(v); };
+      ov.querySelector('#vv-warn-cancel').onclick = () => done(false);
+      ov.querySelector('#vv-warn-proceed').onclick = () => done(true);
+      ov.addEventListener('click', e => { if (e.target === ov) done(false); });
+    });
   }
 
   socket.on('batch-cancelled', () => {
