@@ -959,23 +959,23 @@
     <div class="settings-section" style="margin-bottom:18px;padding:16px 18px">
       <div class="field-label" style="font-size:13px;font-weight:700;margin-bottom:10px" data-i18n="ct_title">🎬 Type of Content</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <label id="ct-label-stock" style="flex:1;min-width:180px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+        <label id="ct-label-stock" style="flex:1;min-width:180px;display:block;cursor:pointer;
           background:rgba(16,185,129,0.08);border:2px solid #10b981;border-radius:10px;padding:12px 14px;transition:border-color 0.15s">
-          <input type="radio" name="content-type" id="ct-stock" value="stock" checked
-                 onchange="onContentTypeChange()" style="margin-top:3px;accent-color:#10b981" />
-          <div>
-            <div style="font-weight:700;font-size:13px;color:var(--text-main)" data-i18n="ct_stock_title">🎬 Stock Backgrounds</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px" data-i18n="ct_stock_desc">Automatically fetches relevant stock videos for each scene — from Pexels, falling back to Pixabay if it's unavailable.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="radio" name="content-type" id="ct-stock" value="stock" checked
+                   onchange="onContentTypeChange()" style="margin:0;width:auto;flex:none;accent-color:#10b981" />
+            <span style="font-weight:700;font-size:13px;color:var(--text-main)" data-i18n="ct_stock_title">🎬 Stock Backgrounds</span>
           </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding-left:23px" data-i18n="ct_stock_desc">Automatically fetches relevant stock videos for each scene — from Pexels, falling back to Pixabay if it's unavailable.</div>
         </label>
-        <label id="ct-label-captions" style="flex:1;min-width:180px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+        <label id="ct-label-captions" style="flex:1;min-width:180px;display:block;cursor:pointer;
           background:var(--bg-input);border:2px solid var(--border);border-radius:10px;padding:12px 14px;transition:border-color 0.15s">
-          <input type="radio" name="content-type" id="ct-captions" value="captions"
-                 onchange="onContentTypeChange()" style="margin-top:3px;accent-color:#10b981" />
-          <div>
-            <div style="font-weight:700;font-size:13px;color:var(--text-main)" data-i18n="ct_captions_title">🎨 Captions Only</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px" data-i18n="ct_captions_desc">No stock video. Each scene gets a solid colour background — from your brand colours if saved, otherwise random.</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="radio" name="content-type" id="ct-captions" value="captions"
+                   onchange="onContentTypeChange()" style="margin:0;width:auto;flex:none;accent-color:#10b981" />
+            <span style="font-weight:700;font-size:13px;color:var(--text-main)" data-i18n="ct_captions_title">🎨 Captions Only</span>
           </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding-left:23px" data-i18n="ct_captions_desc">No stock video. Each scene gets a solid colour background — from your brand colours if saved, otherwise random.</div>
         </label>
       </div>
     </div>

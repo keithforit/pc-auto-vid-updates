@@ -1,7 +1,7 @@
 {
-  "version": "1.4.73",
+  "version": "1.4.74",
   "date": "2026-06-23",
-  "notes": "Text to Video: land on the new scenes when a batch finishes. On completion the status handler reloads scenes with loadSegments(0) (authoritative, no empty-retry); if it produced scenes it now closes the Text-to-Video panel (modal or standalone screen) and drops the user straight onto the freshly-generated scenes, plus a brief localised success toast ('N scenes ready' / 'N個のシーンができました', EN+JA). If the batch produced zero scenes (parse/render failure) the panel is left open so its error log stays visible — no silent close, no misleading toast. Builds on v1.4.71's auto-refresh. Verified: success path closes + toasts with the right count, failure path keeps the panel open with no toast, no console errors.",
+  "notes": "Fix the Content Type card alignment in Text to Video. The radio + title used align-items:flex-start with a hand-tuned margin-top:3px on the radio to fake vertical centring — fragile across fonts/widths, and when the two descriptions wrapped to different line counts the cards looked unbalanced. Restructured each card to display:block with the radio and title on one flex row (align-items:center, so the radio is always vertically centred on the title), and the description flowing beneath, indented to sit under the title. Also pinned the radio to its native size with width:auto — the global '.modal input { width:100% }' rule was stretching it once it sat in a flex row with flex:none. Verified at 820px and 1200px: both radios share the same top, each is centred on its title, titles aligned, equal card heights.",
   "files": [
     "index.html",
     "version.json"
