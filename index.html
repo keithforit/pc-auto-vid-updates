@@ -242,8 +242,8 @@
       gap: 10px; font-size: 12px; font-weight: 700; color: var(--text-main); user-select: none;
     }
     .scene-accordion summary::-webkit-details-marker { display: none; }
-    .scene-accordion summary::after { content: '▾'; font-size: 12px; color: var(--text-muted); transition: transform 0.16s ease; }
-    .scene-accordion[open] summary::after { transform: rotate(180deg); }
+    .scene-accordion > summary::after { content: '▾'; font-size: 12px; color: var(--text-muted); transition: transform 0.16s ease; }
+    .scene-accordion[open] > summary::after { transform: rotate(180deg); }
     .scene-accordion-body { padding: 0 14px 14px; }
     .voice-panel { margin-bottom: 0; }
     .mini-timeline { margin: 10px 0 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
@@ -797,7 +797,7 @@
     .scene-tab:hover { color: var(--text-soft); border-color: var(--border-mid); }
     .scene-tab.active { background: var(--accent); border-color: var(--accent); color: #04253b; }
     .timeline-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
-    .timeline-mode .scene-accordion summary { display: none; }
+    .timeline-mode .scene-accordion > summary { display: none; }   /* hide only the section header, not nested per-layer (image/shape) controls */
     .timeline-mode .scene-accordion-body { padding: 0; }
     /* Clean CapCut-style inspector — the default left panel in timeline mode */
     .tl-inspector { display: none; }
@@ -910,7 +910,7 @@
     /* ── List view: compact tabbed sections per card (the options the timeline had) ── */
     .list-mode .scene-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 12px; }
     .list-mode .scene-accordion { border: none; background: transparent; margin-bottom: 0; overflow: visible; }
-    .list-mode .scene-accordion summary { display: none; }
+    .list-mode .scene-accordion > summary { display: none; }   /* hide only the section header, not nested per-layer (image/shape) controls */
     .list-mode .scene-accordion-body { padding: 0; }
   </style>
 </head>
