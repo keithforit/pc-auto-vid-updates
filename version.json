@@ -1,7 +1,7 @@
 {
-  "version": "1.4.66",
-  "date": "2026-06-19",
-  "notes": "Fix incomplete Japanese localization when switching language. Many scene-card labels (Align H/V, Text align, Text style, Show at/Hide at, Font, Glow, Stroke, Block BG, Exact volume, Blur, etc.) are built with bare ${t.xxx} and no data-i18n attribute, so setAppLang never re-translated them — they stayed frozen at their build-time (English) language. Added switchLang(): the language toggles (main switcher + Timeline editor) now re-translate the static chrome AND rebuild the loaded scene cards via loadSegments, so every dynamic label re-resolves in the new language (editor stays on the selected scene/layer). Also gave the hardcoded 'Box r:' / 'Block r:' radius labels real i18n keys (label_box_r / label_block_r). Verified EN→JA→EN round-trip leaves zero untranslated labels across all card sections.",
+  "version": "1.4.67",
+  "date": "2026-06-23",
+  "notes": "Fix empty-state message staying frozen in the wrong language after a language switch. The 'Get started' heading and subtitle (both the #segments-list and the Timeline-editor stage) were rendered as bare ${t0.empty_title}/${t0.empty_sub} interpolations with no data-i18n attribute, so setAppLang could never re-translate them — only the Create-Scene button (data-i18n-btn) updated. Because the empty state paints ~1.5s after load (loadSegments retry delay), after the deferred auto-detect setAppLang fires, you could end up with the EN toggle active but a Japanese heading (or vice-versa). Added data-i18n=\"empty_title\" / data-i18n=\"empty_sub\" to both <p> tags so every language switch fully repaints the empty state regardless of when it was first drawn. Same data-i18n gap class as the v1.4.66 scene-card fix.",
   "files": [
     "index.html",
     "version.json"

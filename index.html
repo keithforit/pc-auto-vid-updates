@@ -6679,7 +6679,7 @@
         const t0 = (I18N[window._appLang||'en']||I18N.en);
         const empty = document.createElement('div');
         empty.style.cssText = 'padding:56px 0;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;';
-        empty.innerHTML = `<div style="font-size:42px;line-height:1;margin-bottom:4px">🎬</div><p style="color:var(--text-main);margin:0;font-size:19px;font-weight:700">${t0.empty_title}</p><p style="color:var(--text-muted);margin:0 0 10px;font-size:13px;max-width:320px">${t0.empty_sub}</p><button class="btn" onclick="openModal(-1)" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
+        empty.innerHTML = `<div style="font-size:42px;line-height:1;margin-bottom:4px">🎬</div><p data-i18n="empty_title" style="color:var(--text-main);margin:0;font-size:19px;font-weight:700">${t0.empty_title}</p><p data-i18n="empty_sub" style="color:var(--text-muted);margin:0 0 10px;font-size:13px;max-width:320px">${t0.empty_sub}</p><button class="btn" onclick="openModal(-1)" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
         list.appendChild(empty);
         document.getElementById('clear-scenes-btn')?.style.setProperty('display', 'none');
         sdSegments = [];
@@ -12393,7 +12393,7 @@
       empty.style.cssText = 'height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;';
       stage.appendChild(empty);
     }
-    empty.innerHTML = `<div style="font-size:46px;line-height:1;margin-bottom:4px">🎬</div><p style="color:var(--text-main);margin:0;font-size:21px;font-weight:700">${t0.empty_title}</p><p style="color:var(--text-muted);margin:0 0 14px;font-size:14px;max-width:360px">${t0.empty_sub}</p><button class="btn" onclick="tlEditorAddScene()" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
+    empty.innerHTML = `<div style="font-size:46px;line-height:1;margin-bottom:4px">🎬</div><p data-i18n="empty_title" style="color:var(--text-main);margin:0;font-size:21px;font-weight:700">${t0.empty_title}</p><p data-i18n="empty_sub" style="color:var(--text-muted);margin:0 0 14px;font-size:14px;max-width:360px">${t0.empty_sub}</p><button class="btn" onclick="tlEditorAddScene()" data-i18n-btn="btn_create_scene">${t0.btn_create_scene}</button>`;
     const title = document.getElementById('tl-ed-title');
     if (title) title.textContent = '';
   }
