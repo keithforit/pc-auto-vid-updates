@@ -402,10 +402,15 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
-    .ttv-modal { width: 760px; max-height: 86vh; overflow-y: auto; text-align: left; }
+    .ttv-modal { position: relative; width: 760px; max-height: 86vh; overflow-y: auto; text-align: left; }
+    .ttv-modal .ttv-close { position: absolute; top: 12px; right: 12px; border: none; background: transparent; color: var(--text-muted); font-size: 17px; line-height: 1; cursor: pointer; padding: 5px 8px; border-radius: 8px; }
+    .ttv-modal .ttv-close:hover { background: var(--bg-input); color: var(--text-main); }
     /* Scene/list view shows Text to Video inline in the page instead of as a modal overlay */
     #textToVideoModal.ttv-inline { display: block; position: static; inset: auto; background: transparent; padding: 0; z-index: auto; }
     #textToVideoModal.ttv-inline .ttv-modal { width: 100%; max-width: 980px; max-height: none; overflow: visible; margin: 0 auto 24px; box-shadow: none; }
+    /* ...and it takes over the content area as its own screen: hide the scene list + bottom timeline */
+    body.ttv-screen .panel { display: none !important; }
+    body.ttv-screen #scene-dock { display: none !important; }
     .rdm-modal { width: 560px; text-align: center; }
     #rdm-video { width: 100%; max-height: 56vh; border-radius: 12px; background: #000; margin: 8px 0; display: block; }
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; }
@@ -946,6 +951,7 @@
   <!-- TEXT TO VIDEO — opened as a modal from the "✨ Text to Video" button (tab bar + editor top bar) -->
   <div class="modal-overlay" id="textToVideoModal" onclick="if(event.target===this)closeTextToVideoModal()">
    <div class="modal ttv-modal">
+    <button type="button" class="ttv-close" onclick="closeTextToVideoModal()" aria-label="Close" title="Close">✕</button>
     <h3 style="margin:0 0 4px">🎞 <span data-i18n="ttv_title">Text to Video</span></h3>
     <p style="margin:0 0 16px;font-size:12px;color:var(--text-dim)" data-i18n="ttv_desc">Paste a script and auto-generate all the scenes.</p>
 
@@ -1740,6 +1746,10 @@
       vv_warn_body: "This project's voice is set to VOICEVOX, but it doesn't look like it's running at localhost:50021. Open the VOICEVOX app first — without it, the voiceovers can't be generated.",
       vv_warn_cancel: "Cancel",
       vv_warn_proceed: "Start anyway",
+      ttv_replace_title: "⚠️ Replace your current scenes?",
+      ttv_replace_body: "Text to Video replaces all of your current scenes with new ones generated from your script. Your existing scenes will be gone — this can't be undone.",
+      ttv_replace_cancel: "Cancel",
+      ttv_replace_proceed: "Replace scenes",
       speed: "Speed",
       pitch: "Pitch",
       volume: "Volume",
@@ -2339,6 +2349,10 @@
       vv_warn_body: "このプロジェクトの音声はVOICEVOXに設定されていますが、localhost:50021で起動していないようです。先にVOICEVOXアプリを起動してください。起動していないと音声を生成できません。",
       vv_warn_cancel: "キャンセル",
       vv_warn_proceed: "このまま開始",
+      ttv_replace_title: "⚠️ 現在のシーンを置き換えますか？",
+      ttv_replace_body: "テキストから動画は、現在のすべてのシーンをスクリプトから生成した新しいシーンに置き換えます。既存のシーンは失われ、元に戻せません。",
+      ttv_replace_cancel: "キャンセル",
+      ttv_replace_proceed: "シーンを置き換える",
       speed: "速度",
       pitch: "ピッチ",
       volume: "音量",
@@ -3200,18 +3214,23 @@
     const modal = document.getElementById('textToVideoModal');
     if (!modal) return;
     if (getSceneViewMode() === 'timeline') {
+      document.body.classList.remove('ttv-screen');
       modal.classList.remove('ttv-inline');
       modal.classList.add('open');
     } else {
+      // Scene view: take over the content area as its own screen (scene list + bottom timeline hidden)
+      // so it reads as a distinct step, not a panel sitting on top of the scenes.
       modal.classList.remove('open');
       modal.classList.add('ttv-inline');
-      modal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.body.classList.add('ttv-screen');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => document.getElementById('s1')?.focus(), 120);
     }
   }
   function openTextToVideoModal() { openTextToVideo(); }   // back-compat alias
   function closeTextToVideoModal() {
     document.getElementById('textToVideoModal')?.classList.remove('open', 'ttv-inline');
+    document.body.classList.remove('ttv-screen');
   }
   function switchTab(name) {
     stopThumbnailAudioPreview();
@@ -3219,6 +3238,7 @@
     stopAudioElement(currentVoicePreviewAudio);
     currentVoicePreviewAudio = null;
     _restoreVoicePreviewButton();
+    closeTextToVideoModal();   // switching tabs leaves the Text-to-Video screen
     document.querySelectorAll('.tab').forEach((t,i)   => t.classList.toggle('active', TAB_NAMES[i] === name));
     document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', TAB_NAMES[i] === name));
     if (name === 'scenes')   { loadSegments(); }
@@ -3524,6 +3544,10 @@
       socket.emit('cancel-batch');
       return;
     }
+    // Text to Video regenerates the whole project from the script — confirm before wiping existing scenes.
+    if (Array.isArray(sdSegments) && sdSegments.length > 0) {
+      if (!(await confirmReplaceScenes())) return;
+    }
     // VOICEVOX is a separate local app. If this project's voice is set to VOICEVOX but it isn't
     // running, every scene's audio fails — so warn (and let the user bail) before the batch starts.
     try {
@@ -3573,6 +3597,30 @@
       const done = v => { ov.remove(); resolve(v); };
       ov.querySelector('#vv-warn-cancel').onclick = () => done(false);
       ov.querySelector('#vv-warn-proceed').onclick = () => done(true);
+      ov.addEventListener('click', e => { if (e.target === ov) done(false); });
+    });
+  }
+
+  // Localised "this will replace your scenes" confirm shown before a batch when scenes already exist.
+  function confirmReplaceScenes() {
+    return new Promise(resolve => {
+      const t = (I18N[window._appLang||'en']||I18N.en);
+      const ov = document.createElement('div');
+      ov.className = 'modal-overlay open';
+      ov.style.zIndex = '10050';
+      ov.innerHTML = `
+        <div class="modal" style="max-width:440px;text-align:left">
+          <h3 style="margin:0 0 10px">${t.ttv_replace_title}</h3>
+          <p style="margin:0 0 18px;font-size:13px;color:var(--text-muted);line-height:1.6">${t.ttv_replace_body}</p>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn ghost" id="ttv-replace-cancel" type="button">${t.ttv_replace_cancel}</button>
+            <button class="btn" id="ttv-replace-proceed" type="button" style="background:#dc2626">${t.ttv_replace_proceed}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+      const done = v => { ov.remove(); resolve(v); };
+      ov.querySelector('#ttv-replace-cancel').onclick = () => done(false);
+      ov.querySelector('#ttv-replace-proceed').onclick = () => done(true);
       ov.addEventListener('click', e => { if (e.target === ov) done(false); });
     });
   }
