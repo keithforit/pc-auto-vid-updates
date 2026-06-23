@@ -7454,10 +7454,9 @@
   }
 
   function backgroundTransformStyle(scale, x, y) {
-    const objX = 50 + x / 2;
-    const objY = 50 + y / 2;
-    const expand = (scale - 1) / 2;
-    return `position:absolute;width:${scale*100}%;height:${scale*100}%;left:-${expand*100}%;top:-${expand*100}%;object-fit:cover;object-position:${objX}% ${objY}%;`;
+    // Mirror the render (src/Background.tsx): an oversized 114% element panned with translate, so X/Y
+    // works even when the video AR matches the frame AR (object-position can't pan an exact-fit cover).
+    return `position:absolute;width:114%;height:114%;left:-7%;top:-7%;object-fit:cover;object-position:center center;transform:translate(${x}%, ${y}%) scale(${scale});transform-origin:center center;`;
   }
 
   function updateBackgroundTransformPreview(i) {
@@ -7470,19 +7469,18 @@
     if (xValue) xValue.textContent = `${Math.round(x)}%`;
     if (yValue) yValue.textContent = `${Math.round(y)}%`;
     if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
-      const objX = 50 + x / 2;
-      const objY = 50 + y / 2;
-      const expand = (scale - 1) / 2;
+      // Mirror the render (src/Background.tsx): oversized element + translate, so X/Y pans even when the
+      // video AR matches the frame AR (object-position can't pan a cover that already fills exactly).
       const blur = el.style.filter;
       el.style.position = 'absolute';
-      el.style.width = `${scale * 100}%`;
-      el.style.height = `${scale * 100}%`;
-      el.style.left = `-${expand * 100}%`;
-      el.style.top = `-${expand * 100}%`;
+      el.style.width = '114%';
+      el.style.height = '114%';
+      el.style.left = '-7%';
+      el.style.top = '-7%';
       el.style.objectFit = 'cover';
-      el.style.objectPosition = `${objX}% ${objY}%`;
-      el.style.transform = '';
-      el.style.transformOrigin = '';
+      el.style.objectPosition = 'center center';
+      el.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
+      el.style.transformOrigin = 'center center';
       if (blur) el.style.filter = blur;
     }
   }
@@ -7860,7 +7858,7 @@
     if(!el)return;
     const { scale, x, y } = getBackgroundTransformValues(i);
     const style = backgroundTransformStyle(scale, x, y);
-    if(el.tagName==='VIDEO'){el.src=src;const _exp=(scale-1)/2;el.style.position='absolute';el.style.width=`${scale*100}%`;el.style.height=`${scale*100}%`;el.style.left=`-${_exp*100}%`;el.style.top=`-${_exp*100}%`;el.style.objectFit='cover';el.style.objectPosition=`${50+x/2}% ${50+y/2}%`;el.style.transform='';}
+    if(el.tagName==='VIDEO'){el.src=src;el.style.position='absolute';el.style.width='114%';el.style.height='114%';el.style.left='-7%';el.style.top='-7%';el.style.objectFit='cover';el.style.objectPosition='center center';el.style.transform=`translate(${x}%, ${y}%) scale(${scale})`;el.style.transformOrigin='center center';}
     else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
     const vid = document.getElementById(`thumb-${i}`);
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
