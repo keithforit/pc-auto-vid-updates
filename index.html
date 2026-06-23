@@ -1554,6 +1554,17 @@
       btn_create_scene: '＋ Create scene',
       empty_title: 'Get started',
       empty_sub: 'No scenes yet. Create your first scene to start building your video.',
+      welcome_opener: (name) => name ? `Hey ${name}, ` : 'Hey, ',
+      welcome_bodies: [
+        'how are you today?',
+        'ready to make something great?',
+        'what are we creating today?',
+        "let's make a video worth watching.",
+        'good to see you back.',
+        'what story are we telling today?',
+        "let's turn an idea into a video.",
+        'ready when you are.',
+      ],
       delete_all_scenes: '🗑 Delete all',
       confirm_clear_all_scenes: 'Delete ALL scenes? This cannot be undone.',
       // Timeline
@@ -2137,6 +2148,17 @@
       btn_create_scene: '＋ シーンを作成',
       empty_title: 'はじめましょう',
       empty_sub: 'シーンがまだありません。最初のシーンを作成して動画を作り始めましょう。',
+      welcome_opener: (name) => name ? `${name}さん、` : '',
+      welcome_bodies: [
+        '今日の調子はどうですか？',
+        '今日は何を作りましょうか？',
+        'おかえりなさい。動画を作りましょう。',
+        'どんな動画にしましょうか？',
+        '今日もいい動画を作りましょう。',
+        'アイデアを動画にしてみましょう。',
+        '準備ができたら始めましょう。',
+        'また会えてうれしいです。',
+      ],
       delete_all_scenes: '🗑 すべて削除',
       confirm_clear_all_scenes: 'すべてのシーンを削除しますか？この操作は元に戻せません。',
       // Timeline
@@ -2727,9 +2749,56 @@
     try {
       const st = await fetch('/setup-status').then(r => r.json());
       if (st.needsSetup) { showSetupWizard(); return; }
+      showWelcomeToast(st.userName || '');   // greet returning users (name optional)
     } catch { return; }
     // Setup already done — verify the saved keys / providers are actually working
     checkProviderHealth();
+  }
+
+  // A friendly, randomised greeting shown once per browser session on startup. Uses the name the
+  // user entered during first-run setup; falls back to a name-less variant when none was saved.
+  function buildWelcomeMessage(name) {
+    const t = (I18N[window._appLang || 'en'] || I18N.en);
+    const bodies = t.welcome_bodies || I18N.en.welcome_bodies;
+    const opener = (t.welcome_opener || I18N.en.welcome_opener)((name || '').trim());
+    return opener + bodies[Math.floor(Math.random() * bodies.length)];
+  }
+
+  function showWelcomeToast(name) {
+    if (sessionStorage.getItem('welcome-shown')) return;   // once per session, not on every reload
+    if (document.getElementById('setup-overlay')) return;  // never greet over the first-run wizard
+    sessionStorage.setItem('welcome-shown', '1');
+    const emoji = ['👋', '🎬', '✨', '🎥'][Math.floor(Math.random() * 4)];
+    const toast = document.createElement('div');
+    toast.id = 'welcome-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(14px);opacity:0;'
+      + 'z-index:10001;display:flex;align-items:center;gap:10px;max-width:90vw;'
+      + 'background:var(--bg-card);border:1px solid var(--border);color:var(--text-main);'
+      + 'padding:11px 14px 11px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.28);'
+      + 'font-size:14px;font-weight:600;transition:opacity .35s ease,transform .35s ease;';
+    toast.innerHTML = `<span style="font-size:18px">${emoji}</span>`;   // emoji is from a fixed set — safe
+    const msg = document.createElement('span');
+    msg.textContent = buildWelcomeMessage(name);   // textContent: the name is user-supplied input
+    toast.appendChild(msg);
+    const close = document.createElement('button');
+    close.textContent = '×';
+    close.setAttribute('aria-label', 'Dismiss');
+    close.style.cssText = 'border:none;background:transparent;color:var(--text-muted);font-size:18px;'
+      + 'line-height:1;cursor:pointer;padding:0 2px;';
+    toast.appendChild(close);
+    document.body.appendChild(toast);
+    void toast.offsetWidth;   // commit the initial state so the change below animates (rAF can be throttled)
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return; dismissed = true;
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(14px)';
+      setTimeout(() => toast.remove(), 400);
+    };
+    close.onclick = dismiss;
+    setTimeout(dismiss, 6500);
   }
 
   function showSetupWizard() {

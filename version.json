@@ -1,7 +1,7 @@
 {
-  "version": "1.4.67",
+  "version": "1.4.68",
   "date": "2026-06-23",
-  "notes": "Fix empty-state message staying frozen in the wrong language after a language switch. The 'Get started' heading and subtitle (both the #segments-list and the Timeline-editor stage) were rendered as bare ${t0.empty_title}/${t0.empty_sub} interpolations with no data-i18n attribute, so setAppLang could never re-translate them — only the Create-Scene button (data-i18n-btn) updated. Because the empty state paints ~1.5s after load (loadSegments retry delay), after the deferred auto-detect setAppLang fires, you could end up with the EN toggle active but a Japanese heading (or vice-versa). Added data-i18n=\"empty_title\" / data-i18n=\"empty_sub\" to both <p> tags so every language switch fully repaints the empty state regardless of when it was first drawn. Same data-i18n gap class as the v1.4.66 scene-card fix.",
+  "notes": "Add a friendly randomised welcome toast on startup. When setup is already done, checkFirstRunSetup now shows a greeting using the name captured during first-run setup (served by /setup-status as userName) — e.g. 'Hey Keith, how are you today?'. When no name was saved it falls back to a name-less variant ('Hey, ...'). Messages are randomised from a pool of 8 per language and fully localised (EN + JA: '{name}さん、...' with no opener when anonymous). The toast is a bottom-centre pill (z-index above all chrome so it clears the Timeline editor header), auto-dismisses after 6.5s, has a manual close, and shows once per browser session (sessionStorage 'welcome-shown') so reloads don't re-nag. Entrance uses a forced reflow rather than requestAnimationFrame so it animates reliably even when rAF is throttled. Name is rendered via textContent (user input, never innerHTML).",
   "files": [
     "index.html",
     "version.json"
