@@ -402,7 +402,10 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
-    .ttv-modal { width: 620px; max-height: 86vh; overflow-y: auto; text-align: left; }
+    .ttv-modal { width: 760px; max-height: 86vh; overflow-y: auto; text-align: left; }
+    /* Scene/list view shows Text to Video inline in the page instead of as a modal overlay */
+    #textToVideoModal.ttv-inline { display: block; position: static; inset: auto; background: transparent; padding: 0; z-index: auto; }
+    #textToVideoModal.ttv-inline .ttv-modal { width: 100%; max-width: 980px; max-height: none; overflow: visible; margin: 0 auto 24px; box-shadow: none; }
     .rdm-modal { width: 560px; text-align: center; }
     #rdm-video { width: 100%; max-height: 56vh; border-radius: 12px; background: #000; margin: 8px 0; display: block; }
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; }
@@ -937,7 +940,7 @@
     <div class="tab active" onclick="switchTab('scenes')">🗂 Scenes</div>
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
-    <button class="tab-cta" type="button" onclick="openTextToVideoModal()" title="Paste a script → auto-generate scenes">✨ <span data-i18n="ttv_open">Text to Video</span></button>
+    <button class="tab-cta" type="button" onclick="openTextToVideo()" title="Paste a script → auto-generate scenes">✨ <span data-i18n="ttv_open">Text to Video</span></button>
   </div>
 
   <!-- TEXT TO VIDEO — opened as a modal from the "✨ Text to Video" button (tab bar + editor top bar) -->
@@ -3191,8 +3194,25 @@
 
   /* ── Tabs ── */
   const TAB_NAMES = ['scenes','media','settings'];
-  function openTextToVideoModal() { document.getElementById('textToVideoModal')?.classList.add('open'); }
-  function closeTextToVideoModal() { document.getElementById('textToVideoModal')?.classList.remove('open'); }
+  // Text to Video presentation is view-dependent: a modal over the full-screen Timeline editor,
+  // or an inline in-page panel in Scene (list) view — matching how it looked before it became a modal.
+  function openTextToVideo() {
+    const modal = document.getElementById('textToVideoModal');
+    if (!modal) return;
+    if (getSceneViewMode() === 'timeline') {
+      modal.classList.remove('ttv-inline');
+      modal.classList.add('open');
+    } else {
+      modal.classList.remove('open');
+      modal.classList.add('ttv-inline');
+      modal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => document.getElementById('s1')?.focus(), 120);
+    }
+  }
+  function openTextToVideoModal() { openTextToVideo(); }   // back-compat alias
+  function closeTextToVideoModal() {
+    document.getElementById('textToVideoModal')?.classList.remove('open', 'ttv-inline');
+  }
   function switchTab(name) {
     stopThumbnailAudioPreview();
     stopSceneSfxPreview();
@@ -11923,6 +11943,9 @@
   function setSceneViewMode(mode) {
     localStorage.setItem('scene-view-mode', mode);
     applySceneViewMode();
+    // Keep an open Text-to-Video panel in the right presentation (modal vs inline) for the new view.
+    const ttv = document.getElementById('textToVideoModal');
+    if (ttv && (ttv.classList.contains('open') || ttv.classList.contains('ttv-inline'))) openTextToVideo();
   }
 
   function applySceneViewMode() {
@@ -13371,7 +13394,7 @@
         <button type="button" class="tl-ed-lbtn" id="tl-ed-lang-ja" onclick="switchLang('ja')">日本語</button>
       </span>
     </span>
-    <button class="tl-ed-btn" onclick="openTextToVideoModal()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
+    <button class="tl-ed-btn" onclick="openTextToVideo()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
     <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
     <button class="tl-ed-btn" id="tl-ed-clear-btn" onclick="clearAllScenes()" title="Delete every scene" style="color:#f87171;border-color:#7f1d1d;"><span data-i18n="delete_all_scenes">🗑 Delete all</span></button>
     <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>

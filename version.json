@@ -1,10 +1,9 @@
 {
-  "version": "1.4.69",
+  "version": "1.4.70",
   "date": "2026-06-23",
-  "notes": "Text to Video: warn before starting a batch when VOICEVOX is the chosen voice but isn't running, and enlarge the script box. (1) The #s1 script textarea was capped at 80px by '.modal textarea' — too small for a full script, especially multi-line Japanese; added a scoped rule taking it to 320px (still resizable). (2) startBatch() is now async and pre-flights: when currentSettings.voice === 'voicevox' and the engine isn't reachable, it shows a localised warning modal and aborts unless the user picks 'Start anyway' — so no more silent audio failures from forgetting to open VOICEVOX. New GET /voicevox-status endpoint pings http://localhost:50021/version (2.5s timeout) and returns {running}. The check is skipped for non-VOICEVOX voices and never blocks if the pre-check itself errors. Fully localised (EN + JA): vv_warn_title / vv_warn_body / vv_warn_cancel / vv_warn_proceed. Verified EN+JA modals, Cancel aborts (no start-batch emitted), Start anyway proceeds, and the happy path (VOICEVOX up) skips the warning.",
+  "notes": "Text to Video presentation now depends on the view. In Timeline view it opens as a modal (widened 620px -> 760px so the bigger script box has room); in Scene (list) view it renders inline within the page — a card in the normal flow, no dark overlay — matching how it worked before it became a modal. Added openTextToVideo() dispatcher keyed on getSceneViewMode() (both the tab-bar CTA and the Timeline-editor button call it); inline mode is a new #textToVideoModal.ttv-inline class (position:static, transparent, in-flow) while timeline keeps the .open overlay (z-index 1400, above the 1200 editor). setSceneViewMode() re-dispatches an already-open panel so toggling List<->Timeline keeps it in the right form. Verified both presentations, the 760px width at desktop widths, the inline card in list view, and the live view-switch conversion; no console errors.",
   "files": [
     "index.html",
-    "server.js",
     "version.json"
   ]
 }
