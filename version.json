@@ -1,7 +1,7 @@
 {
-  "version": "1.4.70",
+  "version": "1.4.71",
   "date": "2026-06-23",
-  "notes": "Text to Video presentation now depends on the view. In Timeline view it opens as a modal (widened 620px -> 760px so the bigger script box has room); in Scene (list) view it renders inline within the page — a card in the normal flow, no dark overlay — matching how it worked before it became a modal. Added openTextToVideo() dispatcher keyed on getSceneViewMode() (both the tab-bar CTA and the Timeline-editor button call it); inline mode is a new #textToVideoModal.ttv-inline class (position:static, transparent, in-flow) while timeline keeps the .open overlay (z-index 1400, above the 1200 editor). setSceneViewMode() re-dispatches an already-open panel so toggling List<->Timeline keeps it in the right form. Verified both presentations, the 760px width at desktop widths, the inline card in list view, and the live view-switch conversion; no console errors.",
+  "notes": "Fix Text to Video appearing to 'not delete the old content'. The parser already overwrites src/Content.json with only the freshly-parsed scenes (old scenes ARE replaced on disk, and the rendered video is new-only), but the editor was never refreshed after a batch — so it kept showing the previous scenes, making it look like nothing changed. The 'status' socket handler now calls loadSegments() when the batch reaches 100%, so the editor reflects exactly what was rendered. Guarded with a _ttvReloaded flag (reset at the start of each batch) so the batch's two progress:100 emissions — per-script done_status + batch_complete — only reload once. Verified: mid-batch status does not reload, the two completion events reload exactly once, no console errors. (Note: past renders accumulate in renders/ by design — that's render history, not stale project content.)",
   "files": [
     "index.html",
     "version.json"
