@@ -1750,6 +1750,7 @@
       ttv_replace_body: "Text to Video replaces all of your current scenes with new ones generated from your script. Your existing scenes will be gone — this can't be undone.",
       ttv_replace_cancel: "Cancel",
       ttv_replace_proceed: "Replace scenes",
+      ttv_done_toast: (n) => `${n} ${n === 1 ? 'scene' : 'scenes'} ready`,
       speed: "Speed",
       pitch: "Pitch",
       volume: "Volume",
@@ -2353,6 +2354,7 @@
       ttv_replace_body: "テキストから動画は、現在のすべてのシーンをスクリプトから生成した新しいシーンに置き換えます。既存のシーンは失われ、元に戻せません。",
       ttv_replace_cancel: "キャンセル",
       ttv_replace_proceed: "シーンを置き換える",
+      ttv_done_toast: (n) => `${n}個のシーンができました`,
       speed: "速度",
       pitch: "ピッチ",
       volume: "音量",
@@ -2826,6 +2828,32 @@
     };
     close.onclick = dismiss;
     setTimeout(dismiss, 6500);
+  }
+
+  // Brief success toast after a Text-to-Video batch lands the user back on the freshly-generated scenes.
+  function showBatchDoneToast(n) {
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    document.getElementById('batch-done-toast')?.remove();
+    const toast = document.createElement('div');
+    toast.id = 'batch-done-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(14px);opacity:0;'
+      + 'z-index:10001;display:flex;align-items:center;gap:10px;max-width:90vw;'
+      + 'background:var(--bg-card);border:1px solid #10b981;color:var(--text-main);'
+      + 'padding:11px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.28);'
+      + 'font-size:14px;font-weight:600;transition:opacity .35s ease,transform .35s ease;';
+    toast.innerHTML = '<span style="font-size:18px">✅</span>';
+    const msg = document.createElement('span');
+    msg.textContent = t.ttv_done_toast ? t.ttv_done_toast(n) : `${n} scenes ready`;
+    toast.appendChild(msg);
+    document.body.appendChild(toast);
+    void toast.offsetWidth;   // commit the start state so the change below animates
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(14px)';
+      setTimeout(() => toast.remove(), 400);
+    }, 5000);
   }
 
   function showSetupWizard() {
@@ -3641,9 +3669,20 @@
       document.getElementById('progress-bar').style.width = d.progress + '%';
       if (d.progress >= 100) {
         _setBatchBtn(false);
-        // The batch overwrote Content.json with the freshly-generated scenes, but the editor is still
-        // showing the old ones — reload it once so it reflects what was actually rendered.
-        if (!_ttvReloaded) { _ttvReloaded = true; loadSegments(); }
+        // The batch overwrote Content.json with the freshly-generated scenes. Reload once (retries=0 so
+        // the result is authoritative), then — if it actually produced scenes — close the Text-to-Video
+        // panel and drop the user onto the new scenes. On a no-scene result (parse/render failure) leave
+        // the panel open so its error log stays visible.
+        if (!_ttvReloaded) {
+          _ttvReloaded = true;
+          (async () => {
+            await loadSegments(0);
+            if (Array.isArray(sdSegments) && sdSegments.length > 0) {
+              closeTextToVideoModal();
+              showBatchDoneToast(sdSegments.length);
+            }
+          })();
+        }
       }
     }
   });

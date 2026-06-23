@@ -1,7 +1,7 @@
 {
-  "version": "1.4.72",
+  "version": "1.4.73",
   "date": "2026-06-23",
-  "notes": "Text to Video safety + standalone screen. (1) Start Production now shows a localised 'Replace your current scenes?' confirmation when scenes already exist (sdSegments.length > 0) — Text to Video regenerates the whole project from the script and overwrites every scene, so this stops accidental wipes. Cancel aborts before anything starts; 'Replace scenes' (red) proceeds. EN + JA (ttv_replace_title/body/cancel/proceed). (2) In Scene (list) view, Text to Video now takes over the content area as its own screen instead of sitting inline above the scenes: body.ttv-screen hides the scene panel AND the fixed bottom timeline dock, so it can't be mistaken for part of the scene list (the cause of earlier 'where did my content go' confusion). Added a × close button to the panel header; closing or switching tabs exits the screen and restores the scenes + dock. Timeline view is unchanged — still a centered modal (now 760px). Verified both views, EN+JA confirm, Cancel gating (no start-batch emitted), and clean restore; no console errors.",
+  "notes": "Text to Video: land on the new scenes when a batch finishes. On completion the status handler reloads scenes with loadSegments(0) (authoritative, no empty-retry); if it produced scenes it now closes the Text-to-Video panel (modal or standalone screen) and drops the user straight onto the freshly-generated scenes, plus a brief localised success toast ('N scenes ready' / 'N個のシーンができました', EN+JA). If the batch produced zero scenes (parse/render failure) the panel is left open so its error log stays visible — no silent close, no misleading toast. Builds on v1.4.71's auto-refresh. Verified: success path closes + toasts with the right count, failure path keeps the panel open with no toast, no console errors.",
   "files": [
     "index.html",
     "version.json"
