@@ -417,6 +417,11 @@
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; max-width: 380px; margin-left: auto; margin-right: auto; }
     .rdm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .rdm-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 16px; max-width: 380px; margin-left: auto; margin-right: auto; }
+    /* Scene (list) view shows the finished video as its own full screen (opaque page bg + an Edit button), not a popup. */
+    #renderDoneModal.rdm-screen-mode { background: var(--bg-page); align-items: flex-start; overflow-y: auto; padding: 4vh 16px 32px; }
+    #renderDoneModal.rdm-screen-mode .rdm-modal { box-shadow: none; }
+    .rdm-edit { display: none; }
+    #renderDoneModal.rdm-screen-mode .rdm-edit { display: inline-flex; }
     .modal h3 { margin: 0 0 18px; font-size: 16px; color: var(--text-main); }
     .modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
     .modal input, .modal textarea { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: sans-serif; }
@@ -2003,6 +2008,7 @@
       rdm_title: 'Your video is ready',
       rdm_download: 'Download',
       rdm_close: 'Close',
+      rdm_edit: 'Edit scenes',
       lv_no_splits: 'No split points set. Mark splits in the Editor tab first.',
       lv_detecting: 'Detecting…',
       lv_detected_count: (n) => `Found ${n} split point(s).`,
@@ -2607,6 +2613,7 @@
       rdm_title: '動画が完成しました',
       rdm_download: 'ダウンロード',
       rdm_close: '閉じる',
+      rdm_edit: 'シーンを編集',
       lv_no_splits: '分割点が設定されていません。まずエディタータブでマークを付けてください。',
       lv_detecting: '検出中…',
       lv_detected_count: (n) => `${n}件の分割点が見つかりました。`,
@@ -10934,14 +10941,26 @@
     }
     if (dl) { dl.href = url; dl.setAttribute('download', file); }
     if (fn) fn.textContent = file;
-    document.getElementById('renderDoneModal')?.classList.add('open');
+    // Scene (list) view: present the result as its own full screen (with an Edit button),
+    // not a popup. Timeline view keeps the centred modal.
+    const overlay = document.getElementById('renderDoneModal');
+    const screenMode = (() => { try { return getSceneViewMode() !== 'timeline'; } catch { return false; } })();
+    overlay?.classList.toggle('rdm-screen-mode', screenMode);
+    overlay?.classList.add('open');
     window.addEventListener('resize', rdmRefitPlayer);
   }
   function closeRenderDoneModal() {
     const vid = document.getElementById('rdm-video');
     if (vid) { try { vid.pause(); } catch {} vid.onloadedmetadata = null; vid.removeAttribute('src'); try { vid.load(); } catch {} }
     window.removeEventListener('resize', rdmRefitPlayer);
-    document.getElementById('renderDoneModal')?.classList.remove('open');
+    document.getElementById('renderDoneModal')?.classList.remove('open', 'rdm-screen-mode');
+  }
+  // "Edit scenes" on the full-screen result: dismiss it and drop the user back on the scene list.
+  function rdmEditScenes() {
+    closeRenderDoneModal();
+    try { switchTab('scenes'); } catch {}
+    try { setSceneViewMode('list'); } catch {}
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
   }
   function rdmShare(target) {
     // No direct API posting yet — open the platform's upload page; the user uploads the downloaded file.
@@ -13543,6 +13562,7 @@
     </div>
     <div class="rdm-note" data-i18n="sd_share_note">Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.</div>
     <div class="modal-actions" style="justify-content:center;margin-top:18px">
+      <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️ <span data-i18n="rdm_edit">Edit scenes</span></button>
       <button class="btn ghost" onclick="closeRenderDoneModal()"><span data-i18n="rdm_close">Close</span></button>
     </div>
   </div>
