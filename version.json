@@ -1,7 +1,7 @@
 {
-  "version": "1.4.83",
+  "version": "1.4.84",
   "date": "2026-06-24",
-  "notes": "Fix the render-done preview never loading, and tidy its buttons. (1) The video stayed blank because render-done emits { file: 'renders/render_X.mp4' } (with the folder) and showRenderDoneModal built the src as /renders/${encodeURIComponent(file)} — encoding the whole path turns the '/' into %2F, giving /renders/renders%2Frender_X.mp4 which 404s against the express.static('/renders/<name>') route. Now it strips to the basename and encodes only that (/renders/render_X.mp4), and the Download href/attribute use the basename too. (Earlier modal work passed verification only because tests used bare basenames, not the prefixed real value.) (2) Close is now an ✕ in the modal's top-right corner (.rdm-close-x, mirrors the Text-to-Video modal) instead of a bottom button; the bottom Close was removed. (3) The Scene-view full-screen 'Edit scenes' button is now just 'Edit' (rdm_edit i18n en 'Edit' / ja '編集'); its row (.rdm-edit-row) only shows in screen mode, so modal mode has no empty action row. Verified in-browser with a prefixed filename: src resolves to /renders/Tiktok-pointchips.mp4 (no %2F), video loads (1080x1920), download points at the basename; ✕ sits top-right and is the only close in timeline (modal) mode; list mode shows the full screen with a visible 'Edit'; no console errors.",
+  "notes": "Render-done 'Edit' button: put a clean 5px gap between the ✏️ pencil and the 'Edit' text. The button is inline-flex in the full-screen result, so added align-items:center + gap:5px to #renderDoneModal.rdm-screen-mode .rdm-edit and removed the literal space after the emoji (which had stacked on top of the gap). Verified in-browser: computed gap 5px, measured 5px between glyph and label.",
   "files": [
     "index.html",
     "version.json"

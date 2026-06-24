@@ -421,7 +421,7 @@
     #renderDoneModal.rdm-screen-mode { background: var(--bg-page); align-items: flex-start; overflow-y: auto; padding: 4vh 16px 32px; }
     #renderDoneModal.rdm-screen-mode .rdm-modal { box-shadow: none; }
     .rdm-edit { display: none; }
-    #renderDoneModal.rdm-screen-mode .rdm-edit { display: inline-flex; }
+    #renderDoneModal.rdm-screen-mode .rdm-edit { display: inline-flex; align-items: center; gap: 5px; }
     /* Close is an ✕ in the modal's top-right corner (mirrors the Text-to-Video modal). */
     .rdm-close-x { position: absolute; top: 12px; right: 12px; border: none; background: transparent; color: var(--text-muted); font-size: 19px; line-height: 1; cursor: pointer; padding: 4px 10px; border-radius: 8px; z-index: 2; }
     .rdm-close-x:hover { background: var(--bg-input); color: var(--text-main); }
@@ -13633,7 +13633,7 @@
     </div>
     <div class="rdm-note" data-i18n="sd_share_note">Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.</div>
     <div class="modal-actions rdm-edit-row" style="justify-content:center;margin-top:18px">
-      <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️ <span data-i18n="rdm_edit">Edit</span></button>
+      <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️<span data-i18n="rdm_edit">Edit</span></button>
     </div>
   </div>
 </div>
