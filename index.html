@@ -849,6 +849,10 @@
     .tl-hpos.active, .tl-vpos.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
     .tl-wrap { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
     .tl-wrap.active { background: var(--bg-card); border-color: var(--accent); color: var(--accent); }
+    /* Copy / Paste text style — same clipboard as Scene view, now available on the timeline inspector */
+    .tl-insp-styleio { display: flex; gap: 8px; margin-top: 10px; }
+    .tl-styleio { background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+    .tl-styleio:hover { color: var(--text-main); border-color: var(--accent); }
     /* ── Built-in timeline editor: in Timeline mode the tracks dock INTO the page (not a floating popup) ── */
     .timeline-mode #scene-dock { position: static; left: auto; right: auto; bottom: auto; width: auto; margin: 18px 0 0; border-radius: 14px; border-bottom: 1px solid var(--border); box-shadow: none; z-index: auto; }
     /* ── Content rail (left column): the scene's layers + add-media, CapCut-style ── */
@@ -12275,6 +12279,10 @@
       ${accentRow}
       <div class="tl-insp-row"><label>${t.tl_size || 'Size'}</label><input type="range" class="tl-insp-size" id="tl-size-${i}" min="20" max="200" step="2" value="${size}" oninput="tlInspSize(${i})" /></div>
       <div class="tl-insp-styles">${styleChips}</div>
+      <div class="tl-insp-styleio">
+        <button type="button" class="tl-styleio" onclick="tlInspCopyStyle(${i}, event)" title="${t.copy_style || 'Copy Style'}">📋 ${t.copy_style || 'Copy Style'}</button>
+        <button type="button" class="tl-styleio" onclick="tlInspPasteStyle(${i}, event)" title="${t.paste_style || 'Paste Style'}">📌 ${t.paste_style || 'Paste Style'}</button>
+      </div>
       <div class="tl-insp-row" style="margin-top:14px"><label>${t.tl_align || 'Align'}</label><div class="tl-aligns">${aligns}</div></div>
       <div class="tl-insp-row"><label>${t.tl_position || 'Position'}</label><div class="tl-aligns">${hposBtns}</div></div>
       <div class="tl-insp-row"><label></label><div class="tl-aligns">${vposBtns}</div></div>
@@ -12290,6 +12298,25 @@
       back.innerHTML = `← ${t.tl_back || 'Back'}`;
       back.onclick = () => tlInspBack(i);
       div.parentNode.insertBefore(back, div);
+    }
+  }
+
+  // Copy / Paste the text style straight from the timeline inspector — works on whichever layer is
+  // selected (main scene text or an extra text layer), reusing Scene view's clipboard + handlers.
+  function tlInspCopyStyle(i, evt) {
+    if (tlSelLayer.type === 'extra') copyExtraStyle(i, tlSelLayer.idx, evt);
+    else copySceneStyle(i, evt);
+  }
+  async function tlInspPasteStyle(i, evt) {
+    if (tlSelLayer.type === 'extra') {
+      await pasteExtraStyle(i, tlSelLayer.idx, evt);
+      // pasteExtraStyle only re-renders the hidden accordion; rebuild the inspector so its
+      // swatches / size reflect the pasted style.
+      const card = document.getElementById(`card-${i}`);
+      if (card) { try { buildTimelineInspector(card, i); } catch (e) { console.warn('tl insp refresh:', e); } }
+    } else {
+      // pasteSceneStyle reloads all scenes (loadSegments), which rebuilds the inspector for us.
+      await pasteSceneStyle(i, evt);
     }
   }
 
