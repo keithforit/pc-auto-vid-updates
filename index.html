@@ -411,7 +411,7 @@
     /* ...and it takes over the content area as its own screen: hide the scene list + bottom timeline */
     body.ttv-screen .panel { display: none !important; }
     body.ttv-screen #scene-dock { display: none !important; }
-    .rdm-modal { width: auto; min-width: 340px; max-width: 95vw; text-align: center; }
+    .rdm-modal { position: relative; width: auto; min-width: 340px; max-width: 95vw; text-align: center; }
     /* The player is sized in JS to the finished file's real aspect ratio (9:16 TikTok, 1:1, 16:9, …) so it never letterboxes; the modal shrink-wraps to it. */
     #rdm-video { width: 320px; height: 568px; object-fit: contain; border-radius: 12px; background: #000; margin: 8px auto; display: block; }
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; max-width: 380px; margin-left: auto; margin-right: auto; }
@@ -422,6 +422,12 @@
     #renderDoneModal.rdm-screen-mode .rdm-modal { box-shadow: none; }
     .rdm-edit { display: none; }
     #renderDoneModal.rdm-screen-mode .rdm-edit { display: inline-flex; }
+    /* Close is an ✕ in the modal's top-right corner (mirrors the Text-to-Video modal). */
+    .rdm-close-x { position: absolute; top: 12px; right: 12px; border: none; background: transparent; color: var(--text-muted); font-size: 19px; line-height: 1; cursor: pointer; padding: 4px 10px; border-radius: 8px; z-index: 2; }
+    .rdm-close-x:hover { background: var(--bg-input); color: var(--text-main); }
+    /* The Edit row only exists on the full-screen (Scene-view) result; the corner ✕ closes in both modes. */
+    #renderDoneModal .rdm-edit-row { display: none; }
+    #renderDoneModal.rdm-screen-mode .rdm-edit-row { display: flex; }
     .modal h3 { margin: 0 0 18px; font-size: 16px; color: var(--text-main); }
     .modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
     .modal input, .modal textarea { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: sans-serif; }
@@ -2012,7 +2018,7 @@
       rdm_title: 'Your video is ready',
       rdm_download: 'Download',
       rdm_close: 'Close',
-      rdm_edit: 'Edit scenes',
+      rdm_edit: 'Edit',
       lv_no_splits: 'No split points set. Mark splits in the Editor tab first.',
       lv_detecting: 'Detecting…',
       lv_detected_count: (n) => `Found ${n} split point(s).`,
@@ -2617,7 +2623,7 @@
       rdm_title: '動画が完成しました',
       rdm_download: 'ダウンロード',
       rdm_close: '閉じる',
-      rdm_edit: 'シーンを編集',
+      rdm_edit: '編集',
       lv_no_splits: '分割点が設定されていません。まずエディタータブでマークを付けてください。',
       lv_detecting: '検出中…',
       lv_detected_count: (n) => `${n}件の分割点が見つかりました。`,
@@ -10960,7 +10966,11 @@
   function showRenderDoneModal(file) {
     if (!file) return;
     rdmCurrentFile = file;
-    const url = `/renders/${encodeURIComponent(file)}`;
+    // data.file arrives as "renders/render_X.mp4" (with the folder); the static route is /renders/<name>,
+    // so use just the basename and encode only that — encoding the whole path turns "/" into %2F and
+    // 404s, which left the preview blank.
+    const name = String(file).replace(/^.*[\/\\]/, '');
+    const url = `/renders/${encodeURIComponent(name)}`;
     const vid = document.getElementById('rdm-video');
     const dl = document.getElementById('rdm-download');
     const fn = document.getElementById('rdm-filename');
@@ -10976,7 +10986,7 @@
       };
       try { vid.load(); } catch {}
     }
-    if (dl) { dl.href = url; dl.setAttribute('download', file); }
+    if (dl) { dl.href = url; dl.setAttribute('download', name); }
     if (fn) fn.textContent = file;
     // Scene (list) view: present the result as its own full screen (with an Edit button),
     // not a popup. Timeline view keeps the centred modal.
@@ -13612,6 +13622,7 @@
 <!-- Render-complete modal: preview the finished video, then download / share -->
 <div class="modal-overlay" id="renderDoneModal" onclick="if(event.target===this)closeRenderDoneModal()">
   <div class="modal rdm-modal">
+    <button class="rdm-close-x" onclick="closeRenderDoneModal()" aria-label="Close" title="Close">✕</button>
     <h3>✅ <span data-i18n="rdm_title">Your video is ready</span></h3>
     <video id="rdm-video" controls playsinline preload="metadata"></video>
     <div class="rdm-filename" id="rdm-filename"></div>
@@ -13621,9 +13632,8 @@
       <button class="btn ghost" onclick="rdmShare('instagram')">📷 Instagram</button>
     </div>
     <div class="rdm-note" data-i18n="sd_share_note">Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.</div>
-    <div class="modal-actions" style="justify-content:center;margin-top:18px">
-      <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️ <span data-i18n="rdm_edit">Edit scenes</span></button>
-      <button class="btn ghost" onclick="closeRenderDoneModal()"><span data-i18n="rdm_close">Close</span></button>
+    <div class="modal-actions rdm-edit-row" style="justify-content:center;margin-top:18px">
+      <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️ <span data-i18n="rdm_edit">Edit</span></button>
     </div>
   </div>
 </div>
