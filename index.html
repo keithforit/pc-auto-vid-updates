@@ -411,11 +411,12 @@
     /* ...and it takes over the content area as its own screen: hide the scene list + bottom timeline */
     body.ttv-screen .panel { display: none !important; }
     body.ttv-screen #scene-dock { display: none !important; }
-    .rdm-modal { width: 560px; text-align: center; }
-    #rdm-video { width: 100%; max-height: 56vh; border-radius: 12px; background: #000; margin: 8px 0; display: block; }
-    .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; }
+    .rdm-modal { width: auto; min-width: 340px; max-width: 95vw; text-align: center; }
+    /* The player is sized in JS to the finished file's real aspect ratio (9:16 TikTok, 1:1, 16:9, …) so it never letterboxes; the modal shrink-wraps to it. */
+    #rdm-video { width: 320px; height: 568px; object-fit: contain; border-radius: 12px; background: #000; margin: 8px auto; display: block; }
+    .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; max-width: 380px; margin-left: auto; margin-right: auto; }
     .rdm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .rdm-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 16px; }
+    .rdm-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 16px; max-width: 380px; margin-left: auto; margin-right: auto; }
     .modal h3 { margin: 0 0 18px; font-size: 16px; color: var(--text-main); }
     .modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
     .modal input, .modal textarea { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: sans-serif; }
@@ -10891,6 +10892,27 @@
 
   /* ── Render-complete modal: preview the finished video + download / share ── */
   let rdmCurrentFile = '';
+  // Size the in-modal player to the finished video's real shape so TikTok (9:16),
+  // square (1:1) and landscape (16:9) each preview at their true size — no letterboxing,
+  // and play happens inside that correctly-shaped area.
+  function rdmSizePlayer(vid, vw, vh) {
+    vw = Number(vw) || 9; vh = Number(vh) || 16;
+    const winW = window.innerWidth || document.documentElement.clientWidth || screen.width || 1200;
+    const winH = window.innerHeight || document.documentElement.clientHeight || screen.height || 800;
+    const maxH = Math.max(240, winH - 320);   // leave room for title / buttons / note
+    // Fit inside the modal: 28px padding each side + its 95vw cap, minus a small gutter.
+    const maxW = Math.max(200, Math.min(640, winW * 0.95 - 64));
+    let w = maxW, h = w * vh / vw;
+    if (h > maxH) { h = maxH; w = h * vw / vh; }
+    vid.style.width = Math.round(w) + 'px';
+    vid.style.height = Math.round(h) + 'px';
+  }
+  function rdmRefitPlayer() {
+    const modal = document.getElementById('renderDoneModal');
+    const vid = document.getElementById('rdm-video');
+    if (!vid || !modal || !modal.classList.contains('open')) return;
+    rdmSizePlayer(vid, vid.videoWidth || 9, vid.videoHeight || 16);
+  }
   function showRenderDoneModal(file) {
     if (!file) return;
     rdmCurrentFile = file;
@@ -10898,14 +10920,27 @@
     const vid = document.getElementById('rdm-video');
     const dl = document.getElementById('rdm-download');
     const fn = document.getElementById('rdm-filename');
-    if (vid) { vid.src = url; try { vid.load(); } catch {} }
+    if (vid) {
+      vid.src = url;
+      // Pre-size to the selected output shape so the player opens correct even before the file's
+      // own dimensions load, then refine the instant real metadata arrives.
+      let pw = 1080, ph = 1920;
+      try { const p = getActiveVideoPreset(); if (p) { pw = p.width; ph = p.height; } } catch {}
+      rdmSizePlayer(vid, pw, ph);
+      vid.onloadedmetadata = () => {
+        if (vid.videoWidth && vid.videoHeight) rdmSizePlayer(vid, vid.videoWidth, vid.videoHeight);
+      };
+      try { vid.load(); } catch {}
+    }
     if (dl) { dl.href = url; dl.setAttribute('download', file); }
     if (fn) fn.textContent = file;
     document.getElementById('renderDoneModal')?.classList.add('open');
+    window.addEventListener('resize', rdmRefitPlayer);
   }
   function closeRenderDoneModal() {
     const vid = document.getElementById('rdm-video');
-    if (vid) { try { vid.pause(); } catch {} vid.removeAttribute('src'); try { vid.load(); } catch {} }
+    if (vid) { try { vid.pause(); } catch {} vid.onloadedmetadata = null; vid.removeAttribute('src'); try { vid.load(); } catch {} }
+    window.removeEventListener('resize', rdmRefitPlayer);
     document.getElementById('renderDoneModal')?.classList.remove('open');
   }
   function rdmShare(target) {
