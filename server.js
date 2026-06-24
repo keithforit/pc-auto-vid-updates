@@ -21,10 +21,14 @@ const PID_FILE = path.join(__dirname, '.server.pid');
         }
         try { fs.unlinkSync(PID_FILE); } catch (_) {}
     }
-    // 2. Also clear any stale processes on ports 3000-3004 (covers instances that
-    //    predate the PID file, i.e. multiple tabs issue before v1.3.2).
+    // 2. Also clear any stale processes on ports 3000-3004 (covers instances that predate the PID
+    //    file) plus our target PORT if set elsewhere — so an in-app re-launch reclaims the SAME port
+    //    the browser is polling, not the next free one.
+    const portsToClear = [3000, 3001, 3002, 3003, 3004];
+    const envPort = parseInt(process.env.PORT, 10);
+    if (envPort && !portsToClear.includes(envPort)) portsToClear.push(envPort);
     let killed = false;
-    for (let p = 3000; p <= 3004; p++) {
+    for (const p of portsToClear) {
         try {
             const pids = execSync(`lsof -ti tcp:${p} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
             for (const pid of pids.split('\n').filter(s => s && parseInt(s) !== process.pid)) {
@@ -37,7 +41,9 @@ const PID_FILE = path.join(__dirname, '.server.pid');
     if (killed) { try { execSync('sleep 0.4'); } catch (_) {} }
     // 4. Write our own PID
     fs.writeFileSync(PID_FILE, String(process.pid));
-    const cleanup = () => { try { fs.unlinkSync(PID_FILE); } catch (_) {} };
+    // Only remove the PID file if it's still ours — a successor instance (e.g. after an in-app
+    // re-launch) may have already claimed it, and we mustn't delete its entry on the way out.
+    const cleanup = () => { try { if (parseInt(fs.readFileSync(PID_FILE, 'utf8').trim(), 10) === process.pid) fs.unlinkSync(PID_FILE); } catch (_) {} };
     process.on('exit', cleanup);
     process.on('SIGINT',  () => { cleanup(); process.exit(0); });
     process.on('SIGTERM', () => { cleanup(); process.exit(0); });
@@ -2478,15 +2484,39 @@ app.post('/apply-update', async (req, res) => {
         // Update local version.json
         fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ version: remote.version }, null, 2));
         res.json({ ok: true, version: remote.version, notes: remote.notes });
-        // Restart the server after a short delay so the response can be sent
+        // Re-launch a FRESH node process so the new server.js code is actually loaded — an in-process
+        // server.close()+listen() would keep running the OLD code in memory. The replacement binds the
+        // same port (so the client's /ping poll + socket reconnect find it), and its single-instance
+        // guard clears that port + SIGTERMs us during startup. We also exit ourselves as a backstop.
         setTimeout(() => {
-            console.log(`\n🔄 Restarting after update to v${remote.version}...`);
-            server.close(() => {
-                console.log('Server closed, restarting...');
-                server.listen(activePort, BIND_HOST, () => {
-                    console.log(`🚀 Dashboard at http://localhost:${activePort}`);
+            // Don't hand off to a broken update: make sure the freshly downloaded server.js parses,
+            // otherwise we'd exit into a process that can't start and leave no server at all.
+            try {
+                execSync(`"${process.execPath}" -c "${path.join(__dirname, 'server.js')}"`, { stdio: 'ignore' });
+            } catch (e) {
+                console.error('⚠️  Updated server.js failed its syntax check — keeping the current server running. Restart manually after this is fixed.');
+                io.emit('log', '⚠️ Update downloaded, but the new server failed a safety check — keeping the current version running. A manual restart will be needed.');
+                return;
+            }
+            console.log(`\n🔄 Relaunching after update to v${remote.version}...`);
+            try {
+                const child = spawn(process.execPath, [process.argv[1], ...process.argv.slice(2)], {
+                    cwd: __dirname,
+                    env: { ...process.env, PORT: String(activePort) },
+                    detached: true,
+                    stdio: 'inherit',
                 });
-            });
+                child.unref();
+            } catch (e) {
+                // Couldn't spawn a successor — fall back to the old in-process re-listen so we at least
+                // stay up (on the old code) rather than going dark.
+                console.error('Relaunch failed, falling back to in-process re-listen:', e);
+                try { server.close(() => server.listen(activePort, BIND_HOST, () => console.log(`🚀 Dashboard at http://localhost:${activePort}`))); } catch (_) {}
+                return;
+            }
+            // Release our listening port and exit so the fresh instance can bind it.
+            try { server.close(); } catch (_) {}
+            setTimeout(() => process.exit(0), 700);
         }, 1500);
     } catch (e) {
         res.status(500).json({ error: 'Update failed: ' + e.message });
