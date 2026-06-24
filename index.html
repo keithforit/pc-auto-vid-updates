@@ -3588,14 +3588,9 @@
     if (Array.isArray(sdSegments) && sdSegments.length > 0) {
       if (!(await confirmReplaceScenes())) return;
     }
-    // VOICEVOX is a separate local app. If this project's voice is set to VOICEVOX but it isn't
-    // running, every scene's audio fails — so warn (and let the user bail) before the batch starts.
-    try {
-      await ensureCurrentSettingsLoaded();
-      if (currentSettings && currentSettings.voice === 'voicevox' && !(await isVoicevoxRunning())) {
-        if (!(await confirmVoicevoxWarning())) return;
-      }
-    } catch (e) { console.warn('VOICEVOX pre-check skipped:', e); }
+    // VOICEVOX is a separate local app. If it's needed but not running, every scene's audio fails —
+    // so warn (and let the user bail) before the batch starts.
+    if (!(await voicevoxPreflightOK())) return;
     const logWindow = document.getElementById('log-window');
     const scripts = [document.getElementById('s1').value];
     const contentType = document.querySelector('input[name="content-type"]:checked')?.value || 'stock';
@@ -3639,6 +3634,27 @@
       ov.querySelector('#vv-warn-proceed').onclick = () => done(true);
       ov.addEventListener('click', e => { if (e.target === ov) done(false); });
     });
+  }
+
+  // True when this project will actually call VOICEVOX for audio — the global voice is VOICEVOX, or
+  // any scene picks its own VOICEVOX speaker. Mirrors the server's contentUsesVoicevox() so the
+  // warning fires for every flow that would hit the engine.
+  function projectUsesVoicevox() {
+    if (currentSettings && currentSettings.voice === 'voicevox') return true;
+    try { return Array.isArray(sdSegments) && sdSegments.some(s => String((s && s.voicevoxSpeaker) || '').trim()); }
+    catch { return false; }
+  }
+
+  // Pre-flight before any flow that regenerates voice audio: if VOICEVOX is needed but the local
+  // engine isn't reachable, warn and let the user bail. Resolves true to proceed, false to cancel.
+  async function voicevoxPreflightOK() {
+    try {
+      await ensureCurrentSettingsLoaded();
+      if (projectUsesVoicevox() && !(await isVoicevoxRunning())) {
+        return await confirmVoicevoxWarning();
+      }
+    } catch (e) { console.warn('VOICEVOX pre-check skipped:', e); }
+    return true;
   }
 
   // Localised "this will replace your scenes" confirm shown before a batch when scenes already exist.
@@ -10807,8 +10823,11 @@
     log.scrollTop = log.scrollHeight;
   }
 
-  function scenesRerender() {
+  async function scenesRerender() {
     if (_renderRunning) { cancelRender(); return; }
+    // Warn before regenerating if VOICEVOX is the voice but the engine isn't running — otherwise it
+    // just fails partway with an error buried in the log.
+    if (!(await voicevoxPreflightOK())) return;
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     scenesRerenderActive = true;
     _renderRunning = true;
@@ -10822,8 +10841,9 @@
     socket.emit('render-only', { lang: window._appLang||'en' });
   }
 
-  function rerender() {
+  async function rerender() {
     if (_renderRunning) { cancelRender(); return; }
+    if (!(await voicevoxPreflightOK())) return;
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     rerenderActive = true;
     _renderRunning = true;
