@@ -1,9 +1,11 @@
 {
-  "version": "1.4.84",
+  "version": "1.4.85",
   "date": "2026-06-24",
-  "notes": "Render-done 'Edit' button: put a clean 5px gap between the ✏️ pencil and the 'Edit' text. The button is inline-flex in the full-screen result, so added align-items:center + gap:5px to #renderDoneModal.rdm-screen-mode .rdm-edit and removed the literal space after the emoji (which had stacked on top of the gap). Verified in-browser: computed gap 5px, measured 5px between glyph and label.",
+  "notes": "Connect TikTok / Instagram accounts and post finished videos directly from the result screen. Settings gains a 'Connect accounts' section (per-platform client key/secret, the exact OAuth Redirect URI to register, Save keys / Connect / Disconnect, live status). Server adds: GET /social/status, POST /social/config, POST /social/disconnect, GET /oauth/{tiktok,instagram}/start + /callback (OAuth 2.0 with CSRF state), and POST /social/post. TikTok uses Login Kit + Content Posting API (FILE_UPLOAD of the local render; token auto-refresh); Instagram uses Facebook Login → Instagram Graph API (resolves the IG Business account via the user's Pages, creates a REELS container from a public video_url, polls processing, then publishes). Secrets/tokens are stored in a gitignored SocialConnections.json (never committed). The result-screen TikTok/Instagram buttons now post directly when connected (relabel to 'Post to …', show a caption box) and otherwise fall back to opening the upload page. Edit button also got its 5px icon gap (v1.4.84). KNOWN PLATFORM LIMITS (see SOCIAL_SETUP.md): TikTok posts are private (SELF_ONLY) until your app passes TikTok's audit; Instagram's API can't take a local file — it fetches from a PUBLIC URL, so you must host the render publicly and set a 'Public video URL base', and need a Business/Creator IG account linked to a Facebook Page. You register the developer apps and paste the keys; I can't create them or end-to-end test the live OAuth/posting. Verified in-browser/curl: status + config + disconnect endpoints; both OAuth start routes build correct authorize URLs (client_key/scope/redirect_uri/state); post returns proper 'not connected' errors; Settings UI renders with redirect URIs + status; modal shows caption + 'Post to TikTok' when connected (mocked) and the plain fallback otherwise; no console errors. NOTE: server.js change needs a full app restart to take effect.",
   "files": [
     "index.html",
+    "server.js",
+    "SOCIAL_SETUP.md",
     "version.json"
   ]
 }

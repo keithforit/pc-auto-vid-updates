@@ -949,6 +949,222 @@ function applyStylesToContent(settings) {
 
 app.get('/settings', (req, res) => res.json(readSettings()));
 
+// ── Social connections: connect TikTok / Instagram, then post a render directly ────────────────
+// App credentials + OAuth tokens live in a gitignored file (SocialConnections.json) — never committed.
+const SOCIAL_PATH = './SocialConnections.json';
+const readSocial  = () => readJsonFile(SOCIAL_PATH, {});
+const writeSocial = (v) => writeJsonFile(SOCIAL_PATH, v);
+const randomState = () => require('crypto').randomBytes(16).toString('hex');
+// The OAuth redirect URI must EXACTLY match what the user registered in their dev app. Derive it from
+// the incoming request so it stays correct whatever port the app ended up on.
+const oauthRedirect = (req, platform) => `${req.protocol}://${req.get('host')}/oauth/${platform}/callback`;
+// Tiny page the OAuth popup shows on return: notify the opener, then close.
+function oauthDonePage(ok, platform, message) {
+    const safe = String(message || '').replace(/</g, '&lt;');
+    return `<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;background:#0a0a0a;color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center">
+      <div><div style="font-size:42px">${ok ? '✅' : '⚠️'}</div><p style="max-width:340px;line-height:1.5">${ok ? `${platform} connected. You can close this window.` : `Couldn't connect ${platform}: ${safe}`}</p></div>
+      <script>try{window.opener&&window.opener.postMessage({type:'social-${ok ? 'connected' : 'error'}',platform:${JSON.stringify(platform)}},'*')}catch(e){};setTimeout(()=>{try{window.close()}catch(e){}},${ok ? 900 : 5000});</script></body>`;
+}
+
+// Connection status for the Settings UI + the result-screen share buttons (never returns secrets).
+app.get('/social/status', (req, res) => {
+    const s = readSocial();
+    res.json({
+        tiktok: {
+            configured: !!(s.tiktok && s.tiktok.clientKey && s.tiktok.clientSecret),
+            connected:  !!(s.tiktok && s.tiktok.accessToken),
+            displayName: (s.tiktok && s.tiktok.displayName) || ''
+        },
+        instagram: {
+            configured: !!(s.instagram && s.instagram.appId && s.instagram.appSecret),
+            connected:  !!(s.instagram && s.instagram.accessToken && s.instagram.igUserId),
+            username:   (s.instagram && s.instagram.username) || '',
+            publicBaseUrl: (s.instagram && s.instagram.publicBaseUrl) || ''
+        },
+        redirectUris: { tiktok: oauthRedirect(req, 'tiktok'), instagram: oauthRedirect(req, 'instagram') }
+    });
+});
+
+// Save developer-app credentials (kept locally, never committed).
+app.post('/social/config', (req, res) => {
+    const s = readSocial();
+    const { platform } = req.body || {};
+    if (platform === 'tiktok') {
+        s.tiktok = { ...(s.tiktok || {}), clientKey: String(req.body.clientKey || '').trim(), clientSecret: String(req.body.clientSecret || '').trim() };
+    } else if (platform === 'instagram') {
+        s.instagram = { ...(s.instagram || {}), appId: String(req.body.appId || '').trim(), appSecret: String(req.body.appSecret || '').trim(), publicBaseUrl: String(req.body.publicBaseUrl || '').trim().replace(/\/+$/, '') };
+    } else return res.status(400).json({ error: 'Unknown platform' });
+    writeSocial(s);
+    res.json({ ok: true });
+});
+
+// Drop the user tokens but keep the app credentials, so reconnecting is one click.
+app.post('/social/disconnect', (req, res) => {
+    const s = readSocial();
+    const { platform } = req.body || {};
+    if (s[platform]) {
+        const keep = platform === 'tiktok' ? ['clientKey', 'clientSecret'] : ['appId', 'appSecret', 'publicBaseUrl'];
+        const next = {}; keep.forEach(k => { if (s[platform][k]) next[k] = s[platform][k]; });
+        s[platform] = next; writeSocial(s);
+    }
+    res.json({ ok: true });
+});
+
+// ── TikTok OAuth (Login Kit) ──
+app.get('/oauth/tiktok/start', (req, res) => {
+    const s = readSocial();
+    if (!s.tiktok || !s.tiktok.clientKey) return res.status(400).send('Enter your TikTok client key/secret in Settings first.');
+    const state = randomState(); s.tiktok.state = state; writeSocial(s);
+    const params = new URLSearchParams({
+        client_key: s.tiktok.clientKey, response_type: 'code',
+        scope: 'user.info.basic,video.publish,video.upload',
+        redirect_uri: oauthRedirect(req, 'tiktok'), state
+    });
+    res.redirect(`https://www.tiktok.com/v2/auth/authorize/?${params}`);
+});
+
+app.get('/oauth/tiktok/callback', async (req, res) => {
+    const axios = require('axios');
+    const s = readSocial();
+    try {
+        const { code, state } = req.query;
+        if (!code) throw new Error('No authorization code returned');
+        if (!s.tiktok || state !== s.tiktok.state) throw new Error('State mismatch — please retry from Settings');
+        const body = new URLSearchParams({
+            client_key: s.tiktok.clientKey, client_secret: s.tiktok.clientSecret,
+            code, grant_type: 'authorization_code', redirect_uri: oauthRedirect(req, 'tiktok')
+        });
+        const tok = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        const d = tok.data;
+        if (d.error) throw new Error(d.error_description || d.error);
+        Object.assign(s.tiktok, {
+            accessToken: d.access_token, refreshToken: d.refresh_token,
+            expiresAt: Date.now() + (d.expires_in || 0) * 1000, openId: d.open_id
+        });
+        delete s.tiktok.state;
+        try {
+            const info = await axios.get('https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name', { headers: { Authorization: `Bearer ${d.access_token}` } });
+            s.tiktok.displayName = info.data?.data?.user?.display_name || '';
+        } catch (_) {}
+        writeSocial(s);
+        res.send(oauthDonePage(true, 'tiktok'));
+    } catch (e) {
+        res.send(oauthDonePage(false, 'tiktok', e.response?.data?.error_description || e.response?.data?.error?.message || e.message));
+    }
+});
+
+// Refresh the TikTok access token when it's near expiry.
+async function tiktokAccessToken(s) {
+    const axios = require('axios');
+    if (!s.tiktok || !s.tiktok.accessToken) throw new Error('TikTok is not connected');
+    if (s.tiktok.expiresAt && Date.now() > s.tiktok.expiresAt - 60000 && s.tiktok.refreshToken) {
+        const body = new URLSearchParams({ client_key: s.tiktok.clientKey, client_secret: s.tiktok.clientSecret, grant_type: 'refresh_token', refresh_token: s.tiktok.refreshToken });
+        const r = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        s.tiktok.accessToken = r.data.access_token;
+        s.tiktok.refreshToken = r.data.refresh_token || s.tiktok.refreshToken;
+        s.tiktok.expiresAt = Date.now() + (r.data.expires_in || 0) * 1000;
+        writeSocial(s);
+    }
+    return s.tiktok.accessToken;
+}
+
+// ── Instagram OAuth (via Facebook Login → Instagram Graph API) ──
+app.get('/oauth/instagram/start', (req, res) => {
+    const s = readSocial();
+    if (!s.instagram || !s.instagram.appId) return res.status(400).send('Enter your Meta app ID/secret in Settings first.');
+    const state = randomState(); s.instagram.state = state; writeSocial(s);
+    const params = new URLSearchParams({
+        client_id: s.instagram.appId, redirect_uri: oauthRedirect(req, 'instagram'),
+        scope: 'instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management',
+        response_type: 'code', state
+    });
+    res.redirect(`https://www.facebook.com/v21.0/dialog/oauth?${params}`);
+});
+
+app.get('/oauth/instagram/callback', async (req, res) => {
+    const axios = require('axios');
+    const s = readSocial();
+    try {
+        const { code, state } = req.query;
+        if (!code) throw new Error('No authorization code returned');
+        if (!s.instagram || state !== s.instagram.state) throw new Error('State mismatch — please retry from Settings');
+        const redirect = oauthRedirect(req, 'instagram');
+        const tok = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', { params: { client_id: s.instagram.appId, client_secret: s.instagram.appSecret, redirect_uri: redirect, code } });
+        let token = tok.data.access_token;
+        try {  // exchange for a long-lived token
+            const ll = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', { params: { grant_type: 'fb_exchange_token', client_id: s.instagram.appId, client_secret: s.instagram.appSecret, fb_exchange_token: token } });
+            token = ll.data.access_token || token;
+        } catch (_) {}
+        // Find the Instagram Business/Creator account linked to one of the user's Pages.
+        const pages = await axios.get('https://graph.facebook.com/v21.0/me/accounts', { params: { fields: 'name,access_token,instagram_business_account', access_token: token } });
+        const page = (pages.data.data || []).find(p => p.instagram_business_account);
+        if (!page) throw new Error('No Instagram Business/Creator account is linked to your Facebook Pages');
+        const igUserId = page.instagram_business_account.id;
+        const pageToken = page.access_token || token;   // a Page token is what publishing needs
+        let username = '';
+        try { const ig = await axios.get(`https://graph.facebook.com/v21.0/${igUserId}`, { params: { fields: 'username', access_token: pageToken } }); username = ig.data.username || ''; } catch (_) {}
+        Object.assign(s.instagram, { accessToken: pageToken, igUserId, username });
+        delete s.instagram.state;
+        writeSocial(s);
+        res.send(oauthDonePage(true, 'instagram'));
+    } catch (e) {
+        res.send(oauthDonePage(false, 'instagram', e.response?.data?.error?.message || e.message));
+    }
+});
+
+// Post a finished render straight to the connected platform.
+app.post('/social/post', async (req, res) => {
+    const axios = require('axios');
+    const { platform, file, caption } = req.body || {};
+    const name = String(file || '').replace(/^.*[\/\\]/, '');     // basename only
+    const localPath = path.join(__dirname, 'renders', name);
+    if (!name || !fs.existsSync(localPath)) return res.status(400).json({ error: 'Render not found on disk' });
+    const s = readSocial();
+    try {
+        if (platform === 'tiktok') {
+            const token = await tiktokAccessToken(s);
+            const size = fs.statSync(localPath).size;
+            const init = await axios.post('https://open.tiktokapis.com/v2/post/publish/video/init/', {
+                // Unaudited apps may only post privately (SELF_ONLY); the user finishes/sets public in the app.
+                post_info: { title: String(caption || '').slice(0, 2200), privacy_level: 'SELF_ONLY', disable_comment: false },
+                source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: size, total_chunk_count: 1 }
+            }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=UTF-8' } });
+            if (init.data.error && init.data.error.code !== 'ok') throw new Error(init.data.error.message || 'TikTok init failed');
+            const { publish_id, upload_url } = init.data.data || {};
+            if (!upload_url) throw new Error('TikTok did not return an upload URL');
+            await axios.put(upload_url, fs.readFileSync(localPath), {
+                headers: { 'Content-Type': 'video/mp4', 'Content-Length': size, 'Content-Range': `bytes 0-${size - 1}/${size}` },
+                maxBodyLength: Infinity, maxContentLength: Infinity
+            });
+            return res.json({ ok: true, platform, publishId: publish_id, note: 'Uploaded to TikTok. Until your app is audited it posts as private (SELF_ONLY) — open TikTok to review/publish.' });
+        }
+        if (platform === 'instagram') {
+            if (!s.instagram || !s.instagram.accessToken || !s.instagram.igUserId) throw new Error('Instagram is not connected');
+            const base = s.instagram.publicBaseUrl;
+            if (!base) throw new Error('Set a public video URL base for Instagram in Settings — Instagram fetches the file from a public URL, so a localhost-only path will not work.');
+            const videoUrl = `${base}/renders/${encodeURIComponent(name)}`;
+            const create = await axios.post(`https://graph.facebook.com/v21.0/${s.instagram.igUserId}/media`, null, {
+                params: { media_type: 'REELS', video_url: videoUrl, caption: String(caption || ''), access_token: s.instagram.accessToken }
+            });
+            const creationId = create.data.id;
+            let status = 'IN_PROGRESS';
+            for (let i = 0; i < 40 && status !== 'FINISHED'; i++) {     // IG needs time to fetch + transcode
+                await new Promise(r => setTimeout(r, 3000));
+                const st = await axios.get(`https://graph.facebook.com/v21.0/${creationId}`, { params: { fields: 'status_code', access_token: s.instagram.accessToken } });
+                status = st.data.status_code;
+                if (status === 'ERROR') throw new Error('Instagram could not process the video (is the public URL reachable?)');
+            }
+            if (status !== 'FINISHED') throw new Error('Instagram processing timed out');
+            const pub = await axios.post(`https://graph.facebook.com/v21.0/${s.instagram.igUserId}/media_publish`, null, { params: { creation_id: creationId, access_token: s.instagram.accessToken } });
+            return res.json({ ok: true, platform, mediaId: pub.data.id });
+        }
+        return res.status(400).json({ error: 'Unknown platform' });
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.error?.message || e.response?.data?.error_description || e.message });
+    }
+});
+// ───────────────────────────────────────────────────────────────────────────────────────────────
+
 app.post('/settings', (req, res) => {
     try {
         const updated = { ...readSettings(), ...req.body };

@@ -417,6 +417,8 @@
     .rdm-filename { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; word-break: break-all; font-family: monospace; max-width: 380px; margin-left: auto; margin-right: auto; }
     .rdm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .rdm-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 16px; max-width: 380px; margin-left: auto; margin-right: auto; }
+    .rdm-caption { width: 100%; max-width: 380px; box-sizing: border-box; margin: 0 auto 14px; display: block; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: sans-serif; resize: vertical; min-height: 44px; outline: none; }
+    .rdm-caption:focus { border-color: var(--accent); }
     /* Scene (list) view shows the finished video as its own full screen (opaque page bg + an Edit button), not a popup. */
     #renderDoneModal.rdm-screen-mode { background: var(--bg-page); align-items: flex-start; overflow-y: auto; padding: 4vh 16px 32px; }
     #renderDoneModal.rdm-screen-mode .rdm-modal { box-shadow: none; }
@@ -442,6 +444,15 @@
     /* ── Settings tab ── */
     .settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-card); }
     .settings-section h3 { margin: 0 0 18px; font-size: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    /* Connect-accounts (TikTok / Instagram) cards */
+    .conn-card { background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: 12px; padding: 16px; }
+    .conn-head { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; }
+    .conn-status { font-size: 12px; font-weight: 600; }
+    .conn-card .field-label { margin-top: 10px; }
+    .conn-redirect { font-size: 11px; color: var(--text-dim); margin-top: 12px; word-break: break-all; line-height: 1.6; }
+    .conn-redirect code { background: var(--bg-card); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 11px; color: var(--text-soft); }
+    .conn-hint { font-size: 11px; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+    .conn-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     .field-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; margin-top: 14px; }
     .field-label:first-of-type { margin-top: 0; }
     select, .settings-section input[type=text] {
@@ -1301,6 +1312,43 @@
       <div id="videoSizeSummary" style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5;">16:9 (1920px × 1080px)</div>
     </div>
 
+    <div class="settings-section">
+      <h3>🔗 <span data-i18n="conn_title">Connect accounts</span></h3>
+      <p style="font-size:12px;color:#94a3b8;margin:-8px 0 16px;line-height:1.55" data-i18n="conn_intro">Connect TikTok / Instagram to post a finished video straight from the result screen. You'll need your own developer app on each platform — paste its keys below, add the shown Redirect URI to the app, then click Connect.</p>
+
+      <div class="conn-card">
+        <div class="conn-head"><span>🎵 TikTok</span><span class="conn-status" id="tk-status" style="color:#94a3b8">…</span></div>
+        <div class="field-label">TikTok client key</div>
+        <input type="text" id="tk-key" autocomplete="off" spellcheck="false" placeholder="client key" />
+        <div class="field-label">TikTok client secret</div>
+        <input type="text" id="tk-secret" autocomplete="off" spellcheck="false" placeholder="client secret" />
+        <div class="conn-redirect"><span data-i18n="conn_redirect">Redirect URI to register in the app:</span> <code id="tk-redirect">—</code></div>
+        <div class="conn-hint" data-i18n="conn_tiktok_hint">Until TikTok audits your app, uploads post as private (SELF_ONLY) — finish them in the TikTok app.</div>
+        <div class="conn-actions">
+          <button class="btn sm ghost" onclick="saveSocialConfig('tiktok')"><span data-i18n="conn_save">Save keys</span></button>
+          <button class="btn sm blue" id="tk-connect" onclick="connectSocial('tiktok')"><span data-i18n="conn_connect">Connect</span></button>
+          <button class="btn sm" id="tk-disconnect" onclick="disconnectSocial('tiktok')" style="display:none"><span data-i18n="conn_disconnect">Disconnect</span></button>
+        </div>
+      </div>
+
+      <div class="conn-card" style="margin-top:14px">
+        <div class="conn-head"><span>📷 Instagram</span><span class="conn-status" id="ig-status" style="color:#94a3b8">…</span></div>
+        <div class="field-label">Meta app ID</div>
+        <input type="text" id="ig-appid" autocomplete="off" spellcheck="false" placeholder="app ID" />
+        <div class="field-label">Meta app secret</div>
+        <input type="text" id="ig-secret" autocomplete="off" spellcheck="false" placeholder="app secret" />
+        <div class="field-label"><span data-i18n="conn_ig_publicurl">Public video URL base</span> <span style="color:#64748b">(https://…)</span></div>
+        <input type="text" id="ig-publicurl" autocomplete="off" spellcheck="false" placeholder="https://your-public-host" />
+        <div class="conn-redirect"><span data-i18n="conn_redirect">Redirect URI to register in the app:</span> <code id="ig-redirect">—</code></div>
+        <div class="conn-hint" data-i18n="conn_ig_hint">Needs an Instagram Business/Creator account linked to a Facebook Page. Instagram fetches the file from the public URL above, so the render must be reachable there.</div>
+        <div class="conn-actions">
+          <button class="btn sm ghost" onclick="saveSocialConfig('instagram')"><span data-i18n="conn_save">Save keys</span></button>
+          <button class="btn sm blue" id="ig-connect" onclick="connectSocial('instagram')"><span data-i18n="conn_connect">Connect</span></button>
+          <button class="btn sm" id="ig-disconnect" onclick="disconnectSocial('instagram')" style="display:none"><span data-i18n="conn_disconnect">Disconnect</span></button>
+        </div>
+      </div>
+    </div>
+
     <button class="btn full" id="saveSettingsBtn" onclick="saveSettings()" data-i18n="settings_save">💾 Save Settings</button>
     <div id="settings-msg" style="text-align:center;margin-top:10px;font-size:13px;color:#94a3b8;min-height:20px;"></div>
 
@@ -1459,7 +1507,22 @@
       sd_share_latest: 'Download latest render',
       sd_share_tiktok: 'Open TikTok Studio upload',
       sd_share_instagram: 'Open Instagram',
-      sd_share_note: 'Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.',
+      sd_share_note: 'Connect TikTok / Instagram in Settings to post directly from here. Otherwise, download the video and upload it on the page that opens.',
+      rdm_caption_ph: 'Caption…',
+      conn_title: 'Connect accounts',
+      conn_intro: "Connect TikTok / Instagram to post a finished video straight from the result screen. You'll need your own developer app on each platform — paste its keys below, add the shown Redirect URI to the app, then click Connect.",
+      conn_redirect: 'Redirect URI to register in the app:',
+      conn_save: 'Save keys',
+      conn_connect: 'Connect',
+      conn_disconnect: 'Disconnect',
+      conn_connected: 'Connected',
+      conn_not_connected: 'Not connected',
+      conn_add_keys: 'Add keys',
+      conn_tiktok_hint: 'Until TikTok audits your app, uploads post as private (SELF_ONLY) — finish them in the TikTok app.',
+      conn_ig_publicurl: 'Public video URL base',
+      conn_ig_hint: 'Needs an Instagram Business/Creator account linked to a Facebook Page. Instagram fetches the file from the public URL above, so the render must be reachable there.',
+      conn_post_tiktok: 'Post to TikTok',
+      conn_post_instagram: 'Post to Instagram',
       sd_chan_text: 'Text',
       sd_chan_media: 'Media',
       setup_welcome_title: 'Welcome. Ready to install the video generator?',
@@ -2063,7 +2126,22 @@
       sd_share_latest: '最新レンダリングをダウンロード',
       sd_share_tiktok: 'TikTok Studio アップロードを開く',
       sd_share_instagram: 'Instagram を開く',
-      sd_share_note: 'アプリ内から直接投稿するには TikTok / Instagram の開発者アプリ連携が必要です（未設定）。現在は動画をダウンロードして、開いたページにアップロードしてください。',
+      sd_share_note: '設定でTikTok / Instagramを連携すると、ここから直接投稿できます。未連携の場合は動画をダウンロードして、開いたページにアップロードしてください。',
+      rdm_caption_ph: 'キャプション…',
+      conn_title: 'アカウント連携',
+      conn_intro: 'TikTok / Instagram を連携すると、完成した動画を結果画面から直接投稿できます。各プラットフォームで自分の開発者アプリが必要です。下にキーを貼り付け、表示されたリダイレクトURIをアプリに登録してから「連携」を押してください。',
+      conn_redirect: 'アプリに登録するリダイレクトURI：',
+      conn_save: 'キーを保存',
+      conn_connect: '連携',
+      conn_disconnect: '連携解除',
+      conn_connected: '連携済み',
+      conn_not_connected: '未連携',
+      conn_add_keys: 'キーを入力',
+      conn_tiktok_hint: 'TikTokの審査が通るまで、アップロードは非公開（SELF_ONLY）で投稿されます。TikTokアプリで仕上げてください。',
+      conn_ig_publicurl: '公開動画URLのベース',
+      conn_ig_hint: 'Facebookページに連携したInstagramビジネス/クリエイターアカウントが必要です。Instagramは上記の公開URLからファイルを取得するため、その場所で動画にアクセスできる必要があります。',
+      conn_post_tiktok: 'TikTokに投稿',
+      conn_post_instagram: 'Instagramに投稿',
       sd_chan_text: 'テキスト',
       sd_chan_media: 'メディア',
       setup_welcome_title: 'ようこそ。動画ジェネレーターをインストールしますか？',
@@ -3288,7 +3366,7 @@
     document.querySelectorAll('.tab').forEach((t,i)   => t.classList.toggle('active', TAB_NAMES[i] === name));
     document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', TAB_NAMES[i] === name));
     if (name === 'scenes')   { loadSegments(); }
-    if (name === 'settings') { loadSettingsUI(); }
+    if (name === 'settings') { loadSettingsUI(); loadSocialStatus(); }
     if (name === 'media')    { loadMediaLibrary(); }
     // if (name === 'timeline') { loadGlobalTimeline(); }
     // Re-apply language translations after tab switch (static panels)
@@ -10995,6 +11073,21 @@
     overlay?.classList.toggle('rdm-screen-mode', screenMode);
     overlay?.classList.add('open');
     window.addEventListener('resize', rdmRefitPlayer);
+    rdmReflectSocial();   // offer a caption + relabel share buttons if an account is connected
+  }
+  // Reflect connected accounts in the result screen: show a caption box and turn "TikTok"/"Instagram"
+  // into "Post to …" when that platform is connected (else they stay as open-the-upload-page links).
+  async function rdmReflectSocial() {
+    let st = {};
+    try { st = await (await fetch('/social/status')).json(); window._socialStatus = st; } catch (_) {}
+    const t = (I18N[window._appLang||'en']||I18N.en);
+    const cap = document.getElementById('rdm-caption');
+    const any = !!(st.tiktok?.connected || st.instagram?.connected);
+    if (cap) cap.style.display = any ? 'block' : 'none';
+    const tk = document.getElementById('rdm-share-tiktok');
+    const ig = document.getElementById('rdm-share-instagram');
+    if (tk) tk.innerHTML = st.tiktok?.connected ? `🎵 ${t.conn_post_tiktok || 'Post to TikTok'}` : '🎵 TikTok';
+    if (ig) ig.innerHTML = st.instagram?.connected ? `📷 ${t.conn_post_instagram || 'Post to Instagram'}` : '📷 Instagram';
   }
   function closeRenderDoneModal() {
     const vid = document.getElementById('rdm-video');
@@ -11009,11 +11102,78 @@
     try { setSceneViewMode('list'); } catch {}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
   }
-  function rdmShare(target) {
-    // No direct API posting yet — open the platform's upload page; the user uploads the downloaded file.
-    const urls = { tiktok: 'https://www.tiktok.com/tiktokstudio/upload', instagram: 'https://www.instagram.com/' };
-    window.open(urls[target] || '/', '_blank');
+  // Share the finished render. If the platform is connected (Settings → Connect accounts) post it
+  // directly via the server; otherwise fall back to opening the platform's upload page.
+  async function rdmShare(target, evt) {
+    const btn = (evt || window.event)?.target?.closest('button');
+    let connected = false;
+    try {
+      const s = window._socialStatus || await (await fetch('/social/status')).json();
+      window._socialStatus = s;
+      connected = !!(s[target] && s[target].connected);
+    } catch (_) {}
+    if (!connected) {
+      const urls = { tiktok: 'https://www.tiktok.com/tiktokstudio/upload', instagram: 'https://www.instagram.com/' };
+      window.open(urls[target] || '/', '_blank');
+      return;
+    }
+    const caption = (document.getElementById('rdm-caption')?.value || '').trim();
+    const orig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Posting…'; }
+    try {
+      const r = await fetch('/social/post', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform: target, file: rdmCurrentFile, caption }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Post failed');
+      if (btn) btn.innerHTML = '✅ Posted';
+      if (d.note) alert(d.note);
+      setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }, 3000);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      alert(`Couldn't post to ${target}: ${e.message}`);
+    }
   }
+
+  /* ── Connect-accounts settings (TikTok / Instagram direct posting) ── */
+  async function loadSocialStatus() {
+    try {
+      const s = await (await fetch('/social/status')).json();
+      window._socialStatus = s;
+      const t = (I18N[window._appLang||'en']||I18N.en);
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+      setText('tk-redirect', s.redirectUris?.tiktok || '—');
+      setText('ig-redirect', s.redirectUris?.instagram || '—');
+      const label = (c, name) => c.connected ? `✓ ${name || (t.conn_connected || 'Connected')}` : (c.configured ? (t.conn_not_connected || 'Not connected') : (t.conn_add_keys || 'Add keys'));
+      const tk = s.tiktok || {}, ig = s.instagram || {};
+      const tkEl = document.getElementById('tk-status'); if (tkEl) { tkEl.textContent = label(tk, tk.displayName); tkEl.style.color = tk.connected ? '#10b981' : '#94a3b8'; }
+      show('tk-connect', !tk.connected); show('tk-disconnect', !!tk.connected);
+      if (ig.publicBaseUrl) { const el = document.getElementById('ig-publicurl'); if (el && !el.value) el.value = ig.publicBaseUrl; }
+      const igEl = document.getElementById('ig-status'); if (igEl) { igEl.textContent = label(ig, ig.username ? '@' + ig.username : ''); igEl.style.color = ig.connected ? '#10b981' : '#94a3b8'; }
+      show('ig-connect', !ig.connected); show('ig-disconnect', !!ig.connected);
+    } catch (e) { console.warn('social status:', e); }
+  }
+  async function saveSocialConfig(platform) {
+    const body = { platform };
+    if (platform === 'tiktok') { body.clientKey = document.getElementById('tk-key').value; body.clientSecret = document.getElementById('tk-secret').value; }
+    else { body.appId = document.getElementById('ig-appid').value; body.appSecret = document.getElementById('ig-secret').value; body.publicBaseUrl = document.getElementById('ig-publicurl').value; }
+    try { const r = await fetch('/social/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error((await r.json()).error || 'save failed'); }
+    catch (e) { alert('Save failed: ' + e.message); return false; }
+    await loadSocialStatus();
+    return true;
+  }
+  async function connectSocial(platform) {
+    if (!(await saveSocialConfig(platform))) return;        // persist credentials before the redirect
+    const w = window.open(`/oauth/${platform}/start`, 'oauth_' + platform, 'width=620,height=760');
+    if (!w) alert('Please allow pop-ups to connect your account.');
+  }
+  async function disconnectSocial(platform) {
+    try { await fetch('/social/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform }) }); } catch (_) {}
+    await loadSocialStatus();
+  }
+  // The OAuth popup tells us when it's done — refresh the status.
+  window.addEventListener('message', (e) => {
+    if (e && e.data && (e.data.type === 'social-connected' || e.data.type === 'social-error')) { window._socialStatus = null; loadSocialStatus(); }
+  });
 
   /* ── Rich scene timeline interactions ── */
   let stlDragState = null;
@@ -13626,12 +13786,13 @@
     <h3>✅ <span data-i18n="rdm_title">Your video is ready</span></h3>
     <video id="rdm-video" controls playsinline preload="metadata"></video>
     <div class="rdm-filename" id="rdm-filename"></div>
+    <textarea id="rdm-caption" class="rdm-caption" data-i18n-placeholder="rdm_caption_ph" placeholder="Caption…" style="display:none"></textarea>
     <div class="rdm-actions">
       <a class="btn blue" id="rdm-download" download href="#"><i class="fa-solid fa-download"></i> <span data-i18n="rdm_download">Download</span></a>
-      <button class="btn ghost" onclick="rdmShare('tiktok')">🎵 TikTok</button>
-      <button class="btn ghost" onclick="rdmShare('instagram')">📷 Instagram</button>
+      <button class="btn ghost" id="rdm-share-tiktok" onclick="rdmShare('tiktok', event)">🎵 TikTok</button>
+      <button class="btn ghost" id="rdm-share-instagram" onclick="rdmShare('instagram', event)">📷 Instagram</button>
     </div>
-    <div class="rdm-note" data-i18n="sd_share_note">Direct in-app posting needs a TikTok / Instagram developer-app connection — not set up yet. For now: download the video, then upload it on the page that opens.</div>
+    <div class="rdm-note" data-i18n="sd_share_note">Connect TikTok / Instagram in Settings to post directly from here. Otherwise, download the video and upload it on the page that opens.</div>
     <div class="modal-actions rdm-edit-row" style="justify-content:center;margin-top:18px">
       <button class="btn ghost rdm-edit" onclick="rdmEditScenes()">✏️<span data-i18n="rdm_edit">Edit</span></button>
     </div>

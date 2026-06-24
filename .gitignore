@@ -12,6 +12,7 @@ renders
 
 # User data — never back these up
 UserConfig.json
+SocialConnections.json
 recordings
 .server.pid
 src/Content.json
