@@ -1434,6 +1434,19 @@ function isJapanese(text) {
     return /[\u3040-\u30FF\u4E00-\u9FFF]/.test(text);
 }
 
+// Stop a spawned child AND its descendants. Safe ONLY for children spawned with { detached: true } \u2014
+// each becomes its own process-group leader, so signalling the negative PID hits the whole tree
+// (sh \u2192 npx \u2192 node \u2192 remotion \u2192 Chrome workers), not the server's own group. A plain .kill('SIGTERM')
+// only reaches the shell, leaving the real renderer running \u2014 which made "Stop" not actually stop.
+function killTree(proc) {
+    if (!proc || proc.killed || !proc.pid) return;
+    const pid = proc.pid;
+    const sig = (s) => { try { process.kill(-pid, s); } catch (_) { try { proc.kill(s); } catch (__) {} } };
+    sig('SIGTERM');
+    // Escalate to SIGKILL if the tree is still alive after a grace period (remotion/Chrome can ignore TERM).
+    setTimeout(() => { try { process.kill(-pid, 0); sig('SIGKILL'); } catch (_) {} }, 4000);
+}
+
 io.on('connection', (socket) => {
     socket.on('start-batch', async (data) => {
         const scripts = data.scripts.filter(s => s.trim() !== "").slice(0, 2);
@@ -1448,7 +1461,7 @@ io.on('connection', (socket) => {
         const cancelHandler = () => {
             cancelled = true;
             if (activeProc) {
-                try { activeProc.kill('SIGTERM'); } catch (_) {}
+                killTree(activeProc);   // kill the render tree, not just the shell
                 activeProc = null;
             }
             socket.emit('log', L.cancelled);
@@ -1459,7 +1472,7 @@ io.on('connection', (socket) => {
         // Helper: spawn a process, stream its output, reject on non-zero exit
         const runProc = (cmd, args, opts = {}) => new Promise((resolve, reject) => {
             if (cancelled) return reject(new Error('cancelled'));
-            const proc = spawn(cmd, args, opts);
+            const proc = spawn(cmd, args, { ...opts, detached: true });
             activeProc = proc;
             const fwd = d => d.toString().split('\n').filter(l => l.trim()).forEach(l => socket.emit('log', l));
             proc.stdout?.on('data', fwd);
@@ -1575,8 +1588,10 @@ io.on('connection', (socket) => {
 
     socket.on('cancel-render', () => {
         _renderOnlyCancelled = true;
-        if (_renderOnlyAudioProc) { try { _renderOnlyAudioProc.kill('SIGTERM'); } catch (_) {} _renderOnlyAudioProc = null; }
-        if (_renderOnlyVideoProc) { try { _renderOnlyVideoProc.kill('SIGTERM'); } catch (_) {} _renderOnlyVideoProc = null; }
+        // Kill the whole render tree, not just the shell — otherwise remotion keeps rendering in the
+        // background and pops "video ready" after the user stopped.
+        if (_renderOnlyAudioProc) { killTree(_renderOnlyAudioProc); _renderOnlyAudioProc = null; }
+        if (_renderOnlyVideoProc) { killTree(_renderOnlyVideoProc); _renderOnlyVideoProc = null; }
         socket.emit('render-cancelled');
         socket.emit('log', '⏹ Render cancelled.');
     });
@@ -1602,21 +1617,23 @@ io.on('connection', (socket) => {
             socket.emit('log', L.regen_voice);
             // Use spawn (not execSync) so the event loop stays free and logs stream live
             const audioScript = audioCmd2.replace(/^node\s+/, '');
-            const audioProc = spawn('node', [audioScript], { shell: false });
+            const audioProc = spawn('node', [audioScript], { shell: false, detached: true });
             _renderOnlyAudioProc = audioProc;
             audioProc.stdout.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
             audioProc.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(line => socket.emit('log', line)));
             const audioCode = await new Promise(res => audioProc.on('close', c => { _renderOnlyAudioProc = null; res(c); }));
+            if (_renderOnlyCancelled) { _renderOnlyCancelled = false; return; }   // stopped during voice gen
             if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
             socket.emit('log', L.voice_ready);
 
             validateContentForRender(msg => socket.emit('log', msg), lang);
             socket.emit('log', L.rendering_only);
-            const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
+            const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true, detached: true });
             _renderOnlyVideoProc = render;
             render.stdout.on('data', d => socket.emit('log', d.toString().trim()));
             render.stderr.on('data', d => socket.emit('log', d.toString().trim()));
             await new Promise(res => render.on('close', c => { _renderOnlyVideoProc = null; res(c); }));
+            if (_renderOnlyCancelled) { _renderOnlyCancelled = false; return; }   // stopped during render → don't publish
 
             const finalName = `render_${Date.now()}.mp4`;
             if (!fs.existsSync('renders')) fs.mkdirSync('renders');

@@ -10857,6 +10857,7 @@
     socket.emit('render-only', { lang: window._appLang||'en' });
   }
 
+  let _cancelTimeout = null;
   function cancelRender() {
     socket.emit('cancel-render');
     if (scenesRerenderActive) {
@@ -10868,6 +10869,29 @@
       const btn = document.getElementById('rerenderBtn');
       if (btn) { btn.textContent = 'Stopping…'; btn.disabled = true; btn.classList.remove('red'); }
       document.getElementById('rerender-status').textContent = 'Stopping…';
+    }
+    // Safety net: if the server never confirms the cancel, free the UI anyway after a few seconds so
+    // the user can start fresh without refreshing the page.
+    clearTimeout(_cancelTimeout);
+    _cancelTimeout = setTimeout(() => forceResetRenderUI('⏹ Stopped'), 5000);
+  }
+  // Return the render buttons to a ready state. Shared by the server's render-cancelled confirmation
+  // and the cancel safety-net timeout.
+  function forceResetRenderUI(statusMsg) {
+    const _lt = (I18N[window._appLang||'en']||I18N.en);
+    clearTimeout(_cancelTimeout);
+    _renderRunning = false;
+    if (scenesRerenderActive) {
+      scenesRerenderActive = false;
+      const btn = document.getElementById('scenesRerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = _lt.btn_generate || '🎬 Generate'; btn.classList.remove('red'); }
+      const st = document.getElementById('scenes-rerender-status'); if (st) st.textContent = statusMsg;
+    }
+    if (rerenderActive) {
+      rerenderActive = false;
+      const btn = document.getElementById('rerenderBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
+      const st = document.getElementById('rerender-status'); if (st) st.textContent = statusMsg;
     }
   }
 
@@ -10881,24 +10905,13 @@
     }
   });
 
-  socket.on('render-cancelled', () => {
-    const _lt = (I18N[window._appLang||'en']||I18N.en);
-    _renderRunning = false;
-    if (scenesRerenderActive) {
-      scenesRerenderActive = false;
-      const btn = document.getElementById('scenesRerenderBtn');
-      if (btn) { btn.disabled = false; btn.textContent = _lt.btn_generate || '🎬 Generate'; btn.classList.remove('red'); }
-      document.getElementById('scenes-rerender-status').textContent = '⏹ Cancelled';
-    }
-    if (rerenderActive) {
-      rerenderActive = false;
-      const btn = document.getElementById('rerenderBtn');
-      if (btn) { btn.disabled = false; btn.textContent = '🎬 RENDER VIDEO'; btn.classList.remove('red'); }
-      document.getElementById('rerender-status').textContent = '⏹ Cancelled';
-    }
-  });
+  socket.on('render-cancelled', () => forceResetRenderUI('⏹ Cancelled'));
 
   socket.on('render-done', data => {
+    // Ignore a stray/late completion that arrives after the user stopped (both flags already cleared) —
+    // otherwise a render that finished cancelling would still pop "video ready".
+    if (!scenesRerenderActive && !rerenderActive) return;
+    clearTimeout(_cancelTimeout);
     const _lt = (I18N[window._appLang||'en']||I18N.en);
     const doneMsg = _lt.log_done_saved(data.file);
     _renderRunning = false;
