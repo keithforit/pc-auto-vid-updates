@@ -4609,7 +4609,7 @@
       data-fulltext="${escapeHtml(rawText)}"
       style="${wrap};display:${previewDisplay}">
       <div class="tprev-block-strip" id="tprev-strip-${i}" style="background:${glowColor || blockColor}"></div>
-      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner};font-family:${fontFamilyFor(seg.font)}">${txt}</div>
+      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner};font-family:${fontFamilyFor(seg.font)}">${highlightHTML(rawText)}</div>
     </div>`;
   }
 
@@ -4749,6 +4749,16 @@
       innerEl.style.animation = `preview-fade 280ms cubic-bezier(0.22, 1, 0.36, 1) ${timing.delayMs + 180}ms 1 forwards`;
       return;
     }
+    if (animation === 'reveal') {
+      // Reveal just the [highlight] spans left-to-right; rest stays put (matches the render).
+      innerEl.style.opacity = '1';
+      const revMs = Math.max(200, Math.round(fadeInSeconds * 1000));
+      innerEl.querySelectorAll('.tprev-hl').forEach(s => {
+        s.style.display = 'inline-block'; s.style.animation = 'none'; void s.offsetWidth;
+        s.style.animation = `preview-wipe ${revMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${timing.delayMs}ms 1 both`;
+      });
+      return;
+    }
     if (animation !== 'static') restartPreviewAnimation(innerEl, animation, fadeInSeconds, fadeOutSeconds, timing, realTime);
   }
 
@@ -4802,7 +4812,7 @@
     const previewText = fullText.length > 55 ? `${fullText.slice(0,55)}…` : fullText;
     const hasText = fullText.trim().length > 0;
     el.dataset.fulltext = fullText;
-    innerEl.textContent = previewText;
+    innerEl.innerHTML = highlightHTML(fullText);
     const segCaption = document.getElementById(`seg-caption-${i}`);
     if (segCaption) segCaption.textContent = hasText ? fullText : (I18N[window._appLang||'en']||I18N.en).no_orig_text;
     try { sdSyncLabel(i, fullText); } catch {}
@@ -5357,6 +5367,37 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  // Render caption text for the editor preview with [word|#hex] / [word] highlight spans
+  // (matches the Remotion renderLine). Non-bracket text is HTML-escaped; the colour is
+  // allow-listed to safe chars so it can't break out of the style attribute. Highlight spans
+  // get class "tprev-hl" so the Reveal animation can wipe just those spans. Truncates to
+  // maxLen visible chars (… suffix) so long captions stay compact.
+  function highlightHTML(text, maxLen = 55) {
+    const src = String(text == null ? '' : text);
+    const pattern = /\[([^\]|]+)(?:\|([^\]]+))?\]/g;
+    let out = '', last = 0, vis = 0, m, done = false;
+    const take = (str, color) => {
+      if (done) return;
+      let s = str;
+      if (vis + s.length > maxLen) { s = s.slice(0, Math.max(0, maxLen - vis)); done = true; }
+      vis += s.length;
+      if (color !== undefined) {
+        const safe = /^[#a-zA-Z0-9(),.%\s]+$/.test(color) ? color : '';
+        out += `<span class="tprev-hl"${safe ? ` style="color:${safe}"` : ''}>${escapeHtml(s)}</span>`;
+      } else if (s) {
+        out += escapeHtml(s);
+      }
+      if (done) out += '…';
+    };
+    while (!done && (m = pattern.exec(src)) !== null) {
+      if (m.index > last) take(src.slice(last, m.index), undefined);
+      take(m[1], m[2] === undefined ? '' : m[2]);
+      last = pattern.lastIndex;
+    }
+    if (!done && last < src.length) take(src.slice(last), undefined);
+    return out;
   }
 
   function uniqueSpeakerNames(list = []) {
@@ -9115,7 +9156,7 @@
     const noWrapStyle = noWrap
       ? 'white-space:pre;width:max-content;max-width:none;overflow:visible'
       : `max-width:${boxWidth}%`;
-    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" id="et-inner-${i}-${j}" style="${inner};${noWrapStyle};font-family:${fontFamilyFor(et?.font || seg.font)}">${escapeHtml(txt)}</div></div>`;
+    return `<div class="text-preview extra-text-preview" id="et-preview-${i}-${j}" data-drag-extra="${j}" data-drag-seg="${i}" data-freepos="${hasFreePos ? '1' : '0'}" data-startat="${startAt ?? 0}" data-endat="${endAt ?? ''}" data-animation="${animation}" style="${wrap};display:flex"><div class="tprev-inner" id="et-inner-${i}-${j}" style="${inner};${noWrapStyle};font-family:${fontFamilyFor(et?.font || seg.font)}">${highlightHTML(rawText, 40)}</div></div>`;
   }
 
   function buildExtraTextPreviewsHTML(i, seg) {
@@ -9195,6 +9236,15 @@
       innerEl.style.clipPath = '';
       innerEl.style.opacity = animation === 'static' ? '1' : '';
       void innerEl.offsetWidth;
+      if (animation === 'reveal') {
+        innerEl.style.opacity = '1';
+        const revMs = Math.max(200, Math.round(fadeIn * 1000));
+        innerEl.querySelectorAll('.tprev-hl').forEach(s => {
+          s.style.display = 'inline-block'; s.style.animation = 'none'; void s.offsetWidth;
+          s.style.animation = `preview-wipe ${revMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${timing.delayMs}ms 1 both`;
+        });
+        return;
+      }
       if (animation !== 'static') {
         const value = buildPreviewAnimationValue(animation, fadeIn, fadeOut, timing);
         if (value) innerEl.style.animation = value;
