@@ -1,10 +1,9 @@
 {
-  "version": "1.4.86",
+  "version": "1.4.87",
   "date": "2026-06-25",
-  "notes": "Fix: adding API keys (Settings → 'Verify & save keys', and the first-run wizard) could fail with 'Could not reach the key check service' on a home install — even when the keys were valid and the server was running on localhost:3000. Root cause was the single-instance port-cleanup that frees port 3000 and kills stale old servers: it used `lsof` and `sleep`, which don't exist on Windows, so it silently did nothing there — a stale OLD server.js kept port 3000 while the freshly-started one quietly moved to 3001, leaving the browser at :3000 talking to old code that lacks the /setup-validate-keys and /provider-health routes (404 → 'could not reach', both keys shown 'not set'). Cleanup is now cross-platform: netstat on Windows, lsof on macOS/Linux, plus a shell-free synchronous pause (Atomics.wait) replacing `sleep 0.4`. Also reworded the misleading error from 'check your internet connection' to 'Can't reach the app's own server — fully restart the app' (English + Japanese). NOTE: server.js change needs a full app restart (quit completely, then run again) to take effect.",
+  "notes": "UI fix: in Settings → API Keys, the green '✓ Key works' confirmation no longer overlaps the key input box. The note's -8px top margin was tuned for the setup wizard's .setup-input (which has a 14px bottom margin); the Settings card uses bare password inputs with no bottom margin, so the note rode up onto the field. Scoped the two Settings notes (#settings-pexels-note, #settings-pixabay-note) to sit just below their input instead. No server.js change — a browser hard-refresh (Ctrl+Shift+R) is enough to pick this up.",
   "files": [
     "index.html",
-    "server.js",
     "version.json"
   ]
 }
