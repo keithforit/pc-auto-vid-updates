@@ -1,7 +1,7 @@
 {
-  "version": "1.4.87",
+  "version": "1.4.88",
   "date": "2026-06-25",
-  "notes": "UI fix: in Settings → API Keys, the green '✓ Key works' confirmation no longer overlaps the key input box. The note's -8px top margin was tuned for the setup wizard's .setup-input (which has a 14px bottom margin); the Settings card uses bare password inputs with no bottom margin, so the note rode up onto the field. Scoped the two Settings notes (#settings-pexels-note, #settings-pixabay-note) to sit just below their input instead. No server.js change — a browser hard-refresh (Ctrl+Shift+R) is enough to pick this up.",
+  "notes": "UI fix: the Settings → API Keys input boxes (Pexels/Pixabay) rendered as plain white browser-default fields instead of matching the dark theme. The themed input style only targeted '.settings-section input[type=text]', but these fields are type=password, so they were never styled. Added #settings-pexels-key and #settings-pixabay-key to the existing themed-input rule (same dark background, border, radius, and focus colour as every other settings input), with box-sizing:border-box so the 100% width + padding never overflows. CSS-only — a browser hard-refresh (Ctrl+Shift+R) picks it up. Follows the '✓ Key works' overlap fix (v1.4.87).",
   "files": [
     "index.html",
     "version.json"
