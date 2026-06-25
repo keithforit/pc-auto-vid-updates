@@ -19,17 +19,22 @@ function fitFontSize(text: string, fontFamily: string, fontWeight: string | numb
 
 // Parse [word|#hex] or [word] inline color spans within a single line of text.
 // [word] without a color uses highlightColor (if provided), otherwise renders plainly.
-function renderLine(line: string, highlightColor?: string): React.ReactNode[] {
+function renderLine(line: string, highlightColor?: string, revealProgress?: number): React.ReactNode[] {
     const parts: React.ReactNode[] = [];
     const pattern = /\[([^\]|]+)(?:\|([^\]]+))?\]/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
+    // 'reveal' animation: each [bracketed] span wipes in left-to-right via clip-path while
+    // keeping its full width reserved (inline-block), so surrounding static text never shifts.
+    const revealStyle = (): React.CSSProperties => revealProgress != null
+        ? { display: 'inline-block', clipPath: `inset(0 ${((1 - revealProgress) * 100).toFixed(2)}% 0 0)` }
+        : {};
     while ((match = pattern.exec(line)) !== null) {
         if (match.index > lastIndex) parts.push(line.slice(lastIndex, match.index));
         const spanText = match[1];
         const spanColor = match[2] || highlightColor;
-        if (spanColor) {
-            parts.push(<span key={match.index} style={{ color: spanColor }}>{spanText}</span>);
+        if (spanColor || revealProgress != null) {
+            parts.push(<span key={match.index} style={{ ...(spanColor ? { color: spanColor } : {}), ...revealStyle() }}>{spanText}</span>);
         } else {
             parts.push(spanText);
         }
@@ -42,7 +47,7 @@ function renderLine(line: string, highlightColor?: string): React.ReactNode[] {
 interface CaptionProps {
     text: string;
     textStyle?: string;
-    animation?: string;       // 'pop' | 'static' | 'fade' | 'fade-in' | 'fade-out' | 'fade-both' | 'wipe' | 'block'
+    animation?: string;       // 'pop' | 'static' | 'fade' | 'fade-in' | 'fade-out' | 'fade-both' | 'wipe' | 'reveal' | 'block'
     glowColor?: string;
     glowSize?: number;
     font?: string;
@@ -142,6 +147,7 @@ export const Caption: React.FC<CaptionProps> = ({
     let scale = 1;
     let opacity = hideOp;
     let textRevealOpacity = 1;
+    let revealProgress = 1; // 'reveal': 0→1 left-to-right wipe of [bracketed] spans (1 = fully shown)
     let clipPath: string | undefined;
     // wipe: block sweeps left-to-right revealing text underneath
     let wipeSweepX = -105; // translateX % of the block cover
@@ -151,6 +157,7 @@ export const Caption: React.FC<CaptionProps> = ({
         scale = 1;
         opacity = 0;
         textRevealOpacity = 0;
+        revealProgress = 0;
     } else {
         switch (animation) {
             case 'static': {
@@ -194,6 +201,17 @@ export const Caption: React.FC<CaptionProps> = ({
                 showWipeCover = localFrame < fadeInFrames;
                 // Text fades in from behind the block as it sweeps away
                 textRevealOpacity = interpolate(localFrame, [sweepMid, fadeInFrames], [0, 1], {
+                    extrapolateLeft: 'clamp',
+                    extrapolateRight: 'clamp',
+                    easing: Easing.out(Easing.cubic),
+                });
+                opacity = exitFade * hideOp;
+                break;
+            }
+            case 'reveal': {
+                // Everything appears immediately; only the [bracketed] highlight spans wipe in
+                // left-to-right (applied per-span in renderLine via revealProgress).
+                revealProgress = interpolate(localFrame, [0, fadeInFrames], [0, 1], {
                     extrapolateLeft: 'clamp',
                     extrapolateRight: 'clamp',
                     easing: Easing.out(Easing.cubic),
@@ -340,7 +358,7 @@ export const Caption: React.FC<CaptionProps> = ({
                     <div style={{ ...textContentStyle, position: 'relative', zIndex: 1, opacity: animation === 'wipe' ? textRevealOpacity : 1 }}>
                         {String(text ?? '').split('\n').map((line, idx, arr) => (
                             <React.Fragment key={idx}>
-                                {renderLine(line, highlightColor)}
+                                {renderLine(line, highlightColor, animation === 'reveal' ? revealProgress : undefined)}
                                 {idx < arr.length - 1 && <br />}
                             </React.Fragment>
                         ))}

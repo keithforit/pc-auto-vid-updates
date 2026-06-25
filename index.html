@@ -1690,6 +1690,7 @@
       anim_fade_out: 'Fade out',
       anim_fade_both: 'Fade both',
       anim_wipe: 'Wipe',
+      anim_reveal: 'Reveal',
       label_wrap: 'Wrap:',
       btn_no_wrap_on: 'No Wrap',
       btn_autofit: 'Auto-fit',
@@ -2309,6 +2310,7 @@
       anim_fade_out: 'フェードアウト',
       anim_fade_both: '両方フェード',
       anim_wipe: 'ワイプ',
+      anim_reveal: '左から表示',
       label_wrap: '折り返し:',
       btn_no_wrap_on: '折り返しなし',
       btn_autofit: '自動フィット',
@@ -2788,6 +2790,7 @@
       if (['fade out','フェードアウト'].includes(txt)) el.textContent = t.anim_fade_out || t.label_fade_out;
       if (['fade both','両方フェード','both','両方'].includes(txt)) el.textContent = t.anim_fade_both || t.label_both;
       if (['wipe','ワイプ'].includes(txt)) el.textContent = t.anim_wipe;
+      if (['reveal','左から表示','リビール'].includes(txt)) el.textContent = t.anim_reveal;
     });
 
     // Update timeline and other labels if they exist
@@ -4648,6 +4651,11 @@
     if (animation === 'wipe') {
       const wipeMs = Math.max(200, Math.round((fadeInSeconds || 0.5) * 1000));
       return `preview-wipe ${wipeMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${visStartMs}ms 1 both`;
+    }
+
+    if (animation === 'reveal') {
+      const revMs = Math.max(200, Math.round((fadeInSeconds || 0.5) * 1000));
+      return `preview-wipe ${revMs}ms cubic-bezier(0.22, 1, 0.36, 1) ${visStartMs}ms 1 both`;
     }
 
     // fade / fade-in / fade-out / fade-both — unified looping keyframe
@@ -6531,7 +6539,8 @@
                   ['fade-in',   _t.anim_fade_in || 'Fade in'],
                   ['fade-out',  _t.anim_fade_out || 'Fade out'],
                   ['fade-both', _t.anim_fade_both || 'Fade both'],
-                  ['wipe',      _t.anim_wipe || 'Wipe']
+                  ['wipe',      _t.anim_wipe || 'Wipe'],
+                  ['reveal',    _t.anim_reveal || 'Reveal']
                 ].map(([a,lbl]) => {
                   const ta = seg.textAnimation || 'pop';
                   const active = ta === a || (a === 'fade-both' && ta === 'fade');
@@ -8386,7 +8395,7 @@
         <div class="ctrl-row">
           <span class="ctrl-row-label">${t.animate}:</span>
           <div style="display:flex;gap:4px;flex-wrap:wrap" id="et-animrow-${i}-${j}">
-            ${[['static', t.anim_static||'Static'], ['pop', t.anim_pop||'Pop'], ['fade-in', t.anim_fade_in||'Fade in'], ['fade-out', t.anim_fade_out||'Fade out'], ['fade-both', t.anim_fade_both||'Fade both'], ['wipe', t.anim_wipe||'Wipe']].map(([a,lbl]) => {
+            ${[['static', t.anim_static||'Static'], ['pop', t.anim_pop||'Pop'], ['fade-in', t.anim_fade_in||'Fade in'], ['fade-out', t.anim_fade_out||'Fade out'], ['fade-both', t.anim_fade_both||'Fade both'], ['wipe', t.anim_wipe||'Wipe'], ['reveal', t.anim_reveal||'Reveal']].map(([a,lbl]) => {
               const isActive = anim===a || (a==='fade-both' && anim==='fade');
               return `<div class="pos-btn style-text-btn ${isActive?'active':''}" data-anim="${a}" onclick="setExtraAnimation(${i},${j},'${a}')">${lbl}</div>`;
             }).join('')}
