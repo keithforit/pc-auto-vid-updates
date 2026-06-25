@@ -1,7 +1,7 @@
 {
-  "version": "1.4.90",
+  "version": "1.4.91",
   "date": "2026-06-25",
-  "notes": "New 'Text effects' presets gallery — ready-made caption looks so you don't have to build a style from scratch. Each scene's main text gets an ✨ Effects button that opens a gallery of 8 one-click presets (Classic box, Bold block, Neon glow, Soft shadow, Outline, Highlight reveal, Wipe bar, Pink neon). Each preset bundles a style + colours + an animation (including the new Reveal). Click one to apply it to that scene, or tick 'Apply to all scenes' to style the whole video at once. Presets apply through the same /update-scene-texts path as Paste Style — a partial update, so your font size, position and text are left untouched — then the editor refreshes. The from-scratch flow and every individual knob still work for fine-tuning afterwards. index.html only (presets just set fields the Caption render already supports); a browser hard-refresh picks it up.",
+  "notes": "Text-effect presets now work on text layers too. Each text layer's header gets the same ✨ Effects button (next to Copy / Paste / ✕) that opens the presets gallery and applies a preset to that layer. The gallery is shared between the main caption and layers; for a layer the 'Apply to all scenes' option is hidden (a preset targets that one layer). Layer presets map the bundle onto the layer's field names (textStyle / animation + the shared colour overrides) and save via the extraTexts array. index.html only; a browser hard-refresh picks it up.",
   "files": [
     "index.html"
   ]

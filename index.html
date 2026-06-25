@@ -8357,6 +8357,7 @@
           <summary>
             <span class="layer-accordion-title">${t.label_text_layer} ${j + 1}</span>
             <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn sm ghost" onclick="event.preventDefault();event.stopPropagation();openTextEffects(${i},${j})" title="${t.fx_title}">${t.fx_effects_btn}</button>
               <button class="btn sm blue" onclick="event.preventDefault();event.stopPropagation();copyExtraStyle(${i},${j},event)" title="Copy style from this layer">📋 ${t.copy_style || 'Copy'}</button>
               <button class="btn sm purple" onclick="event.preventDefault();event.stopPropagation();pasteExtraStyle(${i},${j},event)" title="Paste style to this layer">📌 ${t.paste_style || 'Paste'}</button>
               <button class="btn sm red" onclick="event.preventDefault();event.stopPropagation();removeExtraText(${i},${j})">✕ ${t.btn_remove}</button>
@@ -9018,7 +9019,11 @@
     return m[a] || a;
   }
 
-  function openTextEffects(i) {
+  // Open the presets gallery for the main caption (openTextEffects(i)) or a text layer
+  // (openTextEffects(i, j)). For a layer, the "apply to all scenes" option is hidden.
+  function openTextEffects(i, j) {
+    const isLayer = (j !== undefined && j !== null);
+    const jArg = isLayer ? j : 'null';
     const lang = window._appLang || 'en';
     const t = I18N[lang] || I18N.en;
     document.getElementById('fx-modal')?.remove();
@@ -9027,33 +9032,52 @@
     ov.style.cssText = 'position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
     ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
     const cards = TEXT_PRESETS.map(p => `
-      <div class="fx-card" onclick="applyTextPreset(${i}, '${p.id}')" title="${lang==='ja'?p.ja:p.en}">
+      <div class="fx-card" onclick="applyTextPreset(${i}, ${jArg}, '${p.id}')" title="${lang==='ja'?p.ja:p.en}">
         <div class="fx-stage">${p.sample}</div>
         <div class="fx-meta"><span class="fx-name">${lang==='ja'?p.ja:p.en}</span><span class="fx-chip">${_fxAnimLabel(p.bundle.textAnimation)}</span></div>
       </div>`).join('');
+    const allRow = isLayer ? '' : `<label class="fx-all"><input type="checkbox" id="fx-apply-all"> ${t.fx_apply_all || 'Apply to all scenes'}</label>`;
     ov.innerHTML = `<div class="fx-panel">
         <div class="fx-head"><span class="fx-title">${t.fx_title || 'Text effects'}</span>
           <button class="btn sm ghost" type="button" onclick="document.getElementById('fx-modal').remove()">✕</button></div>
         <div class="fx-grid">${cards}</div>
-        <label class="fx-all"><input type="checkbox" id="fx-apply-all"> ${t.fx_apply_all || 'Apply to all scenes'}</label>
+        ${allRow}
       </div>`;
     document.body.appendChild(ov);
   }
 
-  async function applyTextPreset(i, id) {
+  // Map a preset bundle (main-text field names) onto a text-layer's field names.
+  function _fxLayerPatch(b) {
+    const out = {};
+    if (b.mainTextStyleOverride !== undefined) out.textStyle = b.mainTextStyleOverride;
+    if (b.textAnimation !== undefined) out.animation = b.textAnimation;
+    ['blockColorOverride','textColorOverride','glowColorOverride','glowTextColorOverride','glowSizeOverride','textStrokeColorOverride','textStrokeSizeOverride','boxBorderRadius','blockBorderRadius']
+      .forEach(k => { if (b[k] !== undefined) out[k] = b[k]; });
+    return out;
+  }
+
+  async function applyTextPreset(i, j, id) {
     const p = TEXT_PRESETS.find(x => x.id === id);
     if (!p) return;
-    const all = document.getElementById('fx-apply-all')?.checked;
+    const isLayer = (j !== null && j !== undefined);
+    const all = !isLayer && document.getElementById('fx-apply-all')?.checked;
     document.getElementById('fx-modal')?.remove();
-    let targets = [i];
-    if (all) {
-      try { const segs = await fetch('/segments').then(r => r.json()); if (Array.isArray(segs)) targets = segs.map((_, idx) => idx); } catch {}
-    }
     try {
-      for (const idx of targets) {
-        await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: idx, ...p.bundle }) });
+      if (isLayer) {
+        const segs = await fetch('/segments').then(r => r.json());
+        const extras = Array.isArray(segs?.[i]?.extraTexts) ? segs[i].extraTexts : [];
+        if (!extras[j]) throw new Error('Layer not found');
+        extras[j] = { ...extras[j], ..._fxLayerPatch(p.bundle) };
+        await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: i, extraTexts: extras }) });
+        try { addEditorLog(`✨ Applied "${p.en}" to scene ${i+1} · layer ${j+1}`); } catch {}
+      } else {
+        let targets = [i];
+        if (all) { const segs = await fetch('/segments').then(r => r.json()); if (Array.isArray(segs)) targets = segs.map((_, idx) => idx); }
+        for (const idx of targets) {
+          await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: idx, ...p.bundle }) });
+        }
+        try { addEditorLog(`✨ Applied "${p.en}" ${all ? 'to all scenes' : 'to scene ' + (i+1)}`); } catch {}
       }
-      try { addEditorLog(`✨ Applied "${p.en}" ${all ? 'to all scenes' : 'to scene ' + (i+1)}`); } catch {}
       await loadSegments();
     } catch (err) {
       alert('Error applying effect: ' + (err?.message || err));
