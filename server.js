@@ -11,6 +11,34 @@ const mp3Duration = require('mp3-duration');
 // Kill ALL stale server instances so re-running the script always binds to 3000
 // and never opens extra browser tabs.
 const PID_FILE = path.join(__dirname, '.server.pid');
+
+// Find PIDs listening on the given TCP ports, cross-platform (excluding our own process).
+// macOS/Linux use lsof; Windows uses netstat — lsof is absent on Windows, where this step
+// previously threw and silently did nothing, letting a stale old server keep port 3000 while
+// the freshly-started one quietly moved to 3001 (so the browser at :3000 talked to old code).
+function listenerPidsOnPorts(ports) {
+    const pids = new Set();
+    try {
+        if (process.platform === 'win32') {
+            const out = execSync('netstat -ano -p tcp', { encoding: 'utf8', windowsHide: true });
+            for (const line of out.split('\n')) {
+                const parts = line.trim().split(/\s+/);
+                // Columns: Proto  Local-Address  Foreign-Address  State  PID
+                if (parts.length >= 5 && parts[3] === 'LISTENING' && ports.some(p => parts[1].endsWith(':' + p))) {
+                    const pid = parseInt(parts[4], 10);
+                    if (pid) pids.add(pid);
+                }
+            }
+        } else {
+            for (const p of ports) {
+                const out = execSync(`lsof -ti tcp:${p} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
+                for (const s of out.split('\n')) { const pid = parseInt(s, 10); if (pid) pids.add(pid); }
+            }
+        }
+    } catch (_) {}
+    pids.delete(process.pid);
+    return pids;
+}
 (function singleInstance() {
     // 1. Kill the known previous instance via PID file
     if (fs.existsSync(PID_FILE)) {
@@ -28,17 +56,13 @@ const PID_FILE = path.join(__dirname, '.server.pid');
     const envPort = parseInt(process.env.PORT, 10);
     if (envPort && !portsToClear.includes(envPort)) portsToClear.push(envPort);
     let killed = false;
-    for (const p of portsToClear) {
-        try {
-            const pids = execSync(`lsof -ti tcp:${p} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
-            for (const pid of pids.split('\n').filter(s => s && parseInt(s) !== process.pid)) {
-                try { process.kill(parseInt(pid), 'SIGTERM'); console.log(`🛑 Cleared stale process on port ${p} (PID ${pid})`); killed = true; }
-                catch (_) {}
-            }
-        } catch (_) {}
+    for (const pid of listenerPidsOnPorts(portsToClear)) {
+        try { process.kill(pid, 'SIGTERM'); console.log(`🛑 Cleared stale process (PID ${pid})`); killed = true; }
+        catch (_) {}
     }
-    // 3. Brief pause so the OS can release the ports before we try to bind
-    if (killed) { try { execSync('sleep 0.4'); } catch (_) {} }
+    // 3. Brief pause so the OS can release the ports before we try to bind. Synchronous and
+    //    shell-free (Atomics.wait) — the old `sleep 0.4` was a shell command with no Windows equivalent.
+    if (killed) { try { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 400); } catch (_) {} }
     // 4. Write our own PID
     fs.writeFileSync(PID_FILE, String(process.pid));
     // Only remove the PID file if it's still ours — a successor instance (e.g. after an in-app
