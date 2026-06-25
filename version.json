@@ -1,9 +1,8 @@
 {
-  "version": "1.4.89",
+  "version": "1.4.90",
   "date": "2026-06-25",
-  "notes": "New text animation 'Reveal' (左から表示). It reveals the [bracketed] highlight phrase left-to-right with a smooth clip-path wipe while the rest of the caption stays fixed in place — the static words hold their final position and the highlighted phrase fills into the reserved gap (the popular Reel caption style). Author it with the existing highlight syntax, e.g. 「[とりあえず英会話|#3742f0]」で. Available on the main caption AND every extra text layer (both use the Caption component), selectable in the Animate row next to Pop / Wipe / Fade. The actual render (src/Caption.tsx) reveals only the bracketed span(s) into their reserved width via display:inline-block + clip-path; the editor preview approximates it with a whole-line left-to-right wipe, because the preview doesn't render bracket highlight colours yet (a separate enhancement). Ships index.html (editor + preview) and src/Caption.tsx (render); Remotion re-bundles src on the next batch, so the effect applies to the next render after updating.",
+  "notes": "New 'Text effects' presets gallery — ready-made caption looks so you don't have to build a style from scratch. Each scene's main text gets an ✨ Effects button that opens a gallery of 8 one-click presets (Classic box, Bold block, Neon glow, Soft shadow, Outline, Highlight reveal, Wipe bar, Pink neon). Each preset bundles a style + colours + an animation (including the new Reveal). Click one to apply it to that scene, or tick 'Apply to all scenes' to style the whole video at once. Presets apply through the same /update-scene-texts path as Paste Style — a partial update, so your font size, position and text are left untouched — then the editor refreshes. The from-scratch flow and every individual knob still work for fine-tuning afterwards. index.html only (presets just set fields the Caption render already supports); a browser hard-refresh picks it up.",
   "files": [
-    "index.html",
-    "src/Caption.tsx"
+    "index.html"
   ]
 }

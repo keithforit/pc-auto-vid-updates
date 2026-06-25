@@ -400,6 +400,18 @@
     .add-scene-row button { background: none; border: 1px dashed var(--border); color: var(--text-muted); font-size: 12px; padding: 4px 14px; border-radius: 99px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
     .add-scene-row button:hover { border-color: var(--accent); color: var(--accent); background: rgba(16,185,129,0.05); }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1400; align-items: center; justify-content: center; }
+    /* Text-effect presets gallery */
+    .fx-panel { width: min(560px, calc(100vw - 40px)); max-height: 86vh; overflow: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: 0 24px 80px rgba(0,0,0,0.55); }
+    .fx-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .fx-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
+    .fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .fx-card { border: 1px solid var(--border-mid); border-radius: 12px; overflow: hidden; cursor: pointer; background: var(--bg-input); transition: border-color .15s, transform .1s; }
+    .fx-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .fx-stage { height: 70px; background: #0f1420; display: flex; align-items: center; justify-content: center; font-family: "Noto Sans JP", sans-serif; font-size: 21px; }
+    .fx-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 9px; }
+    .fx-name { font-size: 12px; color: var(--text-main); }
+    .fx-chip { font-size: 10px; color: var(--text-dim); background: rgba(255,255,255,0.06); border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+    .fx-all { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--text-soft); cursor: pointer; }
     .modal-overlay.open { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: var(--shadow-card); }
     .ttv-modal { position: relative; width: 760px; max-height: 86vh; overflow-y: auto; text-align: left; }
@@ -1679,6 +1691,9 @@
       // Media Text
       btn_copy_style: '📋 Copy Style',
       btn_paste_style: '📌 Paste Style',
+      fx_effects_btn: '✨ Effects',
+      fx_title: 'Text effects',
+      fx_apply_all: 'Apply to all scenes',
       text_style_box: 'Box',
       text_style_glow: 'Glow',
       text_style_block: 'Block',
@@ -2299,6 +2314,9 @@
       // Media Text
       btn_copy_style: '📋 スタイルをコピー',
       btn_paste_style: '📌 スタイルを貼り付け',
+      fx_effects_btn: '✨ エフェクト',
+      fx_title: 'テキストエフェクト',
+      fx_apply_all: '全シーンに適用',
       text_style_box: 'ボックス',
       text_style_glow: 'グロー',
       text_style_block: 'ブロック',
@@ -6452,6 +6470,7 @@
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn sm ghost" type="button" onclick="saveMainTextContent(${i})" data-i18n="save_text">${(I18N[window._appLang||'en']||I18N.en).save_text}</button>
                 <button class="btn sm red" type="button" onclick="deleteMainText(${i})" data-i18n="del_orig_text">${(I18N[window._appLang||'en']||I18N.en).del_orig_text}</button>
+                <button class="btn sm ghost" type="button" onclick="openTextEffects(${i})" title="${(I18N[window._appLang||'en']||I18N.en).fx_title}">${(I18N[window._appLang||'en']||I18N.en).fx_effects_btn}</button>
                 <button class="btn sm blue" type="button" onclick="copySceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).copy_style}" data-i18n-btn="btn_copy_style">${(I18N[window._appLang||'en']||I18N.en).btn_copy_style}</button>
                 <button class="btn sm purple" type="button" onclick="pasteSceneStyle(${i}, event)" title="${(I18N[window._appLang||'en']||I18N.en).paste_style}" data-i18n-btn="btn_paste_style">${(I18N[window._appLang||'en']||I18N.en).btn_paste_style}</button>
               </div>
@@ -8959,6 +8978,85 @@
     } catch (err) {
       console.error('Paste error:', err);
       alert('Error pasting style: ' + err.message);
+    }
+  }
+
+  // ── Ready-made text-effect presets ──────────────────────────────────────────
+  // Each preset is a curated style + animation bundle, applied via the same
+  // /update-scene-texts path as Paste Style. The endpoint does partial updates, so
+  // a preset changes only the look — font size, position and text stay untouched.
+  const TEXT_PRESETS = [
+    { id:'box',     en:'Classic box',      ja:'ボックス',
+      sample:'<span style="background:rgba(0,0,0,.72);color:#fff;font-weight:700;padding:4px 10px;border-radius:8px;">見出し</span>',
+      bundle:{ mainTextStyleOverride:'box', textAnimation:'pop', textColorOverride:'#ffffff', boxBorderRadius:20, textStrokeSizeOverride:0 } },
+    { id:'block',   en:'Bold block',       ja:'ボールド',
+      sample:'<span style="background:#ffdd00;color:#111;font-weight:900;padding:4px 10px;border-radius:6px;">見出し</span>',
+      bundle:{ mainTextStyleOverride:'block', textAnimation:'pop', blockColorOverride:'#ffdd00', textColorOverride:'#111111', blockBorderRadius:8, textStrokeSizeOverride:0 } },
+    { id:'neon',    en:'Neon glow',        ja:'ネオン',
+      sample:'<span style="color:#fff;font-weight:900;text-shadow:0 0 4px #22d3ee,0 0 10px #22d3ee,0 0 18px #0891b2;">見出し</span>',
+      bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#22d3ee', glowTextColorOverride:'#ffffff', glowSizeOverride:2 } },
+    { id:'shadow',  en:'Soft shadow',      ja:'シャドウ',
+      sample:'<span style="color:#fff;font-weight:900;text-shadow:2px 3px 7px rgba(0,0,0,.85);">見出し</span>',
+      bundle:{ mainTextStyleOverride:'shadow', textAnimation:'fade-in', textColorOverride:'#ffffff' } },
+    { id:'outline', en:'Outline',          ja:'アウトライン',
+      sample:'<span style="color:#fff;font-weight:900;-webkit-text-stroke:1.2px #000;text-shadow:0 1px 0 #000;">見出し</span>',
+      bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#000000', glowTextColorOverride:'#ffffff', glowSizeOverride:1 } },
+    { id:'reveal',  en:'Highlight reveal', ja:'ハイライト出現',
+      sample:'<span style="font-weight:900;"><span style="color:#3742f0;-webkit-text-stroke:.7px #fff;text-shadow:0 0 6px rgba(120,140,255,.5);">英会話</span><span style="color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;">で</span></span>',
+      bundle:{ mainTextStyleOverride:'shadow', textAnimation:'reveal', textColorOverride:'#ffffff' } },
+    { id:'wipe',    en:'Wipe bar',         ja:'ワイプバー',
+      sample:'<span style="background:#f97316;color:#3a1404;font-weight:900;padding:4px 10px;border-radius:6px;">見出し</span>',
+      bundle:{ mainTextStyleOverride:'block', textAnimation:'wipe', blockColorOverride:'#f97316', textColorOverride:'#ffffff', blockBorderRadius:8, textStrokeSizeOverride:0 } },
+    { id:'pink',    en:'Pink neon',        ja:'ピンクネオン',
+      sample:'<span style="color:#ff5fa2;font-weight:900;text-shadow:0 0 5px rgba(255,95,162,.6),2px 2px 4px rgba(0,0,0,.6);">見出し</span>',
+      bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#ff4da6', glowTextColorOverride:'#ffffff', glowSizeOverride:2 } },
+  ];
+
+  function _fxAnimLabel(a) {
+    const t = I18N[window._appLang||'en'] || I18N.en;
+    const m = { pop:t.anim_pop, 'fade-in':t.anim_fade_in, 'fade-out':t.anim_fade_out, 'fade-both':t.anim_fade_both, wipe:t.anim_wipe, reveal:t.anim_reveal, static:t.anim_static };
+    return m[a] || a;
+  }
+
+  function openTextEffects(i) {
+    const lang = window._appLang || 'en';
+    const t = I18N[lang] || I18N.en;
+    document.getElementById('fx-modal')?.remove();
+    const ov = document.createElement('div');
+    ov.id = 'fx-modal';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
+    const cards = TEXT_PRESETS.map(p => `
+      <div class="fx-card" onclick="applyTextPreset(${i}, '${p.id}')" title="${lang==='ja'?p.ja:p.en}">
+        <div class="fx-stage">${p.sample}</div>
+        <div class="fx-meta"><span class="fx-name">${lang==='ja'?p.ja:p.en}</span><span class="fx-chip">${_fxAnimLabel(p.bundle.textAnimation)}</span></div>
+      </div>`).join('');
+    ov.innerHTML = `<div class="fx-panel">
+        <div class="fx-head"><span class="fx-title">${t.fx_title || 'Text effects'}</span>
+          <button class="btn sm ghost" type="button" onclick="document.getElementById('fx-modal').remove()">✕</button></div>
+        <div class="fx-grid">${cards}</div>
+        <label class="fx-all"><input type="checkbox" id="fx-apply-all"> ${t.fx_apply_all || 'Apply to all scenes'}</label>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+
+  async function applyTextPreset(i, id) {
+    const p = TEXT_PRESETS.find(x => x.id === id);
+    if (!p) return;
+    const all = document.getElementById('fx-apply-all')?.checked;
+    document.getElementById('fx-modal')?.remove();
+    let targets = [i];
+    if (all) {
+      try { const segs = await fetch('/segments').then(r => r.json()); if (Array.isArray(segs)) targets = segs.map((_, idx) => idx); } catch {}
+    }
+    try {
+      for (const idx of targets) {
+        await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: idx, ...p.bundle }) });
+      }
+      try { addEditorLog(`✨ Applied "${p.en}" ${all ? 'to all scenes' : 'to scene ' + (i+1)}`); } catch {}
+      await loadSegments();
+    } catch (err) {
+      alert('Error applying effect: ' + (err?.message || err));
     }
   }
 
