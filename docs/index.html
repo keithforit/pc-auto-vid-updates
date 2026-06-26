@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pc-auto-vid — Automated Video Creator</title>
+  <style>
+    :root { --bg:#0e0f13; --card:#171922; --fg:#e7e9ee; --muted:#9aa0ad; --accent:#5b8cff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+           background:var(--bg); color:var(--fg); line-height:1.6; }
+    .wrap { max-width:760px; margin:0 auto; padding:48px 24px; }
+    header { text-align:center; margin-bottom:40px; }
+    h1 { font-size:2.2rem; margin:0 0 8px; }
+    .tag { color:var(--muted); font-size:1.1rem; }
+    .card { background:var(--card); border:1px solid #232634; border-radius:14px; padding:28px; margin:18px 0; }
+    h2 { margin-top:0; font-size:1.3rem; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    ul { padding-left:20px; }
+    .links { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:28px; }
+    footer { text-align:center; color:var(--muted); font-size:.9rem; margin-top:40px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>pc-auto-vid</h1>
+      <p class="tag">Create short-form videos on your own PC, then share them straight to social.</p>
+    </header>
+
+    <div class="card">
+      <h2>What it does</h2>
+      <p>pc-auto-vid is a desktop application that runs locally on your own computer. It helps you
+         assemble narrated short-form videos from scenes, captions, music and stock footage, then
+         optionally publish the finished video to your connected social accounts.</p>
+    </div>
+
+    <div class="card">
+      <h2>Social account connections</h2>
+      <p>You can connect a TikTok account so that videos you create can be posted to your own profile.
+         The connection uses TikTok's official, secure login. pc-auto-vid never sees your TikTok password,
+         and your access tokens are stored only on your own computer — never on any external server.</p>
+      <ul>
+        <li>We request only the permissions needed to identify your account and upload your videos.</li>
+        <li>You can disconnect at any time from the app's Settings.</li>
+        <li>You are always in control of what gets posted.</li>
+      </ul>
+    </div>
+
+    <div class="links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="mailto:keith@for-it.co.jp">Contact</a>
+    </div>
+
+    <footer>
+      <p>© pc-auto-vid · for-it.co.jp · <a href="mailto:keith@for-it.co.jp">keith@for-it.co.jp</a></p>
+    </footer>
+  </div>
+</body>
+</html>
