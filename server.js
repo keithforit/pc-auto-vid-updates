@@ -983,6 +983,10 @@ const randomState = () => require('crypto').randomBytes(16).toString('hex');
 // so the Client Secret is NEVER needed in this distributed app and is intentionally not stored here.
 // (Sandbox key; rotate / move server-side before going to production.)
 const TIKTOK_CLIENT_KEY = 'sbawsa2u55ul375e4y';
+// Client Secret is NEVER committed (repo is public). It's optional and supplied out-of-band for local
+// testing — via the TIKTOK_CLIENT_SECRET env var or a gitignored ./tiktok-secret.local.json. Sent in the
+// token exchange only if present (TikTok's token endpoint may require it even alongside PKCE).
+const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || (readJsonFile('./tiktok-secret.local.json', {}).clientSecret) || '';
 // PKCE pair. NOTE: TikTok expects the code_challenge as the HEX SHA-256 of the verifier (not base64url).
 function tiktokPkce() {
     const crypto = require('crypto');
@@ -1068,11 +1072,13 @@ app.get('/oauth/tiktok/callback', async (req, res) => {
         const { code, state } = req.query;
         if (!code) throw new Error('No authorization code returned');
         if (!s.tiktok || state !== s.tiktok.state) throw new Error('State mismatch — please retry from Settings');
-        const body = new URLSearchParams({
+        const tokenParams = {
             client_key: TIKTOK_CLIENT_KEY,
             code, grant_type: 'authorization_code', redirect_uri: oauthRedirect(req, 'tiktok'),
             code_verifier: s.tiktok.codeVerifier || ''
-        });
+        };
+        if (TIKTOK_CLIENT_SECRET) tokenParams.client_secret = TIKTOK_CLIENT_SECRET;
+        const body = new URLSearchParams(tokenParams);
         const tok = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         const d = tok.data;
         if (d.error) throw new Error(d.error_description || d.error);
@@ -1088,7 +1094,10 @@ app.get('/oauth/tiktok/callback', async (req, res) => {
         writeSocial(s);
         res.send(oauthDonePage(true, 'tiktok'));
     } catch (e) {
-        res.send(oauthDonePage(false, 'tiktok', e.response?.data?.error_description || e.response?.data?.error?.message || e.message));
+        const td = e.response?.data || {};
+        console.error('TikTok token exchange failed:', JSON.stringify(td) || e.message);
+        const detail = [td.error, td.error_description || td.error?.message, td.log_id && ('log_id ' + td.log_id)].filter(Boolean).join(' · ') || e.message;
+        res.send(oauthDonePage(false, 'tiktok', detail));
     }
 });
 
@@ -1097,7 +1106,9 @@ async function tiktokAccessToken(s) {
     const axios = require('axios');
     if (!s.tiktok || !s.tiktok.accessToken) throw new Error('TikTok is not connected');
     if (s.tiktok.expiresAt && Date.now() > s.tiktok.expiresAt - 60000 && s.tiktok.refreshToken) {
-        const body = new URLSearchParams({ client_key: TIKTOK_CLIENT_KEY, grant_type: 'refresh_token', refresh_token: s.tiktok.refreshToken });
+        const refreshParams = { client_key: TIKTOK_CLIENT_KEY, grant_type: 'refresh_token', refresh_token: s.tiktok.refreshToken };
+        if (TIKTOK_CLIENT_SECRET) refreshParams.client_secret = TIKTOK_CLIENT_SECRET;
+        const body = new URLSearchParams(refreshParams);
         const r = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         s.tiktok.accessToken = r.data.access_token;
         s.tiktok.refreshToken = r.data.refresh_token || s.tiktok.refreshToken;

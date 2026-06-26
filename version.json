@@ -1,7 +1,7 @@
 {
-  "version": "1.4.95",
+  "version": "1.4.96",
   "date": "2026-06-26",
-  "notes": "TikTok connect: stop requesting the unused 'video.upload' scope. Our posting flow is a direct post (/post/publish/video/init/), which only needs 'video.publish'; we still request 'user.info.basic' for the display name. Requesting a scope we don't use was an extra failure point for TikTok's 'scope' login error. server.js only.",
+  "notes": "TikTok connect: token exchange now includes the Client Secret when one is available locally (TIKTOK_CLIENT_SECRET env var or a gitignored tiktok-secret.local.json), since TikTok's token endpoint appears to require it even with PKCE — fixes 'request parameters are malformed' at the final step. The secret is never committed (repo is public). Also surfaces TikTok's exact error code + log_id in the connect popup for easier diagnosis. server.js + .gitignore.",
   "files": [
     "server.js"
   ]

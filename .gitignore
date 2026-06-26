@@ -13,6 +13,7 @@ renders
 # User data — never back these up
 UserConfig.json
 SocialConnections.json
+tiktok-secret.local.json
 recordings
 .server.pid
 src/Content.json
