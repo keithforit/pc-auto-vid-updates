@@ -1,7 +1,7 @@
 {
-  "version": "1.4.98",
+  "version": "1.4.99",
   "date": "2026-06-26",
-  "notes": "TikTok 'Switch account' button on the connected card: one click disconnects the current account and reopens the OAuth popup to link another. Inline reminder notes that TikTok reuses the browser's login, so log out at tiktok.com first to actually switch. EN + JA. index.html only.",
+  "notes": "Effects gallery improvements: (1) Each preset card now previews the effect on YOUR scene's actual caption text (brackets stripped, truncated) instead of a generic placeholder — so you see it on your words before applying. (2) Highlight reveal no longer looks like it does nothing: when the caption has no [bracketed] phrase, applying it now wraps the whole caption in [ ] so it actually reveals, and a toast explains how to narrow the highlight to one phrase (e.g. [phrase|#3742f0]). Works for the main caption, text layers, and apply-to-all-scenes. index.html only.",
   "files": [
     "index.html"
   ]

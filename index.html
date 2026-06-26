@@ -9011,30 +9011,32 @@
   // Each preset is a curated style + animation bundle, applied via the same
   // /update-scene-texts path as Paste Style. The endpoint does partial updates, so
   // a preset changes only the look — font size, position and text stay untouched.
+  // sample is a tiny HTML template; "{T}" is replaced with the scene's real caption text when the
+  // gallery opens, so each card previews the effect on the user's own words.
   const TEXT_PRESETS = [
     { id:'box',     en:'Classic box',      ja:'ボックス',
-      sample:'<span style="background:rgba(0,0,0,.72);color:#fff;font-weight:700;padding:4px 10px;border-radius:8px;">見出し</span>',
+      sample:'<span style="background:rgba(0,0,0,.72);color:#fff;font-weight:700;padding:4px 10px;border-radius:8px;">{T}</span>',
       bundle:{ mainTextStyleOverride:'box', textAnimation:'pop', textColorOverride:'#ffffff', boxBorderRadius:20, textStrokeSizeOverride:0 } },
     { id:'block',   en:'Bold block',       ja:'ボールド',
-      sample:'<span style="background:#ffdd00;color:#111;font-weight:900;padding:4px 10px;border-radius:6px;">見出し</span>',
+      sample:'<span style="background:#ffdd00;color:#111;font-weight:900;padding:4px 10px;border-radius:6px;">{T}</span>',
       bundle:{ mainTextStyleOverride:'block', textAnimation:'pop', blockColorOverride:'#ffdd00', textColorOverride:'#111111', blockBorderRadius:8, textStrokeSizeOverride:0 } },
     { id:'neon',    en:'Neon glow',        ja:'ネオン',
-      sample:'<span style="color:#fff;font-weight:900;text-shadow:0 0 4px #22d3ee,0 0 10px #22d3ee,0 0 18px #0891b2;">見出し</span>',
+      sample:'<span style="color:#fff;font-weight:900;text-shadow:0 0 4px #22d3ee,0 0 10px #22d3ee,0 0 18px #0891b2;">{T}</span>',
       bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#22d3ee', glowTextColorOverride:'#ffffff', glowSizeOverride:2 } },
     { id:'shadow',  en:'Soft shadow',      ja:'シャドウ',
-      sample:'<span style="color:#fff;font-weight:900;text-shadow:2px 3px 7px rgba(0,0,0,.85);">見出し</span>',
+      sample:'<span style="color:#fff;font-weight:900;text-shadow:2px 3px 7px rgba(0,0,0,.85);">{T}</span>',
       bundle:{ mainTextStyleOverride:'shadow', textAnimation:'fade-in', textColorOverride:'#ffffff' } },
     { id:'outline', en:'Outline',          ja:'アウトライン',
-      sample:'<span style="color:#fff;font-weight:900;-webkit-text-stroke:1.2px #000;text-shadow:0 1px 0 #000;">見出し</span>',
+      sample:'<span style="color:#fff;font-weight:900;-webkit-text-stroke:1.2px #000;text-shadow:0 1px 0 #000;">{T}</span>',
       bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#000000', glowTextColorOverride:'#ffffff', glowSizeOverride:1 } },
     { id:'reveal',  en:'Highlight reveal', ja:'ハイライト出現',
-      sample:'<span style="font-weight:900;"><span style="color:#3742f0;-webkit-text-stroke:.7px #fff;text-shadow:0 0 6px rgba(120,140,255,.5);">英会話</span><span style="color:#fff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;">で</span></span>',
+      sample:'<span style="font-weight:900;color:#3742f0;-webkit-text-stroke:.7px #fff;text-shadow:0 0 6px rgba(120,140,255,.5);">{T}</span>',
       bundle:{ mainTextStyleOverride:'shadow', textAnimation:'reveal', textColorOverride:'#ffffff' } },
     { id:'wipe',    en:'Wipe bar',         ja:'ワイプバー',
-      sample:'<span style="background:#f97316;color:#3a1404;font-weight:900;padding:4px 10px;border-radius:6px;">見出し</span>',
+      sample:'<span style="background:#f97316;color:#3a1404;font-weight:900;padding:4px 10px;border-radius:6px;">{T}</span>',
       bundle:{ mainTextStyleOverride:'block', textAnimation:'wipe', blockColorOverride:'#f97316', textColorOverride:'#ffffff', blockBorderRadius:8, textStrokeSizeOverride:0 } },
     { id:'pink',    en:'Pink neon',        ja:'ピンクネオン',
-      sample:'<span style="color:#ff5fa2;font-weight:900;text-shadow:0 0 5px rgba(255,95,162,.6),2px 2px 4px rgba(0,0,0,.6);">見出し</span>',
+      sample:'<span style="color:#ff5fa2;font-weight:900;text-shadow:0 0 5px rgba(255,95,162,.6),2px 2px 4px rgba(0,0,0,.6);">{T}</span>',
       bundle:{ mainTextStyleOverride:'glow', textAnimation:'pop', glowColorOverride:'#ff4da6', glowTextColorOverride:'#ffffff', glowSizeOverride:2 } },
   ];
 
@@ -9051,6 +9053,12 @@
     const jArg = isLayer ? j : 'null';
     const lang = window._appLang || 'en';
     const t = I18N[lang] || I18N.en;
+    // Preview each effect on the scene's actual caption text (brackets stripped, truncated).
+    const rawText = isLayer
+      ? (document.getElementById(`et-input-${i}-${j}`)?.value || '')
+      : (document.getElementById(`maintext-${i}`)?.value || '');
+    const plain = rawText.replace(/\[([^\]|]+)(?:\|[^\]]+)?\]/g, '$1').replace(/\s+/g, ' ').trim();
+    const fxText = plain ? (plain.length > 14 ? escapeHtml(plain.slice(0, 14)) + '…' : escapeHtml(plain)) : (lang === 'ja' ? '見出し' : 'Your text');
     document.getElementById('fx-modal')?.remove();
     const ov = document.createElement('div');
     ov.id = 'fx-modal';
@@ -9058,7 +9066,7 @@
     ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
     const cards = TEXT_PRESETS.map(p => `
       <div class="fx-card" onclick="applyTextPreset(${i}, ${jArg}, '${p.id}')" title="${lang==='ja'?p.ja:p.en}">
-        <div class="fx-stage">${p.sample}</div>
+        <div class="fx-stage">${p.sample.replace(/\{T\}/g, fxText)}</div>
         <div class="fx-meta"><span class="fx-name">${lang==='ja'?p.ja:p.en}</span><span class="fx-chip">${_fxAnimLabel(p.bundle.textAnimation)}</span></div>
       </div>`).join('');
     const allRow = isLayer ? '' : `<label class="fx-all"><input type="checkbox" id="fx-apply-all"> ${t.fx_apply_all || 'Apply to all scenes'}</label>`;
@@ -9087,23 +9095,41 @@
     const isLayer = (j !== null && j !== undefined);
     const all = !isLayer && document.getElementById('fx-apply-all')?.checked;
     document.getElementById('fx-modal')?.remove();
+    // Highlight reveal only wipes in [bracketed] phrases. If the text has none, wrap the whole
+    // caption in [ ] so the effect visibly does something — and the brackets become editable.
+    const wrapReveal = (txt) => { const raw = String(txt == null ? '' : txt); const s = raw.trim(); return (s && !s.includes('[')) ? `[${s}]` : raw; };
+    let autoBracketed = false;
     try {
       if (isLayer) {
         const segs = await fetch('/segments').then(r => r.json());
         const extras = Array.isArray(segs?.[i]?.extraTexts) ? segs[i].extraTexts : [];
         if (!extras[j]) throw new Error('Layer not found');
         extras[j] = { ...extras[j], ..._fxLayerPatch(p.bundle) };
+        if (id === 'reveal') { const nt = wrapReveal(extras[j].text); if (nt !== extras[j].text) { extras[j].text = nt; autoBracketed = true; } }
         await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: i, extraTexts: extras }) });
         try { addEditorLog(`✨ Applied "${p.en}" to scene ${i+1} · layer ${j+1}`); } catch {}
       } else {
         let targets = [i];
-        if (all) { const segs = await fetch('/segments').then(r => r.json()); if (Array.isArray(segs)) targets = segs.map((_, idx) => idx); }
+        let segs = null;
+        if (all || id === 'reveal') segs = await fetch('/segments').then(r => r.json());
+        if (all && Array.isArray(segs)) targets = segs.map((_, idx) => idx);
         for (const idx of targets) {
-          await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ index: idx, ...p.bundle }) });
+          const body = { index: idx, ...p.bundle };
+          if (id === 'reveal' && Array.isArray(segs)) {
+            const cur = String(segs[idx]?.text == null ? '' : segs[idx].text);
+            const nt = wrapReveal(cur);
+            if (nt !== cur) { body.text = nt; autoBracketed = true; }
+          }
+          await fetch('/update-scene-texts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
         }
         try { addEditorLog(`✨ Applied "${p.en}" ${all ? 'to all scenes' : 'to scene ' + (i+1)}`); } catch {}
       }
       await loadSegments();
+      if (autoBracketed) {
+        try { showHealthToast((window._appLang === 'ja')
+          ? '「ハイライト出現」を適用：キャプション全体を [ ] で囲みました。特定の語句だけを強調するには、その語を [語句|#3742f0] のように囲んでください。'
+          : 'Highlight reveal applied — your whole caption was wrapped in [ ]. To reveal just one phrase, wrap it like [phrase|#3742f0] in the caption.', 'ok'); } catch {}
+      }
     } catch (err) {
       alert('Error applying effect: ' + (err?.message || err));
     }
