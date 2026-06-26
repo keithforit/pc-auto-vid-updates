@@ -1353,6 +1353,7 @@
       <div id="update-status" style="font-size:13px;color:#94a3b8;margin-bottom:12px;min-height:18px;"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn sm" onclick="checkForUpdate()" id="check-update-btn" data-i18n="btn_check_update">🔍 Check for Updates</button>
+        <button class="btn sm ghost" onclick="showUpdateInfo()" id="whatsnew-update-btn" style="display:none">📋 <span data-i18n="update_whats_new">What's new</span></button>
         <button class="btn sm blue" onclick="applyUpdate()" id="apply-update-btn" style="display:none" data-i18n="btn_apply_update">⬇️ Download &amp; Install Update</button>
       </div>
     </div>
@@ -1798,6 +1799,12 @@
       btn_apply_update: '⬇️ Download & Install Update',
       update_checking: 'Checking for updates...',
       update_available: (v) => `Update available: v${v}`,
+      update_you_have: (v) => `you have v${v}`,
+      update_whats_new: "What's new",
+      update_install_now: 'Install Now',
+      update_dismiss: 'Dismiss',
+      update_close: 'Close',
+      update_no_notes: 'No details provided.',
       update_latest: 'You are on the latest version.',
       update_error: 'Error checking for updates.',
       update_installing: 'Installing update...',
@@ -2424,6 +2431,12 @@
       btn_apply_update: '⬇️ 更新をダウンロードしてインストール',
       update_checking: '更新を確認中...',
       update_available: (v) => `新しいバージョンが利用可能です: v${v}`,
+      update_you_have: (v) => `現在 v${v}`,
+      update_whats_new: '新着情報',
+      update_install_now: '今すぐ更新',
+      update_dismiss: '後で',
+      update_close: '閉じる',
+      update_no_notes: '詳細はありません。',
       update_latest: '最新バージョンを使用しています。',
       update_error: '更新の確認中にエラーが発生しました。',
       update_installing: '更新をインストール中...',
@@ -13303,8 +13316,9 @@
       const res = await fetch('/check-update');
       const data = await res.json();
       if (data.error) return; // Silent fail
-      if (!data.upToDate && !sessionStorage.getItem('update-banner-dismissed')) {
-        showUpdateBanner(data);
+      if (!data.upToDate) {
+        window._updateData = data;
+        if (!sessionStorage.getItem('update-banner-dismissed')) showUpdateBanner(data);
       }
     } catch (err) {
       // Silent fail - don't bother user with network errors
@@ -13324,14 +13338,19 @@
       justify-content: space-between; gap: 16px; font-weight: 500;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15); flex-wrap: wrap;
     `;
+    window._updateData = data;
+    const t = I18N[window._appLang||'en'] || I18N.en;
+    const head = t.update_available ? t.update_available(data.latest) : `Update available: v${data.latest}`;
+    const have = t.update_you_have ? t.update_you_have(data.current) : `you have v${data.current}`;
     banner.innerHTML = `
-      <span style="display: flex; align-items: center; gap: 8px; flex: 1;">
+      <span style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
         <span style="font-size: 18px;">📦</span>
-        <span>Update available: v${data.latest} (you have v${data.current}) — ${data.notes || 'Click to update'}</span>
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${head} <span style="opacity:.85;font-weight:400">(${have})</span></span>
       </span>
-      <div style="display: flex; gap: 8px;">
-        <button style="padding: 8px 14px; border: none; border-radius: 6px; background: white; color: #f59e0b; font-weight: 600; cursor: pointer; font-size: 13px;" onclick="applyUpdate()">Install Now</button>
-        <button style="padding: 8px 14px; border: 1px solid white; border-radius: 6px; background: transparent; color: white; font-weight: 600; cursor: pointer; font-size: 13px;" onclick="dismissUpdateBanner()">Dismiss</button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button style="padding: 8px 14px; border: 1px solid rgba(255,255,255,.7); border-radius: 6px; background: rgba(255,255,255,.12); color: white; font-weight: 600; cursor: pointer; font-size: 13px;" onclick="showUpdateInfo()">📋 ${t.update_whats_new || "What's new"}</button>
+        <button style="padding: 8px 14px; border: none; border-radius: 6px; background: white; color: #f59e0b; font-weight: 600; cursor: pointer; font-size: 13px;" onclick="applyUpdate()">${t.update_install_now || 'Install Now'}</button>
+        <button style="padding: 8px 14px; border: 1px solid white; border-radius: 6px; background: transparent; color: white; font-weight: 600; cursor: pointer; font-size: 13px;" onclick="dismissUpdateBanner()">${t.update_dismiss || 'Dismiss'}</button>
       </div>
     `;
     document.body.insertBefore(banner, document.body.firstChild);
@@ -13343,16 +13362,54 @@
     sessionStorage.setItem('update-banner-dismissed', 'true');
   }
 
+  // "What's new" feature report for the available update — formats the version notes into a
+  // tidy bulleted list (split on sentence boundaries) so the banner can stay short.
+  function showUpdateInfo() {
+    const data = window._updateData;
+    if (!data || !data.latest) return;
+    const t = I18N[window._appLang||'en'] || I18N.en;
+    document.getElementById('update-info-modal')?.remove();
+    const items = String(data.notes || '')
+      .split(/(?<=[.!?。！？])\s+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    const body = items.length
+      ? `<ul style="margin:0;padding-left:20px;line-height:1.65;color:#e7e9ee">${items.map(s => `<li style="margin-bottom:8px">${escapeHtml(s)}</li>`).join('')}</ul>`
+      : `<p style="color:#94a3b8;margin:0">${t.update_no_notes || 'No details provided.'}</p>`;
+    const ov = document.createElement('div');
+    ov.id = 'update-info-modal';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div style="background:#171922;border:1px solid #2a2d3a;border-radius:14px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid #2a2d3a">
+          <div>
+            <div style="font-size:17px;font-weight:700;color:#fff">📋 ${t.update_whats_new || "What's new"} · v${data.latest}</div>
+            ${data.date ? `<div style="font-size:12px;color:#94a3b8;margin-top:3px">${escapeHtml(String(data.date))}</div>` : ''}
+          </div>
+          <button onclick="document.getElementById('update-info-modal').remove()" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">✕</button>
+        </div>
+        <div style="padding:20px 22px;overflow-y:auto">${body}</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 22px;border-top:1px solid #2a2d3a">
+          <button class="btn sm ghost" onclick="document.getElementById('update-info-modal').remove()">${t.update_close || 'Close'}</button>
+          <button class="btn sm blue" onclick="document.getElementById('update-info-modal').remove(); applyUpdate();">${t.update_install_now || 'Install Now'}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+
   // ──────────────────────────────────────────────────
   async function checkForUpdate() {
     const statusEl = document.getElementById('update-status');
     const applyBtn = document.getElementById('apply-update-btn');
     const checkBtn = document.getElementById('check-update-btn');
+    const wnBtn = document.getElementById('whatsnew-update-btn');
     checkBtn.disabled = true;
     checkBtn.textContent = 'Checking…';
     statusEl.style.color = '#94a3b8';
     statusEl.textContent = 'Checking for updates…';
     applyBtn.style.display = 'none';
+    if (wnBtn) wnBtn.style.display = 'none';
     try {
       const res = await fetch('/check-update');
       const data = await res.json();
@@ -13361,9 +13418,12 @@
         statusEl.style.color = '#10b981';
         statusEl.textContent = `✅ You are up to date (v${data.current})`;
       } else {
+        window._updateData = data;
+        const t = I18N[window._appLang||'en'] || I18N.en;
         statusEl.style.color = '#f59e0b';
-        statusEl.textContent = `⚠️ Update available: v${data.latest} (you have v${data.current})${data.notes ? ' — ' + data.notes : ''}`;
+        statusEl.textContent = `⚠️ ${t.update_available ? t.update_available(data.latest) : 'Update available: v'+data.latest} (${t.update_you_have ? t.update_you_have(data.current) : 'you have v'+data.current})`;
         applyBtn.style.display = 'inline-flex';
+        if (wnBtn) wnBtn.style.display = 'inline-flex';
       }
     } catch (err) {
       statusEl.style.color = '#ef4444';
