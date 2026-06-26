@@ -1,8 +1,8 @@
 {
-  "version": "1.4.94",
+  "version": "1.4.95",
   "date": "2026-06-26",
-  "notes": "TikTok connect: re-show the app's live Redirect URI on the TikTok card in Settings (under the hint). Helps diagnose TikTok's 'redirect_uri' error, which happens when the app falls back to a port other than 3000 (3001–3004) and that exact callback URL isn't registered in the TikTok app. Fix on the TikTok side: register http://localhost:3000..3004/oauth/tiktok/callback under Desktop. index.html only.",
+  "notes": "TikTok connect: stop requesting the unused 'video.upload' scope. Our posting flow is a direct post (/post/publish/video/init/), which only needs 'video.publish'; we still request 'user.info.basic' for the display name. Requesting a scope we don't use was an extra failure point for TikTok's 'scope' login error. server.js only.",
   "files": [
-    "index.html"
+    "server.js"
   ]
 }

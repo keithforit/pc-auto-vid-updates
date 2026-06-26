@@ -1054,7 +1054,7 @@ app.get('/oauth/tiktok/start', (req, res) => {
     s.tiktok.state = state; s.tiktok.codeVerifier = verifier; writeSocial(s);
     const params = new URLSearchParams({
         client_key: TIKTOK_CLIENT_KEY, response_type: 'code',
-        scope: 'user.info.basic,video.publish,video.upload',
+        scope: 'user.info.basic,video.publish',   // direct-post only needs video.publish; user.info.basic = display name
         redirect_uri: oauthRedirect(req, 'tiktok'), state,
         code_challenge: challenge, code_challenge_method: 'S256'
     });
