@@ -1,9 +1,8 @@
 {
-  "version": "1.4.93",
+  "version": "1.4.94",
   "date": "2026-06-26",
-  "notes": "One-click TikTok connect: the app now ships an embedded TikTok app key and uses the secure PKCE login flow, so you (and testers) no longer paste a Client Key/Secret in Settings — just click Connect, approve in TikTok, done. The Client Secret is never shipped (PKCE), so it stays safe even though the updates repo is public. Settings → Connect accounts: the TikTok card now shows only a Connect button. server.js (OAuth start/callback/refresh now use the embedded key + code_verifier) and index.html.",
+  "notes": "TikTok connect: re-show the app's live Redirect URI on the TikTok card in Settings (under the hint). Helps diagnose TikTok's 'redirect_uri' error, which happens when the app falls back to a port other than 3000 (3001–3004) and that exact callback URL isn't registered in the TikTok app. Fix on the TikTok side: register http://localhost:3000..3004/oauth/tiktok/callback under Desktop. index.html only.",
   "files": [
-    "server.js",
     "index.html"
   ]
 }
