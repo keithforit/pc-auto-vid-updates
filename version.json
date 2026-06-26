@@ -1,7 +1,7 @@
 {
-  "version": "1.4.97",
+  "version": "1.4.98",
   "date": "2026-06-26",
-  "notes": "Remove Instagram from the UI: the Settings → Connect accounts section now shows only TikTok, and the result screen's share row offers only TikTok (Download + Post to TikTok). Intro/note text updated (EN + JA). Backend Instagram routes are left in place but unused. index.html only.",
+  "notes": "TikTok 'Switch account' button on the connected card: one click disconnects the current account and reopens the OAuth popup to link another. Inline reminder notes that TikTok reuses the browser's login, so log out at tiktok.com first to actually switch. EN + JA. index.html only.",
   "files": [
     "index.html"
   ]

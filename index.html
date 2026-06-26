@@ -1337,8 +1337,10 @@
         <div class="conn-redirect" style="font-size:11px;color:#64748b;margin-top:8px">Dev: this app's live Redirect URI (must be registered in TikTok under Desktop): <code id="tk-redirect">—</code></div>
         <div class="conn-actions">
           <button class="btn sm blue" id="tk-connect" onclick="connectSocial('tiktok')"><span data-i18n="conn_connect">Connect</span></button>
+          <button class="btn sm blue" id="tk-switch" onclick="switchSocial('tiktok')" style="display:none"><span data-i18n="conn_switch">Switch account</span></button>
           <button class="btn sm" id="tk-disconnect" onclick="disconnectSocial('tiktok')" style="display:none"><span data-i18n="conn_disconnect">Disconnect</span></button>
         </div>
+        <div class="conn-hint" id="tk-switch-hint" data-i18n="conn_switch_hint" style="display:none">To switch to a different TikTok account, first log out (or change account) at tiktok.com — the connect popup uses your browser's TikTok login.</div>
       </div>
     </div>
 
@@ -1508,6 +1510,8 @@
       conn_save: 'Save keys',
       conn_connect: 'Connect',
       conn_disconnect: 'Disconnect',
+      conn_switch: 'Switch account',
+      conn_switch_hint: "To switch to a different TikTok account, first log out (or change account) at tiktok.com — the connect popup uses your browser's TikTok login.",
       conn_connected: 'Connected',
       conn_not_connected: 'Not connected',
       conn_add_keys: 'Add keys',
@@ -2131,6 +2135,8 @@
       conn_save: 'キーを保存',
       conn_connect: '連携',
       conn_disconnect: '連携解除',
+      conn_switch: 'アカウントを切り替え',
+      conn_switch_hint: '別のTikTokアカウントに切り替えるには、先に tiktok.com でログアウト（またはアカウント切替）してください。連携ポップアップはブラウザのTikTokログインを使用します。',
       conn_connected: '連携済み',
       conn_not_connected: '未連携',
       conn_add_keys: 'キーを入力',
@@ -11309,6 +11315,7 @@
       const tk = s.tiktok || {}, ig = s.instagram || {};
       const tkEl = document.getElementById('tk-status'); if (tkEl) { tkEl.textContent = label(tk, tk.displayName); tkEl.style.color = tk.connected ? '#10b981' : '#94a3b8'; }
       show('tk-connect', !tk.connected); show('tk-disconnect', !!tk.connected);
+      show('tk-switch', !!tk.connected); show('tk-switch-hint', !!tk.connected);
       if (ig.publicBaseUrl) { const el = document.getElementById('ig-publicurl'); if (el && !el.value) el.value = ig.publicBaseUrl; }
       const igEl = document.getElementById('ig-status'); if (igEl) { igEl.textContent = label(ig, ig.username ? '@' + ig.username : ''); igEl.style.color = ig.connected ? '#10b981' : '#94a3b8'; }
       show('ig-connect', !ig.connected); show('ig-disconnect', !!ig.connected);
@@ -11328,6 +11335,12 @@
     if (platform !== 'tiktok' && !(await saveSocialConfig(platform))) return;
     const w = window.open(`/oauth/${platform}/start`, 'oauth_' + platform, 'width=620,height=760');
     if (!w) alert('Please allow pop-ups to connect your account.');
+  }
+  // Switch account = drop the current tokens, then reopen the OAuth popup to link another one.
+  // (TikTok reuses your browser's TikTok session, so the hint reminds you to log out there first.)
+  async function switchSocial(platform) {
+    await disconnectSocial(platform);
+    await connectSocial(platform);
   }
   async function disconnectSocial(platform) {
     try { await fetch('/social/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform }) }); } catch (_) {}
