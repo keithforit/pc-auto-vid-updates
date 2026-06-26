@@ -1333,14 +1333,8 @@
 
       <div class="conn-card">
         <div class="conn-head"><span>🎵 TikTok</span><span class="conn-status" id="tk-status" style="color:#94a3b8">…</span></div>
-        <div class="field-label">TikTok client key</div>
-        <input type="text" id="tk-key" autocomplete="off" spellcheck="false" placeholder="client key" />
-        <div class="field-label">TikTok client secret</div>
-        <input type="text" id="tk-secret" autocomplete="off" spellcheck="false" placeholder="client secret" />
-        <div class="conn-redirect"><span data-i18n="conn_redirect">Redirect URI to register in the app:</span> <code id="tk-redirect">—</code></div>
-        <div class="conn-hint" data-i18n="conn_tiktok_hint">Until TikTok audits your app, uploads post as private (SELF_ONLY) — finish them in the TikTok app.</div>
+        <div class="conn-hint" data-i18n="conn_tiktok_hint">Just click Connect and approve in TikTok — no setup needed. Uploads post as private (SELF_ONLY); finish them in the TikTok app.</div>
         <div class="conn-actions">
-          <button class="btn sm ghost" onclick="saveSocialConfig('tiktok')"><span data-i18n="conn_save">Save keys</span></button>
           <button class="btn sm blue" id="tk-connect" onclick="connectSocial('tiktok')"><span data-i18n="conn_connect">Connect</span></button>
           <button class="btn sm" id="tk-disconnect" onclick="disconnectSocial('tiktok')" style="display:none"><span data-i18n="conn_disconnect">Disconnect</span></button>
         </div>
@@ -1533,7 +1527,7 @@
       conn_connected: 'Connected',
       conn_not_connected: 'Not connected',
       conn_add_keys: 'Add keys',
-      conn_tiktok_hint: 'Until TikTok audits your app, uploads post as private (SELF_ONLY) — finish them in the TikTok app.',
+      conn_tiktok_hint: 'Just click Connect and approve in TikTok — no setup needed. Uploads post as private (SELF_ONLY); finish them in the TikTok app.',
       conn_ig_publicurl: 'Public video URL base',
       conn_ig_hint: 'Needs an Instagram Business/Creator account linked to a Facebook Page. Instagram fetches the file from the public URL above, so the render must be reachable there.',
       conn_post_tiktok: 'Post to TikTok',
@@ -2156,7 +2150,7 @@
       conn_connected: '連携済み',
       conn_not_connected: '未連携',
       conn_add_keys: 'キーを入力',
-      conn_tiktok_hint: 'TikTokの審査が通るまで、アップロードは非公開（SELF_ONLY）で投稿されます。TikTokアプリで仕上げてください。',
+      conn_tiktok_hint: 'Connect を押して TikTok で承認するだけ — 設定は不要です。アップロードは非公開（SELF_ONLY）で投稿されます。TikTokアプリで仕上げてください。',
       conn_ig_publicurl: '公開動画URLのベース',
       conn_ig_hint: 'Facebookページに連携したInstagramビジネス/クリエイターアカウントが必要です。Instagramは上記の公開URLからファイルを取得するため、その場所で動画にアクセスできる必要があります。',
       conn_post_tiktok: 'TikTokに投稿',
@@ -11338,7 +11332,7 @@
   }
   async function saveSocialConfig(platform) {
     const body = { platform };
-    if (platform === 'tiktok') { body.clientKey = document.getElementById('tk-key').value; body.clientSecret = document.getElementById('tk-secret').value; }
+    if (platform === 'tiktok') { return true; }   // TikTok uses an embedded key + PKCE — no per-user keys to save
     else { body.appId = document.getElementById('ig-appid').value; body.appSecret = document.getElementById('ig-secret').value; body.publicBaseUrl = document.getElementById('ig-publicurl').value; }
     try { const r = await fetch('/social/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error((await r.json()).error || 'save failed'); }
     catch (e) { alert('Save failed: ' + e.message); return false; }
@@ -11346,7 +11340,8 @@
     return true;
   }
   async function connectSocial(platform) {
-    if (!(await saveSocialConfig(platform))) return;        // persist credentials before the redirect
+    // TikTok uses an embedded app key + PKCE — nothing to save first. Instagram still persists its keys.
+    if (platform !== 'tiktok' && !(await saveSocialConfig(platform))) return;
     const w = window.open(`/oauth/${platform}/start`, 'oauth_' + platform, 'width=620,height=760');
     if (!w) alert('Please allow pop-ups to connect your account.');
   }

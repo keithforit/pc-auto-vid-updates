@@ -979,6 +979,17 @@ const SOCIAL_PATH = './SocialConnections.json';
 const readSocial  = () => readJsonFile(SOCIAL_PATH, {});
 const writeSocial = (v) => writeJsonFile(SOCIAL_PATH, v);
 const randomState = () => require('crypto').randomBytes(16).toString('hex');
+// Embedded TikTok app — the Client Key is public and safe to ship. We use PKCE (Login Kit, Desktop),
+// so the Client Secret is NEVER needed in this distributed app and is intentionally not stored here.
+// (Sandbox key; rotate / move server-side before going to production.)
+const TIKTOK_CLIENT_KEY = 'sbawsa2u55ul375e4y';
+// PKCE pair. NOTE: TikTok expects the code_challenge as the HEX SHA-256 of the verifier (not base64url).
+function tiktokPkce() {
+    const crypto = require('crypto');
+    const verifier = crypto.randomBytes(48).toString('base64url');           // 64 chars, valid PKCE charset
+    const challenge = crypto.createHash('sha256').update(verifier).digest('hex');
+    return { verifier, challenge };
+}
 // The OAuth redirect URI must EXACTLY match what the user registered in their dev app. Derive it from
 // the incoming request so it stays correct whatever port the app ended up on.
 const oauthRedirect = (req, platform) => `${req.protocol}://${req.get('host')}/oauth/${platform}/callback`;
@@ -995,7 +1006,7 @@ app.get('/social/status', (req, res) => {
     const s = readSocial();
     res.json({
         tiktok: {
-            configured: !!(s.tiktok && s.tiktok.clientKey && s.tiktok.clientSecret),
+            configured: true,                                   // app Client Key is embedded — no per-user keys (PKCE)
             connected:  !!(s.tiktok && s.tiktok.accessToken),
             displayName: (s.tiktok && s.tiktok.displayName) || ''
         },
@@ -1027,7 +1038,7 @@ app.post('/social/disconnect', (req, res) => {
     const s = readSocial();
     const { platform } = req.body || {};
     if (s[platform]) {
-        const keep = platform === 'tiktok' ? ['clientKey', 'clientSecret'] : ['appId', 'appSecret', 'publicBaseUrl'];
+        const keep = platform === 'tiktok' ? [] : ['appId', 'appSecret', 'publicBaseUrl'];
         const next = {}; keep.forEach(k => { if (s[platform][k]) next[k] = s[platform][k]; });
         s[platform] = next; writeSocial(s);
     }
@@ -1037,12 +1048,15 @@ app.post('/social/disconnect', (req, res) => {
 // ── TikTok OAuth (Login Kit) ──
 app.get('/oauth/tiktok/start', (req, res) => {
     const s = readSocial();
-    if (!s.tiktok || !s.tiktok.clientKey) return res.status(400).send('Enter your TikTok client key/secret in Settings first.');
-    const state = randomState(); s.tiktok.state = state; writeSocial(s);
+    s.tiktok = s.tiktok || {};
+    const state = randomState();
+    const { verifier, challenge } = tiktokPkce();
+    s.tiktok.state = state; s.tiktok.codeVerifier = verifier; writeSocial(s);
     const params = new URLSearchParams({
-        client_key: s.tiktok.clientKey, response_type: 'code',
+        client_key: TIKTOK_CLIENT_KEY, response_type: 'code',
         scope: 'user.info.basic,video.publish,video.upload',
-        redirect_uri: oauthRedirect(req, 'tiktok'), state
+        redirect_uri: oauthRedirect(req, 'tiktok'), state,
+        code_challenge: challenge, code_challenge_method: 'S256'
     });
     res.redirect(`https://www.tiktok.com/v2/auth/authorize/?${params}`);
 });
@@ -1055,8 +1069,9 @@ app.get('/oauth/tiktok/callback', async (req, res) => {
         if (!code) throw new Error('No authorization code returned');
         if (!s.tiktok || state !== s.tiktok.state) throw new Error('State mismatch — please retry from Settings');
         const body = new URLSearchParams({
-            client_key: s.tiktok.clientKey, client_secret: s.tiktok.clientSecret,
-            code, grant_type: 'authorization_code', redirect_uri: oauthRedirect(req, 'tiktok')
+            client_key: TIKTOK_CLIENT_KEY,
+            code, grant_type: 'authorization_code', redirect_uri: oauthRedirect(req, 'tiktok'),
+            code_verifier: s.tiktok.codeVerifier || ''
         });
         const tok = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         const d = tok.data;
@@ -1065,7 +1080,7 @@ app.get('/oauth/tiktok/callback', async (req, res) => {
             accessToken: d.access_token, refreshToken: d.refresh_token,
             expiresAt: Date.now() + (d.expires_in || 0) * 1000, openId: d.open_id
         });
-        delete s.tiktok.state;
+        delete s.tiktok.state; delete s.tiktok.codeVerifier;
         try {
             const info = await axios.get('https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name', { headers: { Authorization: `Bearer ${d.access_token}` } });
             s.tiktok.displayName = info.data?.data?.user?.display_name || '';
@@ -1082,7 +1097,7 @@ async function tiktokAccessToken(s) {
     const axios = require('axios');
     if (!s.tiktok || !s.tiktok.accessToken) throw new Error('TikTok is not connected');
     if (s.tiktok.expiresAt && Date.now() > s.tiktok.expiresAt - 60000 && s.tiktok.refreshToken) {
-        const body = new URLSearchParams({ client_key: s.tiktok.clientKey, client_secret: s.tiktok.clientSecret, grant_type: 'refresh_token', refresh_token: s.tiktok.refreshToken });
+        const body = new URLSearchParams({ client_key: TIKTOK_CLIENT_KEY, grant_type: 'refresh_token', refresh_token: s.tiktok.refreshToken });
         const r = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', body.toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         s.tiktok.accessToken = r.data.access_token;
         s.tiktok.refreshToken = r.data.refresh_token || s.tiktok.refreshToken;

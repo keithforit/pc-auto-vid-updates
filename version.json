@@ -1,8 +1,9 @@
 {
-  "version": "1.4.92",
-  "date": "2026-06-25",
-  "notes": "Editor preview now renders [word|#hex] / [word] highlight colours instead of showing the literal brackets — in both the main caption preview and text-layer previews. The Highlight reveal animation also previews accurately now: only the highlighted phrase wipes in left-to-right (clip-path on the highlight spans) while the rest of the line stays put, matching the actual render. As a bonus, non-bracket caption text is HTML-escaped in the preview (colours are allow-listed so they can't break the markup). index.html only; a browser hard-refresh picks it up.",
+  "version": "1.4.93",
+  "date": "2026-06-26",
+  "notes": "One-click TikTok connect: the app now ships an embedded TikTok app key and uses the secure PKCE login flow, so you (and testers) no longer paste a Client Key/Secret in Settings — just click Connect, approve in TikTok, done. The Client Secret is never shipped (PKCE), so it stays safe even though the updates repo is public. Settings → Connect accounts: the TikTok card now shows only a Connect button. server.js (OAuth start/callback/refresh now use the embedded key + code_verifier) and index.html.",
   "files": [
+    "server.js",
     "index.html"
   ]
 }
