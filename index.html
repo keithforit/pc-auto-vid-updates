@@ -8204,7 +8204,7 @@
       return replacePixabayByUrl(i);
     }
     // Accept both full page URLs and direct video file URLs
-    const pexelsPageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
+    const pexelsPageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/(?:[^/]*-)?(\d+)\/?(?:[?#].*)?$/i);
     if (!pexelsPageMatch && !url.match(/\.mp4/i)) {
       return alert('Please paste a valid Pexels video page URL (e.g. https://www.pexels.com/video/dartboard-close-up-34071374/)');
     }

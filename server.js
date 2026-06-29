@@ -548,8 +548,8 @@ app.post('/replace-video-by-url', async (req, res) => {
     const PEXELS_API_KEY = getUserApiKey('pexelsApiKey', 'PEXELS_API_KEY');
     try {
         const axios = require('axios');
-        const videoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
-        const photoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/photo\/[^/]*?-(\d+)\/?(?:[?#].*)?$/i);
+        const videoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/(?:[^/]*-)?(\d+)\/?(?:[?#].*)?$/i);
+        const photoMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/photo\/(?:[^/]*-)?(\d+)\/?(?:[?#].*)?$/i);
 
         if (videoMatch) {
             // ── Video URL ──────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 {
-  "version": "1.5.6",
+  "version": "1.5.7",
   "date": "2026-06-29",
-  "notes": "Image backgrounds can now be repositioned too. The Scale / X / Y framing controls — previously only on video backgrounds — now show for image backgrounds as well, so you can pan and zoom an image to focus the part you want instead of being stuck with a centre crop. The render already supported this (v1.5.5); this exposes the sliders in the editor. Uploaded videos keep the same framing controls (and an old in-place-swap bug that ignored the new pan model is fixed). Video-only options (Fit, Speed, Clip, Audio) stay hidden for images.",
+  "notes": "Short Pexels URLs now work. Pasting a Pexels link with just the numeric id (e.g. https://www.pexels.com/video/19232967/) was wrongly rejected as invalid — the validator insisted on the longer 'slug-number' form (e.g. .../dartboard-close-up-34071374/). Both forms are valid Pexels URLs, and both are now accepted, for videos and photos. Fixed in the editor and on the server.",
   "files": [
     "index.html",
     "server.js",
