@@ -8045,15 +8045,22 @@
         e.preventDefault();
         handle.classList.add('dragging');
         const rect = track.getBoundingClientRect();
+        // Pause the looping preview while dragging so each scrubbed frame holds still.
+        const dragVid = document.getElementById(`thumb-${i}`);
+        const wasPlaying = dragVid && dragVid.tagName === 'VIDEO' && !dragVid.paused;
+        if (dragVid && dragVid.tagName === 'VIDEO') { try { dragVid.pause(); } catch(_) {} }
         function onMove(ev) {
           const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
           const raw = parseFloat(fromPct(x - rect.left, rect).toFixed(2));
+          const vid = document.getElementById(`thumb-${i}`);
           if (type === 'start') {
             cs = Math.max(0, Math.min(raw, ce - 0.1));
-            const vid = document.getElementById(`thumb-${i}`);
+            // Scrub the preview to the start frame so you see where the clip begins.
             if (vid && vid.tagName === 'VIDEO') try { vid.currentTime = cs; } catch(_) {}
           } else {
             ce = Math.max(cs + 0.1, Math.min(raw, dur));
+            // Scrub the preview to the end frame so you see where the clip ends (mirrors the start handle).
+            if (vid && vid.tagName === 'VIDEO') try { vid.currentTime = ce; } catch(_) {}
           }
           render();
         }
@@ -8065,6 +8072,10 @@
           document.removeEventListener('touchend', onUp);
           saveBgClip(i);
           applyClipToThumb(i, cs > 0.05 ? cs : null, ce < dur - 0.05 ? ce : null);
+          // Resume from the clip start so you immediately see the selected segment play (and loop within it).
+          if (dragVid && dragVid.tagName === 'VIDEO') {
+            try { dragVid.currentTime = cs; if (wasPlaying) { const p = dragVid.play(); if (p && p.catch) p.catch(() => {}); } } catch(_) {}
+          }
         }
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);

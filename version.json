@@ -1,7 +1,7 @@
 {
-  "version": "1.5.9",
+  "version": "1.5.10",
   "date": "2026-06-29",
-  "notes": "Polished feedback + Japanese coverage. (1) Pop-up browser alerts are gone: the app now uses subtle in-app toasts for messages, and invalid Pexels/Pixabay URLs or empty searches show a small red note right under the field instead of a blocking 'localhost says' dialog. Technical error text no longer gets dumped at you. (2) The Background framing controls (Video/Image framing, Fit, Scale, Speed, Clip, Audio, Muted, Ken Burns, Brightness/Contrast, overlay Opacity/Radius/Softness) are now fully translated, so they read in Japanese when the app is set to 日本語. (3) Removed leftover debug logging.",
+  "notes": "Trimming a clip now updates the preview. When you drag the clip's end handle, the preview video scrubs to that end frame as you drag — previously only the start handle did this, so trimming the end gave no visual feedback. The preview also pauses while you drag (so each frame holds still) and resumes from the clip start when you let go, so you immediately see the selected portion play and loop within it.",
   "files": [
     "index.html",
     "server.js",
