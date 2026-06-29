@@ -1,8 +1,9 @@
 {
-  "version": "1.5.1",
+  "version": "1.5.2",
   "date": "2026-06-29",
-  "notes": "Updating no longer opens a duplicate browser tab. Before, installing an update relaunched the server as a fresh process that always opened a new tab, while your existing dashboard tab also reloaded itself in place — leaving you with two tabs. Now the relaunched server is told to skip the browser-open (PCAV_NO_OPEN_TAB), so the update reloads cleanly in the tab you already have. server.js only.",
+  "notes": "Align H / Align V now touch one axis only. Before, if you'd dragged the main text (e.g. moved it up into a free position), clicking 'Center horizontally' also threw away your vertical position and snapped the text back to the middle — and vice-versa for 'Center vertically'. Now each button keeps the other axis exactly where you put it, matching what the tooltips already promised. Also rolls in the v1.5.1 fix: updating no longer opens a duplicate browser tab.",
   "files": [
+    "index.html",
     "server.js"
   ]
 }

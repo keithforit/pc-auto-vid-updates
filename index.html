@@ -8806,8 +8806,23 @@
   async function setTextHPos(i, hPos) {
     document.querySelectorAll(`#hposrow-${i} .pos-btn`).forEach(b =>
       b.classList.toggle('active', b.dataset.hpos === hPos));
-    _exitFreePos(i);              // snap uses the flex layout that keeps text on-board
-    const seg = sdSegments[i]; if (seg) { seg.textHPosition = hPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
+    const seg = sdSegments[i];
+    const preview = document.getElementById(`tpreview-${i}`);
+    const newX = _hSnap[hPos] ?? 50;
+    if (preview && preview.dataset.freepos === '1') {
+      // Text is free-positioned (e.g. dragged up). "Center horizontally" must touch the X axis ONLY
+      // and leave the vertical position untouched — so stay in free-pos and keep the current Y.
+      const keepY = _currentY(i);
+      if (seg) { seg.textHPosition = hPos; seg.textX = newX; seg.textY = keepY; }
+      _applyAlignPos(i, newX, keepY);
+      await fetch('/update-scene-texts', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ index: i, textHPosition: hPos, textX: newX, textY: keepY })
+      });
+      return;
+    }
+    _exitFreePos(i);              // pure snap uses the flex layout that keeps text on-board
+    if (seg) { seg.textHPosition = hPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
     updateTextPreview(i);
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -8818,8 +8833,23 @@
   async function setTextVPos(i, vPos) {
     document.querySelectorAll(`#vposrow-${i} .pos-btn`).forEach(b =>
       b.classList.toggle('active', b.dataset.vpos === vPos));
-    _exitFreePos(i);              // snap uses the flex layout that keeps text on-board
-    const seg = sdSegments[i]; if (seg) { seg.textPosition = vPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
+    const seg = sdSegments[i];
+    const preview = document.getElementById(`tpreview-${i}`);
+    const newY = _vSnap[vPos] ?? 50;
+    if (preview && preview.dataset.freepos === '1') {
+      // Text is free-positioned. "Center vertically" must touch the Y axis ONLY and leave the
+      // horizontal position untouched — so stay in free-pos and keep the current X.
+      const keepX = _currentX(i);
+      if (seg) { seg.textPosition = vPos; seg.textX = keepX; seg.textY = newY; }
+      _applyAlignPos(i, keepX, newY);
+      await fetch('/update-scene-texts', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ index: i, textPosition: vPos, textX: keepX, textY: newY })
+      });
+      return;
+    }
+    _exitFreePos(i);              // pure snap uses the flex layout that keeps text on-board
+    if (seg) { seg.textPosition = vPos; delete seg.textX; delete seg.textY; }  // keep in-memory model in sync so a re-render doesn't revert to free-pos
     updateTextPreview(i);
     await fetch('/update-scene-texts', {
       method: 'POST', headers: {'Content-Type':'application/json'},
