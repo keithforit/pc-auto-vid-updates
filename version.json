@@ -1,7 +1,7 @@
 {
-  "version": "1.5.7",
+  "version": "1.5.8",
   "date": "2026-06-29",
-  "notes": "Short Pexels URLs now work. Pasting a Pexels link with just the numeric id (e.g. https://www.pexels.com/video/19232967/) was wrongly rejected as invalid — the validator insisted on the longer 'slug-number' form (e.g. .../dartboard-close-up-34071374/). Both forms are valid Pexels URLs, and both are now accepted, for videos and photos. Fixed in the editor and on the server.",
+  "notes": "Fixed duplicate image position controls. Image backgrounds had two competing sets of Scale / X / Y sliders — an old one buried in the 'Choose a background' panel (which used the outdated crop model and was hard to find) plus the new 'Image framing' panel. They wrote to the same values and fought each other, so repositioning didn't stick and the image still looked cropped. Removed the old buried set; the single 'Image framing' panel at the top is now the one source of truth, using the correct pan model. Ken Burns stays in the image panel.",
   "files": [
     "index.html",
     "server.js",

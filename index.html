@@ -6995,23 +6995,7 @@
                     <span style="font-size:12px;color:#94a3b8;">Ken Burns:</span>
                     <button id="kenburns-btn-${i}" class="pos-btn${seg.kenBurns!==false?' active':''}" onclick="toggleKenBurns(${i})" style="font-size:11px;padding:3px 10px;">${seg.kenBurns!==false?'On':'Off'}</button>
                   </div>
-                  <div style="margin-top:8px;">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                      <span style="font-size:11px;color:#94a3b8;min-width:36px;">Scale</span>
-                      <input type="range" id="imgscale-${i}" min="1" max="3" step="0.05" value="${Math.max(1, Number(seg.backgroundScale)||1)}" oninput="onBgImageTransformInput(${i})" onchange="saveBgImageTransform(${i})" style="flex:1" />
-                      <span id="imgscale-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Math.max(1,Number(seg.backgroundScale)||1).toFixed(2)}x</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                      <span style="font-size:11px;color:#94a3b8;min-width:36px;">X</span>
-                      <input type="range" id="imgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100,Math.min(100,Number(seg.backgroundX)||0))}" oninput="onBgImageTransformInput(${i})" onchange="saveBgImageTransform(${i})" style="flex:1" />
-                      <span id="imgx-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Math.max(-100,Math.min(100,Number(seg.backgroundX)||0))}%</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <span style="font-size:11px;color:#94a3b8;min-width:36px;">Y</span>
-                      <input type="range" id="imgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100,Math.min(100,Number(seg.backgroundY)||0))}" oninput="onBgImageTransformInput(${i})" onchange="saveBgImageTransform(${i})" style="flex:1" />
-                      <span id="imgy-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Math.max(-100,Math.min(100,Number(seg.backgroundY)||0))}%</span>
-                    </div>
-                  </div>
+                  <div style="margin-top:8px;font-size:11px;color:#64748b;">↑ Use the <b style="color:#94a3b8;font-weight:600">Image framing</b> panel above to scale &amp; reposition.</div>
             </div>
 
             <!-- solid panel -->
@@ -8104,39 +8088,8 @@
     });
   }
 
-  function onBgImageTransformInput(i) {
-    const scale = Math.max(1, parseFloat(document.getElementById(`imgscale-${i}`)?.value) || 1);
-    const x = Math.max(-100, Math.min(100, parseFloat(document.getElementById(`imgx-${i}`)?.value) || 0));
-    const y = Math.max(-100, Math.min(100, parseFloat(document.getElementById(`imgy-${i}`)?.value) || 0));
-    const sv = document.getElementById(`imgscale-v-${i}`);
-    const xv = document.getElementById(`imgx-v-${i}`);
-    const yv = document.getElementById(`imgy-v-${i}`);
-    if (sv) sv.textContent = `${scale.toFixed(2)}x`;
-    if (xv) xv.textContent = `${Math.round(x)}%`;
-    if (yv) yv.textContent = `${Math.round(y)}%`;
-    // Update thumbnail preview
-    const el = document.getElementById(`thumb-${i}`);
-    if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
-      el.style.objectFit = 'cover';
-      el.style.objectPosition = 'center center';
-      el.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
-      el.style.transformOrigin = 'center center';
-    }
-  }
-
-  async function saveBgImageTransform(i) {
-    const scale = Math.max(1, parseFloat(document.getElementById(`imgscale-${i}`)?.value) || 1);
-    const x = Math.max(-100, Math.min(100, parseFloat(document.getElementById(`imgx-${i}`)?.value) || 0));
-    const y = Math.max(-100, Math.min(100, parseFloat(document.getElementById(`imgy-${i}`)?.value) || 0));
-    onBgImageTransformInput(i);
-    const res = await fetch('/update-scene-texts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index: i, backgroundScale: scale, backgroundX: x, backgroundY: y })
-    });
-    const data = await res.json();
-    if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
-  }
+  // (Image Scale/X/Y now lives in the single "Image framing" panel, sharing the video
+  //  framing controls + object-position model — the old duplicate handlers were removed.)
 
   /* Thumb helper */
   function setThumb(i,src) {
