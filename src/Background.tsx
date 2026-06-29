@@ -131,9 +131,13 @@ export const Background: React.FC<BackgroundProps> = ({
         const imgScale = Math.max(1, Number(backgroundScale) || 1);
         const imgX = Math.max(-100, Math.min(100, Number(backgroundX) || 0));
         const imgY = Math.max(-100, Math.min(100, Number(backgroundY) || 0));
+        // Same model as video: pan via object-position (reveals the full crop of a landscape image),
+        // zoom via scale toward the focal point. Ken Burns keeps its animated zoom/drift on top.
+        const imgFocusX = 50 + imgX / 2;
+        const imgFocusY = 50 + imgY / 2;
         const imgTransform = kenBurns
-            ? `translate(${imgX}%, ${imgY}%) scale(${imgScale * kbScale}) translate(${kbTx}%, ${kbTy}%)`
-            : `translate(${imgX}%, ${imgY}%) scale(${imgScale})`;
+            ? `scale(${imgScale * kbScale}) translate(${kbTx}%, ${kbTy}%)`
+            : `scale(${imgScale})`;
         return (
             <AbsoluteFill style={{ overflow: "hidden" }}>
                 <div style={blurWrapStyle}>
@@ -141,13 +145,13 @@ export const Background: React.FC<BackgroundProps> = ({
                         src={resolvedImg}
                         style={{
                             position: "absolute",
-                            width: "114%",
-                            height: "114%",
-                            top: "-7%",
-                            left: "-7%",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
                             objectFit: "cover",
+                            objectPosition: `${imgFocusX}% ${imgFocusY}%`,
                             transform: imgTransform,
-                            transformOrigin: "center center",
+                            transformOrigin: `${imgFocusX}% ${imgFocusY}%`,
                         }}
                     />
                 </div>
@@ -169,18 +173,24 @@ export const Background: React.FC<BackgroundProps> = ({
     // cover = fill frame (default), contain = letterbox
     const fitMode: 'cover' | 'contain' = (videoFit === 'contain-black' || videoFit === 'contain-blur') ? 'contain' : 'cover';
 
-    // Oversized element + translate mirrors the image approach so X/Y panning always works
-    // regardless of whether the video AR matches the frame AR (objectPosition has no effect
-    // when cover fills both dimensions exactly, e.g. 9:16 video in a 9:16 frame).
+    // Pan with object-position (not translate): for a landscape video in a portrait frame, cover
+    // crops the left/right edges at the element level, so translate could only slide that centre
+    // crop around — it could never reveal the source's far-left/right. object-position instead
+    // chooses WHICH slice of the cover overflow is shown, giving the full pan range. transform-origin
+    // matches the focal point so scale zooms toward where you panned (this also keeps panning working
+    // for a same-AR video, where there's no cover overflow but the zoom origin shifts the view).
+    // X/Y −100..100 → focal 0..100 % (0=−100=full left/top, 50=0=centre, 100=+100=full right/bottom).
+    const focusX = 50 + videoX / 2;
+    const focusY = 50 + videoY / 2;
     const videoStyle: React.CSSProperties = {
         position: 'absolute',
-        width: "114%",
-        height: "114%",
-        top: "-7%",
-        left: "-7%",
+        inset: 0,
+        width: "100%",
+        height: "100%",
         objectFit: fitMode,
-        transform: `translate(${videoX}%, ${videoY}%) scale(${videoScale})`,
-        transformOrigin: "center center",
+        objectPosition: `${focusX}% ${focusY}%`,
+        transform: `scale(${videoScale})`,
+        transformOrigin: `${focusX}% ${focusY}%`,
     };
 
     // Blurred full-frame cover style used as background layer for contain-blur mode

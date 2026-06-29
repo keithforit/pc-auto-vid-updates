@@ -6854,13 +6854,13 @@
                   <span id="bgscale-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.max(1, Number(seg.backgroundScale) || 1).toFixed(2)}x</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label">X:</span>
-                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="Pan horizontally — drag left to focus the left side of the video, right for the right">X ◀▶</span>
+                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" title="Drag left to focus the left of the video, right for the right" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgx-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0)))}%</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label">Y:</span>
-                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="Pan vertically — drag left for the top of the video, right for the bottom">Y ▲▼</span>
+                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" title="Drag left for the top of the video, right for the bottom" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgy-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0)))}%</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
@@ -7663,9 +7663,11 @@
   }
 
   function backgroundTransformStyle(scale, x, y) {
-    // Mirror the render (src/Background.tsx): an oversized 114% element panned with translate, so X/Y
-    // works even when the video AR matches the frame AR (object-position can't pan an exact-fit cover).
-    return `position:absolute;width:114%;height:114%;left:-7%;top:-7%;object-fit:cover;object-position:center center;transform:translate(${x}%, ${y}%) scale(${scale});transform-origin:center center;`;
+    // Mirror the render (src/Background.tsx): pan with object-position so X/Y reveals the full crop of
+    // a landscape video/image (cover crops the edges, so translate alone could never reach them); scale
+    // zooms toward the same focal point. X/Y −100..100 → focal 0..100 % (0=full left/top, 50=centre).
+    const fx = 50 + x / 2, fy = 50 + y / 2;
+    return `position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${fx}% ${fy}%;transform:scale(${scale});transform-origin:${fx}% ${fy}%;`;
   }
 
   function updateBackgroundTransformPreview(i) {
@@ -7678,18 +7680,19 @@
     if (xValue) xValue.textContent = `${Math.round(x)}%`;
     if (yValue) yValue.textContent = `${Math.round(y)}%`;
     if (el && (el.tagName === 'VIDEO' || el.tagName === 'IMG')) {
-      // Mirror the render (src/Background.tsx): oversized element + translate, so X/Y pans even when the
-      // video AR matches the frame AR (object-position can't pan a cover that already fills exactly).
+      // Mirror the render (src/Background.tsx): pan via object-position so X/Y reveals the full crop of
+      // a landscape video/image; scale zooms toward the same focal point.
+      const fx = 50 + x / 2, fy = 50 + y / 2;
       const blur = el.style.filter;
       el.style.position = 'absolute';
-      el.style.width = '114%';
-      el.style.height = '114%';
-      el.style.left = '-7%';
-      el.style.top = '-7%';
+      el.style.width = '100%';
+      el.style.height = '100%';
+      el.style.left = '0';
+      el.style.top = '0';
       el.style.objectFit = 'cover';
-      el.style.objectPosition = 'center center';
-      el.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
-      el.style.transformOrigin = 'center center';
+      el.style.objectPosition = `${fx}% ${fy}%`;
+      el.style.transform = `scale(${scale})`;
+      el.style.transformOrigin = `${fx}% ${fy}%`;
       if (blur) el.style.filter = blur;
     }
   }

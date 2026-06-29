@@ -1,7 +1,7 @@
 {
-  "version": "1.5.4",
+  "version": "1.5.5",
   "date": "2026-06-29",
-  "notes": "Nicer text colours + Paste Style stays put. Scene view now uses the same colour swatches as the timeline inspector for the main text and each text overlay — a row of quick-pick presets plus a round custom-colour swatch, instead of the small default colour boxes. And 'Paste Style' no longer jumps you back to the top of the page: it keeps you on the scene you just pasted onto. Also rolls in recent fixes: background Brightness/Contrast (v1.5.3), Align H/V keep the other axis (v1.5.2), and updates no longer open a duplicate browser tab (v1.5.1).",
+  "notes": "You can now actually reposition a landscape background. Before, a wide (landscape) video or image dropped into the portrait frame was centre-cropped, and the X/Y sliders could only slide that centre slice around — they could never reach the left or right of the source. Now X/Y choose which part of the video shows (drag X left to focus the left side, e.g. a shop on the edge of the shot), and Scale zooms toward that same spot. The X/Y sliders are labelled with arrows so the direction is clear. Works for both video and image backgrounds, in the preview and the final render.",
   "files": [
     "index.html",
     "server.js",
