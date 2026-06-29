@@ -873,6 +873,17 @@
     .mini-swatches .tl-swatch-customwrap, .mini-swatches .tl-swatch-custom { width: 19px; height: 19px; }
     .mini-color-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
     .mini-color-row > label { font-size: 10px; color: #94a3b8; min-width: 64px; flex: 0 0 auto; }
+    /* Toasts + inline field errors (replace native alert()) */
+    #toast-host { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; max-width: 92vw; }
+    .toast { pointer-events: auto; display: flex; align-items: center; gap: 9px; min-width: 220px; max-width: 460px; padding: 11px 15px; border-radius: 10px; font-size: 13px; line-height: 1.45; font-weight: 500; color: #f1f5f9; background: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.45); cursor: pointer; animation: toastIn .18s ease both; }
+    .toast.success { border-color: #10b981; }
+    .toast.error { border-color: #ef4444; }
+    .toast.info { border-color: #3b82f6; }
+    .toast .toast-ico { font-size: 15px; flex-shrink: 0; }
+    .toast.leaving { opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .2s; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    .field-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 1px rgba(239,68,68,0.6) !important; }
+    .field-err-msg { color: #f87171; font-size: 11px; margin: 3px 2px 0; width: 100%; }
     .tl-back { display: none; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 12px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
     .tl-back:hover { color: var(--text-main); border-color: var(--accent); }
     .timeline-mode .segment-card.tl-show-all .tl-back { display: inline-flex; }
@@ -2106,6 +2117,43 @@
       lv_split_done: (n) => `Split into ${n} scenes. Proceed to Step 4.`,
       lv_rendering: 'Rendering…',
       lv_press_m: 'Press M to mark, or click the timeline',
+      // Background / framing controls
+      framing_video: 'Video framing',
+      framing_image: 'Image framing',
+      framing_reset: 'Reset',
+      framing_hint_image: 'Use the Image framing panel above to scale & reposition.',
+      fit_label: 'Fit:',
+      fit_fill: '🔲 Fill',
+      fit_black_bars: '⬛ Black Bars',
+      fit_blur_bg: '🌫 Blur BG',
+      scale_label: 'Scale:',
+      speed_label: 'Speed:',
+      clip_label: 'Clip:',
+      audio_label: 'Audio:',
+      audio_muted: 'Muted',
+      no_duration: 'No duration',
+      total_suffix: 'total',
+      ken_burns_label: 'Ken Burns:',
+      opacity_label: 'Opacity:',
+      radius_label: 'Radius:',
+      softness_label: 'Softness:',
+      framing_x_tip: 'Drag left to focus the left of the background, right for the right',
+      framing_y_tip: 'Drag left for the top of the background, right for the bottom',
+      // Toast / inline validation messages
+      t_enter_search: 'Enter a search query first',
+      t_paste_url: 'Paste a video URL first',
+      t_invalid_pexels: 'That doesn’t look like a Pexels video URL. Example: pexels.com/video/19232967/',
+      t_invalid_pixabay: 'That doesn’t look like a Pixabay video URL. Example: pixabay.com/videos/radio-tower-night-view-211067/',
+      t_no_style: 'No style copied yet — copy one from a scene or text layer first',
+      t_copy_failed: 'Couldn’t copy the style',
+      t_paste_failed: 'Couldn’t paste the style',
+      t_effect_failed: 'Couldn’t apply the effect',
+      t_preview_failed: 'Couldn’t play the preview',
+      t_save_failed: 'Couldn’t save — please try again',
+      t_post_failed: 'Couldn’t post the video',
+      t_popup_blocked: 'Please allow pop-ups to connect your account',
+      t_path_copied: 'Image path copied — paste it into an overlay image field',
+      t_delete_failed: 'Couldn’t delete that',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -2741,6 +2789,43 @@
       lv_split_done: (n) => `${n}シーンに分割しました。ステップ4へ進んでください。`,
       lv_rendering: 'レンダリング中…',
       lv_press_m: 'Mキーを押すかタイムラインをクリックしてマーク',
+      // Background / framing controls
+      framing_video: '動画フレーミング',
+      framing_image: '画像フレーミング',
+      framing_reset: 'リセット',
+      framing_hint_image: '上の「画像フレーミング」で拡大・位置調整ができます。',
+      fit_label: 'フィット:',
+      fit_fill: '🔲 フィル',
+      fit_black_bars: '⬛ 黒帯',
+      fit_blur_bg: '🌫 ぼかし背景',
+      scale_label: 'スケール:',
+      speed_label: '速度:',
+      clip_label: 'クリップ:',
+      audio_label: '音声:',
+      audio_muted: 'ミュート',
+      no_duration: '長さ不明',
+      total_suffix: '合計',
+      ken_burns_label: 'ケンバーンズ:',
+      opacity_label: '不透明度:',
+      radius_label: '半径:',
+      softness_label: 'ぼかし:',
+      framing_x_tip: '左にドラッグで背景の左側、右で右側にフォーカス',
+      framing_y_tip: '左にドラッグで背景の上側、右で下側にフォーカス',
+      // トースト / 入力検証メッセージ
+      t_enter_search: '検索キーワードを入力してください',
+      t_paste_url: '動画URLを貼り付けてください',
+      t_invalid_pexels: 'Pexelsの動画URLではないようです。例: pexels.com/video/19232967/',
+      t_invalid_pixabay: 'Pixabayの動画URLではないようです。例: pixabay.com/videos/radio-tower-night-view-211067/',
+      t_no_style: 'スタイルが未コピーです。先にシーンかテキストからコピーしてください',
+      t_copy_failed: 'スタイルをコピーできませんでした',
+      t_paste_failed: 'スタイルを貼り付けできませんでした',
+      t_effect_failed: 'エフェクトを適用できませんでした',
+      t_preview_failed: 'プレビューを再生できませんでした',
+      t_save_failed: '保存できませんでした。もう一度お試しください',
+      t_post_failed: '動画を投稿できませんでした',
+      t_popup_blocked: 'アカウント連携のためポップアップを許可してください',
+      t_path_copied: '画像パスをコピーしました。オーバーレイ画像欄に貼り付けてください',
+      t_delete_failed: '削除できませんでした',
     }
   };
 
@@ -2902,6 +2987,45 @@
   let _setupMode = 'first-run'; // 'first-run' (welcome + confetti) | 'update' (just re-save keys)
 
   function setupT() { return (I18N[window._appLang || 'en'] || I18N.en); }
+
+  // i18n lookup usable outside template scopes (falls back to EN, then the key itself).
+  function tr(key) { const o = I18N[window._appLang || 'en'] || I18N.en; return (o[key] != null ? o[key] : (I18N.en[key] != null ? I18N.en[key] : key)); }
+
+  // Non-blocking toast — the in-app replacement for native alert(). type: 'info' | 'success' | 'error'.
+  function toast(message, type = 'info', ms = 3400) {
+    let host = document.getElementById('toast-host');
+    if (!host) { host = document.createElement('div'); host.id = 'toast-host'; document.body.appendChild(host); }
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const ico = document.createElement('span'); ico.className = 'toast-ico';
+    ico.textContent = type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️';
+    const msg = document.createElement('span'); msg.textContent = message;  // textContent → no markup injection from error strings
+    el.appendChild(ico); el.appendChild(msg);
+    host.appendChild(el);
+    const remove = () => { el.classList.add('leaving'); setTimeout(() => el.remove(), 220); };
+    const timer = setTimeout(remove, ms);
+    el.addEventListener('click', () => { clearTimeout(timer); remove(); });
+    return el;
+  }
+
+  // Inline validation message shown under a field's row; auto-clears on the next edit.
+  function fieldError(inputId, message) {
+    const input = document.getElementById(inputId);
+    if (!input) { toast(message, 'error'); return; }
+    input.classList.add('field-invalid');
+    const anchor = input.closest('.replace-row, .ctrl-row') || input;
+    let hint = document.getElementById(inputId + '-err');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = inputId + '-err';
+      hint.className = 'field-err-msg';
+      anchor.insertAdjacentElement('afterend', hint);
+    }
+    hint.textContent = message;
+    try { input.focus(); } catch (_) {}
+    const clear = () => { input.classList.remove('field-invalid'); const h = document.getElementById(inputId + '-err'); if (h) h.remove(); input.removeEventListener('input', clear); };
+    input.addEventListener('input', clear);
+  }
 
   async function checkFirstRunSetup() {
     try {
@@ -3486,7 +3610,7 @@
       body: JSON.stringify({ color, name })
     });
     const data = await res.json();
-    if (data.error) { alert(data.error); return; }
+    if (data.error) { toast(data.error, 'error'); return; }
     _mediaLibraryCache.brandColors = data.brandColors;
     renderMlColors(data.brandColors);
     refreshAllBrandSwatches();
@@ -3500,7 +3624,7 @@
       body: JSON.stringify({ color })
     });
     const data = await res.json();
-    if (data.error) { alert(data.error); return; }
+    if (data.error) { toast(data.error, 'error'); return; }
     _mediaLibraryCache.brandColors = data.brandColors;
     renderMlColors(data.brandColors);
     refreshAllBrandSwatches();
@@ -3538,7 +3662,7 @@
       body: JSON.stringify({ filename })
     });
     const data = await res.json();
-    if (data.error) { alert(data.error); return; }
+    if (data.error) { toast(data.error, 'error'); return; }
     _mediaLibraryCache.brandImages = data.brandImages;
     renderMlImages(data.brandImages);
   }
@@ -3546,9 +3670,9 @@
   function copyBrandImageToOverlay(filename, name) {
     const path = `brand/${filename}`;
     navigator.clipboard.writeText(path).then(() => {
-      alert(`Copied path: ${path}\n\nYou can use this in an overlay image src field.`);
+      toast(tr('t_path_copied'), 'success');
     }).catch(() => {
-      prompt('Copy this path to use as an overlay src:', path);
+      toast(path, 'info', 6000);  // clipboard blocked — show the path so it can be copied manually
     });
   }
 
@@ -5928,7 +6052,7 @@
       await currentVoicePreviewAudio.play();
     } catch (err) {
       _restoreVoicePreviewButton();
-      alert(err.message || 'Could not preview this voice yet.');
+      toast(tr('t_preview_failed'), 'error'); console.warn('voice preview:', err);
     } finally {
       // Only re-enable+restore if playback never started (error path)
       if (activeButton && activeButton.disabled) {
@@ -6031,7 +6155,7 @@
       updateThumbnailAudioButtons(i, true, false);
     } catch (err) {
       stopThumbnailAudioPreview();
-      alert(err.message || 'Could not preview this scene.');
+      toast(tr('t_preview_failed'), 'error'); console.warn('scene preview:', err);
     } finally {
       if (activeThumbnailPreview?.sceneIndex !== i) updateThumbnailAudioButtons(i, false, false);
     }
@@ -6835,36 +6959,36 @@
 
               <div id="bg-video-controls-${i}" style="display:${(hasVideo && (bgType === 'video' || bgType === 'image'))?'block':'none'};margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;gap:8px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                  <span id="framing-title-${i}" style="font-size:11px;color:#cbd5e1;font-weight:700">${bgType === 'image' ? 'Image framing' : 'Video framing'}</span>
-                  <button class="btn sm ghost" type="button" onclick="resetBackgroundTransform(${i})">Reset</button>
+                  <span id="framing-title-${i}" style="font-size:11px;color:#cbd5e1;font-weight:700">${bgType === 'image' ? _t.framing_image : _t.framing_video}</span>
+                  <button class="btn sm ghost" type="button" onclick="resetBackgroundTransform(${i})">${_t.framing_reset}</button>
                 </div>
                 <!-- ── Video Fit (video only) ── -->
                 <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #1e293b">
-                  <span class="ctrl-row-label">Fit:</span>
+                  <span class="ctrl-row-label">${_t.fit_label}</span>
                   <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap" id="videofit-row-${i}">
-                    ${[['cover','🔲 Fill'],['contain-black','⬛ Black Bars'],['contain-blur','🌫 Blur BG']].map(([val,lbl]) => {
+                    ${[['cover',_t.fit_fill],['contain-black',_t.fit_black_bars],['contain-blur',_t.fit_blur_bg]].map(([val,lbl]) => {
                       const active = (seg.videoFit || 'cover') === val;
                       return `<button class="pos-btn style-text-btn${active?' active':''}" style="font-size:11px;padding:3px 7px" data-vfit="${val}" onclick="setVideoFit(${i},'${val}')">${lbl}</button>`;
                     }).join('')}
                   </div>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label">Scale:</span>
+                  <span class="ctrl-row-label">${_t.scale_label}</span>
                   <input type="range" id="bgscale-${i}" min="1" max="3" step="0.05" value="${Math.max(1, Number(seg.backgroundScale) || 1)}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgscale-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.max(1, Number(seg.backgroundScale) || 1).toFixed(2)}x</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label" title="Pan horizontally — drag left to focus the left side of the background, right for the right">X ◀▶</span>
-                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" title="Drag left to focus the left of the background, right for the right" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="${_t.framing_x_tip}">X ◀▶</span>
+                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" title="${_t.framing_x_tip}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgx-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0)))}%</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label" title="Pan vertically — drag left for the top of the background, right for the bottom">Y ▲▼</span>
-                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" title="Drag left for the top of the background, right for the bottom" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="${_t.framing_y_tip}">Y ▲▼</span>
+                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" title="${_t.framing_y_tip}" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgy-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0)))}%</span>
                 </div>
                 <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
-                  <span class="ctrl-row-label">Speed:</span>
+                  <span class="ctrl-row-label">${_t.speed_label}</span>
                   <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">
                     ${[0.25,0.5,0.75,1,1.5,2,3,4].map(s => {
                       const cur = Math.round((Number(seg.videoSpeed) || 1) * 100);
@@ -6874,7 +6998,7 @@
                   </div>
                 </div>
                 <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:flex-start;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
-                  <span class="ctrl-row-label" style="margin-top:5px">Clip:</span>
+                  <span class="ctrl-row-label" style="margin-top:5px">${_t.clip_label}</span>
                   <div style="flex:1;min-width:0">
                     <input type="hidden" id="clip-start-${i}" value="${seg.clipStart != null ? seg.clipStart : ''}" />
                     <input type="hidden" id="clip-end-${i}" value="${seg.clipEnd != null ? seg.clipEnd : ''}" />
@@ -6886,19 +7010,19 @@
                       </div>
                       <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#64748b">
                         <span id="clip-start-lbl-${i}">0.0s</span>
-                        <span style="color:#475569">${seg.video_duration ? Number(seg.video_duration).toFixed(1)+'s total' : 'No duration'}</span>
+                        <span style="color:#475569">${seg.video_duration ? Number(seg.video_duration).toFixed(1)+'s '+_t.total_suffix : _t.no_duration}</span>
                         <span id="clip-end-lbl-${i}">${seg.video_duration ? Number(seg.video_duration).toFixed(1)+'s' : '—'}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
-                  <span class="ctrl-row-label">Audio:</span>
+                  <span class="ctrl-row-label">${_t.audio_label}</span>
                   <input type="range" id="vidaudio-${i}" min="0" max="1" step="0.05"
                          value="${Math.max(0, Math.min(1, Number(seg.videoAudioVolume) || 0))}"
                          oninput="onVidAudioInput(${i})"
                          onchange="saveVideoAudioVolume(${i},this.value)" style="flex:1" />
-                  <span id="vidaudio-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${Number(seg.videoAudioVolume) > 0 ? Math.round(Number(seg.videoAudioVolume)*100)+'%' : 'Muted'}</span>
+                  <span id="vidaudio-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${Number(seg.videoAudioVolume) > 0 ? Math.round(Number(seg.videoAudioVolume)*100)+'%' : _t.audio_muted}</span>
                   <button id="vidaudio-play-${i}" onclick="previewVideoAudio(${i})" title="Preview audio for 3 seconds" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:5px;width:26px;height:22px;font-size:12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button>
                 </div>
               </div>
@@ -6920,7 +7044,7 @@
               <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
                   <span style="font-size:11px;color:#cbd5e1;font-weight:700">${_t.bg_adjust_title}</span>
-                  <button class="btn sm ghost" type="button" onclick="resetBgAdjust(${i})">Reset</button>
+                  <button class="btn sm ghost" type="button" onclick="resetBgAdjust(${i})">${_t.framing_reset}</button>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
                   <span class="ctrl-row-label">${_t.bg_brightness}</span>
@@ -6950,7 +7074,7 @@
                 </div>
                 <div id="overlay-controls-${i}" style="display:${(seg.overlayType&&seg.overlayType!=='none')?'block':'none'}">
                   <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
-                    <span class="ctrl-row-label">Opacity:</span>
+                    <span class="ctrl-row-label">${_t.opacity_label}</span>
                     <input type="range" id="overlay-opacity-${i}" min="0" max="1" step="0.05"
                            value="${Number(seg.overlayOpacity)>0||seg.overlayOpacity===0?Number(seg.overlayOpacity):0.5}"
                            oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
@@ -6958,14 +7082,14 @@
                   </div>
                   <div id="overlay-spotlight-controls-${i}" style="display:${seg.overlayType==='spotlight'?'block':'none'}">
                     <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
-                      <span class="ctrl-row-label">Radius:</span>
+                      <span class="ctrl-row-label">${_t.radius_label}</span>
                       <input type="range" id="overlay-radius-${i}" min="5" max="80" step="1"
                              value="${Number(seg.spotlightRadius)||30}"
                              oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
                       <span id="overlay-radius-v-${i}" style="font-size:11px;color:#94a3b8;min-width:36px;text-align:right">${Number(seg.spotlightRadius)||30}%</span>
                     </div>
                     <div class="ctrl-row" style="align-items:center;gap:8px">
-                      <span class="ctrl-row-label">Softness:</span>
+                      <span class="ctrl-row-label">${_t.softness_label}</span>
                       <input type="range" id="overlay-soft-${i}" min="0" max="60" step="1"
                              value="${Number(seg.spotlightSoftness)||25}"
                              oninput="onOverlayInput(${i})" onchange="saveOverlaySettings(${i})" style="flex:1" />
@@ -6992,10 +7116,10 @@
                   <button class="btn sm full" style="background:#0e7490" onclick="document.getElementById('imgfile-${i}').click()">⬆ Upload image</button>
                   <div id="imgstatus-${i}" style="font-size:11px;color:#94a3b8;margin-top:4px;min-height:14px;"></div>
                   <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:12px;color:#94a3b8;">Ken Burns:</span>
+                    <span style="font-size:12px;color:#94a3b8;">${_t.ken_burns_label}</span>
                     <button id="kenburns-btn-${i}" class="pos-btn${seg.kenBurns!==false?' active':''}" onclick="toggleKenBurns(${i})" style="font-size:11px;padding:3px 10px;">${seg.kenBurns!==false?'On':'Off'}</button>
                   </div>
-                  <div style="margin-top:8px;font-size:11px;color:#64748b;">↑ Use the <b style="color:#94a3b8;font-weight:600">Image framing</b> panel above to scale &amp; reposition.</div>
+                  <div style="margin-top:8px;font-size:11px;color:#64748b;">↑ ${_t.framing_hint_image}</div>
             </div>
 
             <!-- solid panel -->
@@ -7691,7 +7815,7 @@
     const isVideo = mediaType === 'video';
     panel.querySelectorAll('[data-framing="video"]').forEach(el => { el.style.display = isVideo ? 'flex' : 'none'; });
     const title = document.getElementById(`framing-title-${i}`);
-    if (title) title.textContent = isVideo ? 'Video framing' : 'Image framing';
+    if (title) title.textContent = isVideo ? tr('framing_video') : tr('framing_image');
   }
   // Back-compat shim: existing callers only know show/hide and are all video contexts.
   function setBackgroundTransformPanelState(i, visible) {
@@ -8002,7 +8126,7 @@
     const slider = document.getElementById(`vidaudio-${i}`);
     const valEl  = document.getElementById(`vidaudio-v-${i}`);
     const vol = parseFloat(slider?.value) || 0;
-    if (valEl) valEl.textContent = vol === 0 ? 'Muted' : Math.round(vol * 100) + '%';
+    if (valEl) valEl.textContent = vol === 0 ? tr('audio_muted') : Math.round(vol * 100) + '%';
     // Update live volume if preview is active
     const thumb = document.getElementById(`thumb-${i}`);
     if (thumb && thumb.tagName === 'VIDEO' && _vidAudioTimers[i]) {
@@ -8107,7 +8231,7 @@
   /* Pexels */
   async function replacePexels(i) {
     const query=document.getElementById(`q-${i}`).value.trim();
-    if(!query)return alert('Enter a search query first.');
+    if(!query){fieldError(`q-${i}`, tr('t_enter_search'));return;}
     const btn = document.querySelector(`#card-${i} .replace-row button`);
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
@@ -8148,7 +8272,7 @@
 
   async function replacePexelsByUrl(i) {
     const url = document.getElementById(`pexels-url-${i}`)?.value?.trim();
-    if (!url) return alert('Paste a Pexels video URL first.');
+    if (!url) { fieldError(`pexels-url-${i}`, tr('t_paste_url')); return; }
     // Auto-detect: if a Pixabay URL was pasted here, route it correctly
     if (/pixabay\.com/i.test(url)) {
       const pixabayInput = document.getElementById(`pixabay-url-${i}`);
@@ -8159,7 +8283,7 @@
     // Accept both full page URLs and direct video file URLs
     const pexelsPageMatch = url.match(/pexels\.com(?:\/[a-z]{2}(?:-[a-z]{2})?)?\/video\/(?:[^/]*-)?(\d+)\/?(?:[?#].*)?$/i);
     if (!pexelsPageMatch && !url.match(/\.mp4/i)) {
-      return alert('Please paste a valid Pexels video page URL (e.g. https://www.pexels.com/video/dartboard-close-up-34071374/)');
+      { fieldError(`pexels-url-${i}`, tr('t_invalid_pexels')); return; }
     }
     const btn = document.getElementById(`pexels-url-btn-${i}`);
     const origBtnText = btn ? btn.textContent : '';
@@ -8204,7 +8328,7 @@
   /* Pixabay */
   async function replacePixabay(i) {
     const query = document.getElementById(`pixabay-q-${i}`)?.value?.trim();
-    if (!query) return alert('Enter a Pixabay search query first.');
+    if (!query) { fieldError(`pixabay-q-${i}`, tr('t_enter_search')); return; }
     const btn = document.getElementById(`pixabay-q-${i}`)?.nextElementSibling;
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
@@ -8245,7 +8369,7 @@
 
   async function replacePixabayByUrl(i) {
     const url = document.getElementById(`pixabay-url-${i}`)?.value?.trim();
-    if (!url) return alert('Paste a Pixabay video URL first.');
+    if (!url) { fieldError(`pixabay-url-${i}`, tr('t_paste_url')); return; }
     // Auto-detect: if a Pexels URL was pasted here, route it correctly
     if (/pexels\.com/i.test(url)) {
       const pexelsInput = document.getElementById(`pexels-url-${i}`);
@@ -8255,7 +8379,7 @@
     }
     const pixabayPageMatch = url.match(/pixabay\.com\/videos\/[^/]*?-(\d+)\/?$/);
     if (!pixabayPageMatch) {
-      return alert('Please paste a valid Pixabay video page URL (e.g. https://pixabay.com/videos/radio-tower-night-view-211067/)');
+      { fieldError(`pixabay-url-${i}`, tr('t_invalid_pixabay')); return; }
     }
     const btn = document.getElementById(`pixabay-url-${i}`)?.nextElementSibling;
     const origBtnText = btn ? btn.textContent : '';
@@ -9015,7 +9139,7 @@
         blockBorderRadius:       _copiedStyle.blockBorderRadius,
       };
     }
-    if (!source) return alert('No style copied yet. Copy a style from a text layer or scene first.');
+    if (!source) { toast(tr('t_no_style'), 'info'); return; }
     const btn = evt?.target || event?.target;
     const ets = getExtraTexts(i);
     if (!ets[j]) return;
@@ -9068,7 +9192,7 @@
   let _copiedStyle = null;
   function copySceneStyle(i, evt) {
     const btn = evt?.target || event?.target;
-    if (!btn) return alert('Error: button not found');
+    if (!btn) { console.warn('style: button not found'); return; }
     fetch('/segments')
       .then(res => res.json())
       .then(segments => {
@@ -9099,28 +9223,23 @@
           mainTextStyleOverride: effectiveStyle,
           textAnimation: seg.textAnimation,
         };
-        console.log('Copied style from scene', i, ':', _copiedStyle);
         btn.textContent = '✅ Copied!';
         setTimeout(() => btn.textContent = '📋 Copy Style', 2000);
       })
-      .catch(err => alert('Error copying style: ' + err.message));
+      .catch(err => { toast(tr('t_copy_failed'), 'error'); console.warn('copy style:', err); });
   }
 
   async function pasteSceneStyle(i, evt) {
-    console.log('pasteSceneStyle called with i=', i, 'evt=', evt, '_copiedStyle=', _copiedStyle);
-    if (!_copiedStyle) return alert('No style copied. Copy a style from another scene first.');
+    if (!_copiedStyle) { toast(tr('t_no_style'), 'info'); return; }
     const btn = evt?.target || event?.target;
-    console.log('btn element:', btn);
-    if (!btn) return alert('Error: button not found');
+    if (!btn) { console.warn('style: button not found'); return; }
     try {
-      console.log('Pasting style to scene', i, 'with:', _copiedStyle);
       const res = await fetch('/update-scene-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ index: i, ..._copiedStyle })
       });
       const data = await res.json();
-      console.log('Paste response:', data);
       if (!res.ok) throw new Error(data.error || 'Failed to paste style');
       btn.textContent = '✅ Pasted!';
       setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
@@ -9138,10 +9257,8 @@
         const r = _card.getBoundingClientRect();
         if (r.bottom < 0 || r.top > window.innerHeight) _card.scrollIntoView({ block: 'center' });
       }
-      console.log('Scenes reloaded after paste');
     } catch (err) {
-      console.error('Paste error:', err);
-      alert('Error pasting style: ' + err.message);
+      toast(tr('t_paste_failed'), 'error'); console.warn('paste style:', err);
     }
   }
 
@@ -9269,7 +9386,7 @@
           : 'Highlight reveal applied — your whole caption was wrapped in [ ]. To reveal just one phrase, wrap it like [phrase|#3742f0] in the caption.', 'ok'); } catch {}
       }
     } catch (err) {
-      alert('Error applying effect: ' + (err?.message || err));
+      toast(tr('t_effect_failed'), 'error'); console.warn('apply effect:', err);
     }
   }
 
@@ -9832,7 +9949,6 @@
     else
       s.textContent = `@keyframes ${keyId}{0%{opacity:0}${inPct}%{opacity:1}${holdPct}%{opacity:1}100%{opacity:0}}`;
     document.head.appendChild(s);
-    console.log('[overlay-anim]', { sceneDur, startAtSec, fadeOutStartSec, fadeInSeconds, fadeOutSeconds, animDur, inPct, holdPct, keyframe: s.textContent });
     return `${keyId} ${animDur}ms linear ${visStartMs}ms infinite`;
   }
 
@@ -10843,7 +10959,7 @@
       }, { once: true });
       await currentSceneSfxPreviewAudio.play();
     } catch (err) {
-      alert(err.message || 'Could not play this sound effect.');
+      toast(tr('t_preview_failed'), 'error'); console.warn('sfx preview:', err);
     }
   }
 
@@ -11457,11 +11573,11 @@
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Post failed');
       if (btn) btn.innerHTML = '✅ Posted';
-      if (d.note) alert(d.note);
+      if (d.note) toast(d.note, 'info', 6000);
       setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }, 3000);
     } catch (e) {
       if (btn) { btn.disabled = false; btn.innerHTML = orig; }
-      alert(`Couldn't post to ${target}: ${e.message}`);
+      toast(tr('t_post_failed'), 'error'); console.warn('post to ' + target + ':', e);
     }
   }
 
@@ -11490,7 +11606,7 @@
     if (platform === 'tiktok') { return true; }   // TikTok uses an embedded key + PKCE — no per-user keys to save
     else { body.appId = document.getElementById('ig-appid').value; body.appSecret = document.getElementById('ig-secret').value; body.publicBaseUrl = document.getElementById('ig-publicurl').value; }
     try { const r = await fetch('/social/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error((await r.json()).error || 'save failed'); }
-    catch (e) { alert('Save failed: ' + e.message); return false; }
+    catch (e) { toast(tr('t_save_failed'), 'error'); console.warn('save:', e); return false; }
     await loadSocialStatus();
     return true;
   }
@@ -11498,7 +11614,7 @@
     // TikTok uses an embedded app key + PKCE — nothing to save first. Instagram still persists its keys.
     if (platform !== 'tiktok' && !(await saveSocialConfig(platform))) return;
     const w = window.open(`/oauth/${platform}/start`, 'oauth_' + platform, 'width=620,height=760');
-    if (!w) alert('Please allow pop-ups to connect your account.');
+    if (!w) toast(tr('t_popup_blocked'), 'error', 5000);
   }
   // Switch account = drop the current tokens, then reopen the OAuth popup to link another one.
   // (TikTok reuses your browser's TikTok session, so the hint reminds you to log out there first.)
@@ -13970,7 +14086,7 @@
   async function lvExecuteSplit() {
     const t = (I18N[window._appLang||'en']||I18N.en);
     if (!_lvFilename) return;
-    if (_lvSplitPoints.length === 0) { alert(t.lv_no_splits); return; }
+    if (_lvSplitPoints.length === 0) { toast(t.lv_no_splits, 'error'); return; }
     const transcript = document.getElementById('lv-transcript')?.value || '';
     const statusEl  = document.getElementById('lv-split-status');
     const splitBtn  = document.getElementById('lv-split-btn');

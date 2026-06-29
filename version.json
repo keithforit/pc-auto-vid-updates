@@ -1,7 +1,7 @@
 {
-  "version": "1.5.8",
+  "version": "1.5.9",
   "date": "2026-06-29",
-  "notes": "Fixed duplicate image position controls. Image backgrounds had two competing sets of Scale / X / Y sliders — an old one buried in the 'Choose a background' panel (which used the outdated crop model and was hard to find) plus the new 'Image framing' panel. They wrote to the same values and fought each other, so repositioning didn't stick and the image still looked cropped. Removed the old buried set; the single 'Image framing' panel at the top is now the one source of truth, using the correct pan model. Ken Burns stays in the image panel.",
+  "notes": "Polished feedback + Japanese coverage. (1) Pop-up browser alerts are gone: the app now uses subtle in-app toasts for messages, and invalid Pexels/Pixabay URLs or empty searches show a small red note right under the field instead of a blocking 'localhost says' dialog. Technical error text no longer gets dumped at you. (2) The Background framing controls (Video/Image framing, Fit, Scale, Speed, Clip, Audio, Muted, Ken Burns, Brightness/Contrast, overlay Opacity/Radius/Softness) are now fully translated, so they read in Japanese when the app is set to 日本語. (3) Removed leftover debug logging.",
   "files": [
     "index.html",
     "server.js",
