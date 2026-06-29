@@ -20,6 +20,8 @@ interface BackgroundProps {
     spotlightRadius?: number;    // 0–100 (% of frame — clear center area)
     spotlightSoftness?: number;  // 0–100 (% — transition width)
     backgroundBlur?: number;     // 0–100 % blur (converted to 0–20 px internally)
+    backgroundBrightness?: number; // 0–200 % (100 = unchanged)
+    backgroundContrast?: number;   // 0–200 % (100 = unchanged)
     videoAudioVolume?: number;   // 0–1; 0 = muted (default for stock/looping video)
     videoFit?: 'cover' | 'contain-black' | 'contain-blur'; // how a landscape video fills a portrait frame
     clipStart?: number;          // seconds into the video to start the clip
@@ -46,6 +48,8 @@ export const Background: React.FC<BackgroundProps> = ({
     spotlightRadius = 30,
     spotlightSoftness = 25,
     backgroundBlur = 0,
+    backgroundBrightness = 100,
+    backgroundContrast = 100,
     videoAudioVolume = 0,
     clipStart,
     clipEnd,
@@ -66,10 +70,18 @@ export const Background: React.FC<BackgroundProps> = ({
     const sSoft   = Math.max(0, Math.min(100 - sRadius, Number(spotlightSoftness) ?? 25));
     const blurPct = Math.max(0, Number(backgroundBlur) || 0);
     const blurPx  = blurPct * 0.2; // 0–100 % stored → 0–20 px CSS
-    // Blur wrapper: applied around background content only (overlay stays sharp)
-    const blurWrapStyle: React.CSSProperties = blurPct > 0
-        ? { position: 'absolute', inset: 0, filter: `blur(${blurPx}px)`, overflow: 'hidden' }
-        : { position: 'absolute', inset: 0, overflow: 'hidden' };
+    const brightPct   = Number.isFinite(Number(backgroundBrightness)) ? Number(backgroundBrightness) : 100;
+    const contrastPct = Number.isFinite(Number(backgroundContrast))   ? Number(backgroundContrast)   : 100;
+    // Compose blur + brightness + contrast into one filter, applied around background content only
+    // (the overlay stays sharp/unfiltered). 100 % = unchanged for brightness/contrast.
+    const filterParts: string[] = [];
+    if (blurPct > 0)        filterParts.push(`blur(${blurPx}px)`);
+    if (brightPct !== 100)  filterParts.push(`brightness(${brightPct / 100})`);
+    if (contrastPct !== 100) filterParts.push(`contrast(${contrastPct / 100})`);
+    const blurWrapStyle: React.CSSProperties = {
+        position: 'absolute', inset: 0, overflow: 'hidden',
+        ...(filterParts.length ? { filter: filterParts.join(' ') } : {}),
+    };
 
     // ── Overlay element (placed on top of every background type) ──
     const overlay = (overlayType && overlayType !== 'none') ? (

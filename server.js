@@ -1528,7 +1528,7 @@ app.post('/update-scene-texts', (req, res) => {
         if (voicevoxSpeaker       !== undefined) segments[index].voicevoxSpeaker       = voicevoxSpeaker;
         // Nullable fields: null = delete (revert to default), number/string = set
         const nullableFields = [
-             'textX', 'textY', 'backgroundBlur',
+             'textX', 'textY', 'backgroundBlur', 'backgroundBrightness', 'backgroundContrast',
             'rotation', 'fontSize',
             'blockColorOverride', 'textColorOverride', 'textStrokeColorOverride', 'textStrokeSizeOverride', 'glowColorOverride', 'glowTextColorOverride', 'glowSizeOverride',
             'boxBorderRadius', 'blockBorderRadius',

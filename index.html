@@ -2025,6 +2025,9 @@
       bg_blur_title: '🌀 Background Blur',
       bg_blur: 'Blur:',
       blur_off: 'Off',
+      bg_adjust_title: '🎚 Brightness & Contrast',
+      bg_brightness: 'Brightness:',
+      bg_contrast: 'Contrast:',
       apply_solid_bg: 'Apply solid background',
       // Create tab — no scenes yet
       scenes_none_yet: 'No scenes found yet. Click "Create Scene" to add your first scene.',
@@ -2657,6 +2660,9 @@
       bg_blur_title: '🌀 背景ブラー',
       bg_blur: 'ぼかし:',
       blur_off: 'オフ',
+      bg_adjust_title: '🎚 明るさ・コントラスト',
+      bg_brightness: '明るさ:',
+      bg_contrast: 'コントラスト:',
       apply_solid_bg: '単色背景を適用',
       // Create tab — no scenes yet
       scenes_none_yet: 'シーンがまだありません。「シーンを作成」をクリックして最初のシーンを追加してください。',
@@ -6318,8 +6324,16 @@
     const gEnd   = seg.gradient_end   || '#16213e';
     const gDir   = seg.gradient_direction || 'to bottom';
     const bgBlur = Math.max(0, Number(seg.backgroundBlur) || 0);
-    const bgBlurPx = bgBlur * 0.2; // 0-100% → 0-20px
-    const bgBlurStyle = bgBlur > 0 ? `filter:blur(${bgBlurPx}px);` : '';
+    const bgBright   = Number.isFinite(Number(seg.backgroundBrightness)) ? Number(seg.backgroundBrightness) : 100;
+    const bgContrast = Number.isFinite(Number(seg.backgroundContrast))   ? Number(seg.backgroundContrast)   : 100;
+    // Compose blur + brightness + contrast into one CSS filter (100% = unchanged for the latter two)
+    const bgBlurStyle = (() => {
+      const parts = [];
+      if (bgBlur > 0)       parts.push(`blur(${bgBlur * 0.2}px)`); // 0-100% → 0-20px
+      if (bgBright   !== 100) parts.push(`brightness(${bgBright / 100})`);
+      if (bgContrast !== 100) parts.push(`contrast(${bgContrast / 100})`);
+      return parts.length ? `filter:${parts.join(' ')};` : '';
+    })();
     let thumbHTML = '';
     if (bgType === 'color') {
       thumbHTML = `<div id="thumb-${i}" class="video-thumb" style="background:${solidColor};${bgBlurStyle}"></div>`;
@@ -6909,6 +6923,30 @@
                          oninput="onBgBlurInput(${i},this.value)"
                          onchange="saveBgBlur(${i})" style="flex:1" />
                   <span id="bgblur-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgBlur > 0 ? bgBlur + '%' : _t.blur_off}</span>
+                </div>
+              </div>
+
+              <!-- ── Brightness & Contrast ── -->
+              <div style="margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+                  <span style="font-size:11px;color:#cbd5e1;font-weight:700">${_t.bg_adjust_title}</span>
+                  <button class="btn sm ghost" type="button" onclick="resetBgAdjust(${i})">Reset</button>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:4px">
+                  <span class="ctrl-row-label">${_t.bg_brightness}</span>
+                  <input type="range" id="bgbright-${i}" min="0" max="200" step="1"
+                         value="${bgBright}"
+                         oninput="onBgBrightnessInput(${i},this.value)"
+                         onchange="saveBgBrightness(${i})" style="flex:1" />
+                  <span id="bgbright-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgBright}%</span>
+                </div>
+                <div class="ctrl-row" style="align-items:center;gap:8px;margin-bottom:0">
+                  <span class="ctrl-row-label">${_t.bg_contrast}</span>
+                  <input type="range" id="bgcontrast-${i}" min="0" max="200" step="1"
+                         value="${bgContrast}"
+                         oninput="onBgContrastInput(${i},this.value)"
+                         onchange="saveBgContrast(${i})" style="flex:1" />
+                  <span id="bgcontrast-v-${i}" style="font-size:11px;color:#94a3b8;min-width:40px;text-align:right">${bgContrast}%</span>
                 </div>
               </div>
 
@@ -7675,12 +7713,28 @@
     updateBackgroundTransformPreview(i);
   }
 
+  // Compose blur + brightness + contrast from the current sliders into one CSS filter on the thumb.
+  // All three share the element's single `filter` property, so they must be applied together —
+  // setting one in isolation would wipe the others.
+  function _applyBgFilterPreview(i) {
+    const blur     = Math.max(0, parseFloat(document.getElementById(`bgblur-${i}`)?.value) || 0);
+    const brightRaw = parseFloat(document.getElementById(`bgbright-${i}`)?.value);
+    const contrastRaw = parseFloat(document.getElementById(`bgcontrast-${i}`)?.value);
+    const bright   = Number.isFinite(brightRaw)   ? brightRaw   : 100;
+    const contrast = Number.isFinite(contrastRaw) ? contrastRaw : 100;
+    const parts = [];
+    if (blur > 0)       parts.push(`blur(${blur * 0.2}px)`);
+    if (bright   !== 100) parts.push(`brightness(${bright / 100})`);
+    if (contrast !== 100) parts.push(`contrast(${contrast / 100})`);
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb) thumb.style.filter = parts.join(' ');
+  }
+
   function onBgBlurInput(i, val) {
     const pct = Math.max(0, parseFloat(val) || 0);
     const label = document.getElementById(`bgblur-v-${i}`);
     if (label) label.textContent = pct > 0 ? pct + '%' : (I18N[window._appLang||'en']||I18N.en).blur_off;
-    const thumb = document.getElementById(`thumb-${i}`);
-    if (thumb) thumb.style.filter = pct > 0 ? `blur(${pct * 0.2}px)` : '';
+    _applyBgFilterPreview(i);
   }
 
   async function saveBgBlur(i) {
@@ -7689,6 +7743,52 @@
     await fetch('/update-scene-texts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ index: i, backgroundBlur: pct > 0 ? pct : null })
+    });
+  }
+
+  function onBgBrightnessInput(i, val) {
+    const pct = Number.isFinite(parseFloat(val)) ? Math.max(0, Math.min(200, parseFloat(val))) : 100;
+    const label = document.getElementById(`bgbright-v-${i}`);
+    if (label) label.textContent = pct + '%';
+    _applyBgFilterPreview(i);
+  }
+
+  async function saveBgBrightness(i) {
+    const raw = parseFloat(document.getElementById(`bgbright-${i}`)?.value);
+    const pct = Number.isFinite(raw) ? Math.max(0, Math.min(200, raw)) : 100;
+    onBgBrightnessInput(i, pct); // keep label in sync
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, backgroundBrightness: pct !== 100 ? pct : null })
+    });
+  }
+
+  function onBgContrastInput(i, val) {
+    const pct = Number.isFinite(parseFloat(val)) ? Math.max(0, Math.min(200, parseFloat(val))) : 100;
+    const label = document.getElementById(`bgcontrast-v-${i}`);
+    if (label) label.textContent = pct + '%';
+    _applyBgFilterPreview(i);
+  }
+
+  async function saveBgContrast(i) {
+    const raw = parseFloat(document.getElementById(`bgcontrast-${i}`)?.value);
+    const pct = Number.isFinite(raw) ? Math.max(0, Math.min(200, raw)) : 100;
+    onBgContrastInput(i, pct); // keep label in sync
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, backgroundContrast: pct !== 100 ? pct : null })
+    });
+  }
+
+  async function resetBgAdjust(i) {
+    const b = document.getElementById(`bgbright-${i}`);   if (b) b.value = 100;
+    const c = document.getElementById(`bgcontrast-${i}`); if (c) c.value = 100;
+    const bl = document.getElementById(`bgbright-v-${i}`);   if (bl) bl.textContent = '100%';
+    const cl = document.getElementById(`bgcontrast-v-${i}`); if (cl) cl.textContent = '100%';
+    _applyBgFilterPreview(i);
+    await fetch('/update-scene-texts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i, backgroundBrightness: null, backgroundContrast: null })
     });
   }
 

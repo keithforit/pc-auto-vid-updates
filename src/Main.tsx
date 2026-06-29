@@ -26,6 +26,8 @@ const bgProps = (s: any) => ({
     spotlightRadius: s.spotlightRadius,
     spotlightSoftness: s.spotlightSoftness,
     backgroundBlur: s.backgroundBlur,
+    backgroundBrightness: s.backgroundBrightness,
+    backgroundContrast: s.backgroundContrast,
     videoAudioVolume: s.videoAudioVolume,
     videoFit: s.videoFit,
     clipStart: s.clipStart,

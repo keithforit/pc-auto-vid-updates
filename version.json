@@ -1,9 +1,11 @@
 {
-  "version": "1.5.2",
+  "version": "1.5.3",
   "date": "2026-06-29",
-  "notes": "Align H / Align V now touch one axis only. Before, if you'd dragged the main text (e.g. moved it up into a free position), clicking 'Center horizontally' also threw away your vertical position and snapped the text back to the middle — and vice-versa for 'Center vertically'. Now each button keeps the other axis exactly where you put it, matching what the tooltips already promised. Also rolls in the v1.5.1 fix: updating no longer opens a duplicate browser tab.",
+  "notes": "Backgrounds can now be adjusted for Brightness and Contrast. Each scene's Background section gets a new 'Brightness & Contrast' panel with two sliders (0–200%, 100% = unchanged) plus a Reset button — they sit alongside the existing Blur control and apply to any background type (image, video, color, gradient). The adjustment shows live in the scene preview and is baked into the final render. Also rolls in the earlier fixes: Align H/V keep the other axis (v1.5.2) and updates no longer open a duplicate browser tab (v1.5.1).",
   "files": [
     "index.html",
-    "server.js"
+    "server.js",
+    "src/Main.tsx",
+    "src/Background.tsx"
   ]
 }
