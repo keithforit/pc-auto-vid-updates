@@ -1,7 +1,7 @@
 {
-  "version": "1.5.10",
+  "version": "1.5.11",
   "date": "2026-06-29",
-  "notes": "Trimming a clip now updates the preview. When you drag the clip's end handle, the preview video scrubs to that end frame as you drag — previously only the start handle did this, so trimming the end gave no visual feedback. The preview also pauses while you drag (so each frame holds still) and resumes from the clip start when you let go, so you immediately see the selected portion play and loop within it.",
+  "notes": "Broader Japanese coverage. The overlay image / video / shape and a few scene controls are now translated too: the X / Y / Size / Width / Height / Rotate / Volume / Radius / Curve / Color / Type / Opacity / Position labels, the shape type buttons (Rect / Square / Circle / Ribbon), Replace / Remove, 'Use as blurred background', the 'Muted' readout, 'per cycle', the free-position label, scene Fade in / Fade out, and the Preview / Mute / clip-handle tooltips all read in Japanese under 日本語. Switching language rebuilds the editor so it updates immediately.",
   "files": [
     "index.html",
     "server.js",

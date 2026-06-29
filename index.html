@@ -2154,6 +2154,37 @@
       t_popup_blocked: 'Please allow pop-ups to connect your account',
       t_path_copied: 'Image path copied — paste it into an overlay image field',
       t_delete_failed: 'Couldn’t delete that',
+      // Shared overlay / shape / layer control labels
+      ctl_x: 'X:',
+      ctl_y: 'Y:',
+      ctl_xy: 'X / Y:',
+      ctl_size: 'Size:',
+      ctl_size_hdr: 'Size',
+      ctl_width: 'Width:',
+      ctl_height: 'Height:',
+      ctl_rotate: 'Rotate:',
+      ctl_volume: 'Volume:',
+      ctl_corner_radius: 'Radius:',
+      ctl_curve: 'Curve:',
+      ctl_color: 'Color:',
+      ctl_type: 'Type:',
+      ctl_opacity_hdr: 'Opacity',
+      ctl_position_hdr: 'Position',
+      ctl_free_pos: 'Free pos:',
+      ovl_replace: '↺ Replace',
+      ovl_remove: '✕ Remove',
+      ovl_blur_bg: 'Use as blurred background',
+      ovl_per_cycle: 's per cycle',
+      shape_rect: 'Rect',
+      shape_square_t: 'Square',
+      shape_circle: 'Circle',
+      shape_ribbon: 'Ribbon',
+      tip_preview_scene: 'Preview scene',
+      tip_mute: 'Mute',
+      tip_clip_start: 'Drag to set clip start',
+      tip_clip_end: 'Drag to set clip end',
+      fade_in_label: 'Fade in:',
+      fade_out_label: 'Fade out:',
     },
     ja: {
       subtitle: 'スクリプトを貼り付けて動画を生成し、各シーンを調整しましょう。',
@@ -2826,6 +2857,37 @@
       t_popup_blocked: 'アカウント連携のためポップアップを許可してください',
       t_path_copied: '画像パスをコピーしました。オーバーレイ画像欄に貼り付けてください',
       t_delete_failed: '削除できませんでした',
+      // オーバーレイ / 図形 / レイヤー共通コントロール
+      ctl_x: 'X:',
+      ctl_y: 'Y:',
+      ctl_xy: 'X / Y:',
+      ctl_size: 'サイズ:',
+      ctl_size_hdr: 'サイズ',
+      ctl_width: '幅:',
+      ctl_height: '高さ:',
+      ctl_rotate: '回転:',
+      ctl_volume: '音量:',
+      ctl_corner_radius: '角丸:',
+      ctl_curve: 'カーブ:',
+      ctl_color: '色:',
+      ctl_type: '種類:',
+      ctl_opacity_hdr: '不透明度',
+      ctl_position_hdr: '位置',
+      ctl_free_pos: '自由配置:',
+      ovl_replace: '↺ 差し替え',
+      ovl_remove: '✕ 削除',
+      ovl_blur_bg: 'ぼかし背景として使う',
+      ovl_per_cycle: '秒/周期',
+      shape_rect: '長方形',
+      shape_square_t: '正方形',
+      shape_circle: '円',
+      shape_ribbon: 'リボン',
+      tip_preview_scene: 'シーンをプレビュー',
+      tip_mute: 'ミュート',
+      tip_clip_start: 'ドラッグで開始位置を設定',
+      tip_clip_end: 'ドラッグで終了位置を設定',
+      fade_in_label: 'フェードイン:',
+      fade_out_label: 'フェードアウト:',
     }
   };
 
@@ -6703,7 +6765,7 @@
               </div>
             </div>
             <div class="ctrl-row" id="freepos-row-${i}" style="display:${(seg.textX!==undefined&&seg.textY!==undefined)?'flex':'none'}">
-              <span class="ctrl-row-label">Free pos:</span>
+              <span class="ctrl-row-label">${tr('ctl_free_pos')}</span>
               <div class="freepos-inputs">
                 <label>X%</label>
                 <input type="number" id="fpx-${i}" min="0" max="100" step="1"
@@ -6894,13 +6956,13 @@
             </div>
             <div id="scenefadedurations-${i}" style="margin-top:10px;display:${(((seg.sceneAnimation||'static')==='fade'?'fade-in':(seg.sceneAnimation||'static'))==='static') ? 'none' : 'grid'};gap:8px;">
               <div id="scenefadeinrow-${i}" class="ctrl-row" style="display:${(['fade-in','fade-both'].includes(((seg.sceneAnimation||'static')==='fade'?'fade-in':(seg.sceneAnimation||'static')))) ? 'flex' : 'none'};align-items:center;">
-                <span class="ctrl-row-label">Fade in:</span>
+                <span class="ctrl-row-label">${_t.fade_in_label}</span>
                 <select id="scenefadein-${i}" onchange="setSceneFadeDurations(${i})" style="flex:1;max-width:180px;">
                   ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.sceneFadeInDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
                 </select>
               </div>
               <div id="scenefadeoutrow-${i}" class="ctrl-row" style="display:${(['fade-out','fade-both'].includes(((seg.sceneAnimation||'static')==='fade'?'fade-in':(seg.sceneAnimation||'static')))) ? 'flex' : 'none'};align-items:center;">
-                <span class="ctrl-row-label">Fade out:</span>
+                <span class="ctrl-row-label">${_t.fade_out_label}</span>
                 <select id="scenefadeout-${i}" onchange="setSceneFadeDurations(${i})" style="flex:1;max-width:180px;">
                   ${[0.5,1,1.5,2,3,5].map(v => `<option value="${v}" ${Number(seg.sceneFadeOutDuration ?? 1.5)===v?'selected':''}>${v}s</option>`).join('')}
                 </select>
@@ -7005,8 +7067,8 @@
                     <div class="clip-timeline" id="clip-timeline-${i}" data-duration="${Number(seg.video_duration)||0}">
                       <div class="clip-track" id="clip-track-${i}">
                         <div class="clip-fill" id="clip-fill-${i}"></div>
-                        <div class="clip-handle" id="clip-hs-${i}" title="Drag to set clip start"></div>
-                        <div class="clip-handle" id="clip-he-${i}" title="Drag to set clip end"></div>
+                        <div class="clip-handle" id="clip-hs-${i}" title="${tr('tip_clip_start')}"></div>
+                        <div class="clip-handle" id="clip-he-${i}" title="${tr('tip_clip_end')}"></div>
                       </div>
                       <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#64748b">
                         <span id="clip-start-lbl-${i}">0.0s</span>
@@ -7190,7 +7252,7 @@
         </details>
         </div><!-- /scene-body-wrap -->
       </div>
-      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="video-overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildVideoOverlayPreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="Preview scene">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="Mute" disabled>🔊</button></div></div>`;
+      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="video-overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildVideoOverlayPreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="${tr('tip_preview_scene')}">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="${tr('tip_mute')}" disabled>🔊</button></div></div>`;
     return card;
   }
 
@@ -9787,8 +9849,8 @@
           </span>
           <span style="display:flex;gap:4px">
             <input type="file" id="overlay-replace-file-${i}-${j}" accept="image/*,.svg" style="display:none" onchange="replaceOverlay(${i},${j})" />
-            <button class="btn sm" type="button" onclick="event.preventDefault();event.stopPropagation();document.getElementById('overlay-replace-file-${i}-${j}').click()">↺ Replace</button>
-            <button class="btn sm red" type="button" onclick="event.preventDefault();event.stopPropagation();removeOverlay(${i},${j})">✕ Remove</button>
+            <button class="btn sm" type="button" onclick="event.preventDefault();event.stopPropagation();document.getElementById('overlay-replace-file-${i}-${j}').click()">${tr('ovl_replace')}</button>
+            <button class="btn sm red" type="button" onclick="event.preventDefault();event.stopPropagation();removeOverlay(${i},${j})">${tr('ovl_remove')}</button>
           </span>
         </summary>
         <div class="layer-accordion-body">
@@ -9804,7 +9866,7 @@
       <div class="ctrl-row" id="overlay-fader-row-${i}-${j}" style="align-items:center;gap:8px;display:${overlay.animation==='fader' ? 'flex' : 'none'}">
         <span class="ctrl-row-label">${t.overlay_fader_speed}</span>
         <select id="overlay-fader-${i}-${j}" onchange="saveOverlay(${i})" style="flex:1;max-width:180px;">
-          ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${overlay.faderDuration===v?'selected':''}>${v}s per cycle</option>`).join('')}
+          ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${overlay.faderDuration===v?'selected':''}>${v}${tr('ovl_per_cycle')}</option>`).join('')}
         </select>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
@@ -9830,7 +9892,7 @@
         </select>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">Size:</span>
+        <span class="ctrl-row-label">${tr('ctl_size')}</span>
         <input type="range" id="overlay-size-${i}-${j}" min="10" max="120" step="1" value="${overlay.size}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
         <span id="overlay-size-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.size)}%</span>
       </div>
@@ -9853,17 +9915,17 @@
         </div>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">X:</span>
+        <span class="ctrl-row-label">${tr('ctl_x')}</span>
         <input type="range" id="overlayx-${i}-${j}" min="-100" max="200" step="1" value="${Math.round(overlay.x)}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
         <span id="overlayx-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.x)}%</span>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px">
-        <span class="ctrl-row-label">Y:</span>
+        <span class="ctrl-row-label">${tr('ctl_y')}</span>
         <input type="range" id="overlayy-${i}-${j}" min="-100" max="200" step="1" value="${Math.round(overlay.y)}" oninput="onOverlayControlInput(${i},${j})" onchange="saveOverlay(${i})" style="flex:1" />
         <span id="overlayy-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(overlay.y)}%</span>
       </div>
       <div class="ctrl-row" style="align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="ctrl-row-label">Rotate:</span>
+        <span class="ctrl-row-label">${tr('ctl_rotate')}</span>
         <button class="btn sm ghost rot-quick" type="button" onclick="setOverlayRotation(${i},${j},(parseInt(document.getElementById('overlay-rot-${i}-${j}')?.value)||0)-90,true)">-90°</button>
         <input type="range" id="overlay-rot-${i}-${j}" min="-180" max="180" step="1" value="${Math.round(overlay.rotation)}" oninput="setOverlayRotation(${i},${j},this.value,false)" onchange="setOverlayRotation(${i},${j},this.value,true)" style="flex:1;min-width:120px" />
         <button class="btn sm ghost rot-quick" type="button" onclick="setOverlayRotation(${i},${j},0,true)">0°</button>
@@ -10238,7 +10300,7 @@
           <span class="layer-accordion-title" style="display:flex;align-items:center;gap:6px">
             🎬 <span style="font-size:12px;color:#e2e8f0;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${filename}</span>
           </span>
-          <button class="btn sm red" type="button" style="flex-shrink:0" onclick="event.preventDefault();event.stopPropagation();removeOverlayVideo(${i},${j})">✕ Remove</button>
+          <button class="btn sm red" type="button" style="flex-shrink:0" onclick="event.preventDefault();event.stopPropagation();removeOverlayVideo(${i},${j})">${tr('ovl_remove')}</button>
         </summary>
         <div class="layer-accordion-body" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
           <input type="hidden" id="ovvid-src-${i}-${j}"    value="${src}" />
@@ -10248,13 +10310,13 @@
           <!-- Blurred background checkbox -->
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#0c4a6e;border:1px solid #0e7490;border-radius:6px;padding:7px 10px">
             <input type="checkbox" id="ovvid-blurbg-${i}-${j}" ${useAsBlurredBg?'checked':''} onchange="saveOverlayVideos(${i})" style="width:16px;height:16px;accent-color:#0ea5e9;flex-shrink:0" />
-            <span style="font-size:12px;color:#bae6fd;font-weight:600">Use as blurred background</span>
+            <span style="font-size:12px;color:#bae6fd;font-weight:600">${tr('ovl_blur_bg')}</span>
           </label>
           ${useAsBlurredBg ? `<div style="font-size:11px;color:#94a3b8;background:#0f172a;border:1px solid #1e3a5f;border-radius:6px;padding:6px 10px;line-height:1.5">💡 Blurred background is active. Use <strong style="color:#bae6fd">Background Overlay</strong> in the <strong style="color:#bae6fd">Background &amp; Video</strong> section above to add a dark or spotlight filter on top of it.</div>` : ''}
 
           <!-- Position X -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">X:</span>
+            <span class="ctrl-row-label">${tr('ctl_x')}</span>
             <input type="range" id="ovvid-x-${i}-${j}" min="-50" max="150" step="1" value="${Math.round(x)}"
                    oninput="document.getElementById('ovvid-x-lbl-${i}-${j}').textContent=this.value+'%'"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
@@ -10262,7 +10324,7 @@
           </div>
           <!-- Position Y -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">Y:</span>
+            <span class="ctrl-row-label">${tr('ctl_y')}</span>
             <input type="range" id="ovvid-y-${i}-${j}" min="-50" max="150" step="1" value="${Math.round(y)}"
                    oninput="document.getElementById('ovvid-y-lbl-${i}-${j}').textContent=this.value+'%'"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
@@ -10270,7 +10332,7 @@
           </div>
           <!-- Size -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">Size:</span>
+            <span class="ctrl-row-label">${tr('ctl_size')}</span>
             <input type="range" id="ovvid-size-${i}-${j}" min="10" max="150" step="1" value="${Math.round(size)}"
                    oninput="document.getElementById('ovvid-size-lbl-${i}-${j}').textContent=this.value+'%'"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
@@ -10278,7 +10340,7 @@
           </div>
           <!-- Rotation -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">Rotate:</span>
+            <span class="ctrl-row-label">${tr('ctl_rotate')}</span>
             <input type="range" id="ovvid-rot-${i}-${j}" min="-180" max="180" step="1" value="${Math.round(rotation)}"
                    oninput="document.getElementById('ovvid-rot-lbl-${i}-${j}').textContent=this.value+'°'"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
@@ -10286,7 +10348,7 @@
           </div>
           <!-- Corner radius -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">Radius:</span>
+            <span class="ctrl-row-label">${tr('ctl_corner_radius')}</span>
             <input type="range" id="ovvid-radius-${i}-${j}" min="0" max="500" step="5" value="${Math.round(borderRadius)}"
                    oninput="document.getElementById('ovvid-radius-lbl-${i}-${j}').textContent=this.value+'px'"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
@@ -10294,11 +10356,11 @@
           </div>
           <!-- Volume -->
           <div class="ctrl-row" style="align-items:center;gap:8px">
-            <span class="ctrl-row-label">Volume:</span>
+            <span class="ctrl-row-label">${tr('ctl_volume')}</span>
             <input type="range" id="ovvid-vol-${i}-${j}" min="0" max="1" step="0.05" value="${volume.toFixed(2)}"
-                   oninput="document.getElementById('ovvid-vol-lbl-${i}-${j}').textContent=this.value>0?Math.round(this.value*100)+'%':'Muted'"
+                   oninput="document.getElementById('ovvid-vol-lbl-${i}-${j}').textContent=this.value>0?Math.round(this.value*100)+'%':tr('audio_muted')"
                    onchange="saveOverlayVideos(${i})" style="flex:1" />
-            <span id="ovvid-vol-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:46px;text-align:right">${volume > 0 ? Math.round(volume*100)+'%' : 'Muted'}</span>
+            <span id="ovvid-vol-lbl-${i}-${j}" style="font-size:11px;color:#94a3b8;min-width:46px;text-align:right">${volume > 0 ? Math.round(volume*100)+'%' : tr('audio_muted')}</span>
           </div>
         </div>
       </details>
@@ -10570,7 +10632,7 @@
     const fadeOutDuration = sh.fadeOutDuration ?? 1.5;
     const faderDuration   = sh.faderDuration   ?? 1;
     const isSquareOrCircle = (type === 'square' || type === 'circle');
-    const wLabel = isSquareOrCircle ? 'Size:' : 'Width:';
+    const wLabel = isSquareOrCircle ? tr('ctl_size') : tr('ctl_width');
     const t = I18N[window._appLang||'en']||I18N.en;
     return `
     <div class="shape-block" id="shape-block-${i}-${k}">
@@ -10594,18 +10656,18 @@
 
       <!-- Type -->
       <div class="ctrl-row">
-        <span class="ctrl-row-label">Type:</span>
+        <span class="ctrl-row-label">${tr('ctl_type')}</span>
         <div style="display:flex;gap:4px;flex-wrap:wrap" id="shapetype-${i}-${k}">
-          <div class="pos-btn style-text-btn ${type==='rectangle'?'active':''}" onclick="setShapeType(${i},${k},'rectangle')">Rect</div>
-          <div class="pos-btn style-text-btn ${type==='square'?'active':''}"    onclick="setShapeType(${i},${k},'square')">Square</div>
-          <div class="pos-btn style-text-btn ${type==='circle'?'active':''}"    onclick="setShapeType(${i},${k},'circle')">Circle</div>
-          <div class="pos-btn style-text-btn ${type==='ribbon'?'active':''}"    onclick="setShapeType(${i},${k},'ribbon')">Ribbon</div>
+          <div class="pos-btn style-text-btn ${type==='rectangle'?'active':''}" onclick="setShapeType(${i},${k},'rectangle')">${tr('shape_rect')}</div>
+          <div class="pos-btn style-text-btn ${type==='square'?'active':''}"    onclick="setShapeType(${i},${k},'square')">${tr('shape_square_t')}</div>
+          <div class="pos-btn style-text-btn ${type==='circle'?'active':''}"    onclick="setShapeType(${i},${k},'circle')">${tr('shape_circle')}</div>
+          <div class="pos-btn style-text-btn ${type==='ribbon'?'active':''}"    onclick="setShapeType(${i},${k},'ribbon')">${tr('shape_ribbon')}</div>
         </div>
       </div>
 
       <!-- Size -->
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
-        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Size</div>
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${tr('ctl_size_hdr')}</div>
         <div class="ctrl-row" style="margin:0">
           <span class="ctrl-row-label" id="shape-w-label-${i}-${k}">${wLabel}</span>
           <input type="number" class="num-input" id="shapew-${i}-${k}" min="1" max="300"
@@ -10613,13 +10675,13 @@
           <span style="font-size:10px;color:#64748b;margin-left:2px">%</span>
         </div>
         <div class="ctrl-row" id="shape-h-row-${i}-${k}" style="margin:0;display:${isSquareOrCircle?'none':'flex'}">
-          <span class="ctrl-row-label">Height:</span>
+          <span class="ctrl-row-label">${tr('ctl_height')}</span>
           <input type="number" class="num-input" id="shapeh-${i}-${k}" min="1" max="300"
                  value="${h}" onchange="saveShapes(${i})" />
           <span style="font-size:10px;color:#64748b;margin-left:2px">%</span>
         </div>
         <div class="ctrl-row" id="shape-curve-row-${i}-${k}" style="align-items:center;gap:8px;margin:0;display:${type==='circle'?'none':'flex'}">
-          <span class="ctrl-row-label">Curve:</span>
+          <span class="ctrl-row-label">${tr('ctl_curve')}</span>
           <input type="range" id="shapecurve-${i}-${k}" min="0" max="50" step="1" value="${curve}"
                  oninput="document.getElementById('shapecurve-v-${i}-${k}').textContent=this.value+'%';saveShapes(${i})"
                  style="flex:1" />
@@ -10629,9 +10691,9 @@
 
       <!-- Color & Opacity -->
       <div class="ctrl-row" style="margin-top:6px">
-        <span class="ctrl-row-label">Color:</span>
+        <span class="ctrl-row-label">${tr('ctl_color')}</span>
         <input type="color" class="mini-color" id="shapecolor-${i}-${k}" value="${color}" oninput="saveShapes(${i})" />
-        <span style="font-size:9px;color:#64748b;margin-left:8px">Opacity</span>
+        <span style="font-size:9px;color:#64748b;margin-left:8px">${tr('ctl_opacity_hdr')}</span>
         <input type="number" class="num-input" id="shapeopa-${i}-${k}" min="0" max="100"
                value="${opacity}" onchange="saveShapes(${i})" style="width:46px;margin-left:4px" />
         <span style="font-size:10px;color:#64748b">%</span>
@@ -10639,7 +10701,7 @@
 
       <!-- Position -->
       <div style="background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:5px;">
-        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Position</div>
+        <div style="font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${tr('ctl_position_hdr')}</div>
         <div class="ctrl-row" style="margin:0">
           <span class="ctrl-row-label">${t.shape_align_h}</span>
           <div style="display:flex;gap:3px" id="shape-halign-${i}-${k}">
@@ -10659,14 +10721,14 @@
           </div>
         </div>
         <div class="ctrl-row" style="margin:0">
-          <span class="ctrl-row-label">X / Y:</span>
+          <span class="ctrl-row-label">${tr('ctl_xy')}</span>
           <input type="number" class="num-input" id="shapex-${i}-${k}" min="-100" max="200" value="${x}" onchange="saveShapes(${i})" />
           <span style="font-size:10px;color:#64748b">%</span>
           <input type="number" class="num-input" id="shapey-${i}-${k}" min="-100" max="200" value="${y}" onchange="saveShapes(${i})" style="margin-left:4px" />
           <span style="font-size:10px;color:#64748b">%</span>
         </div>
         <div class="ctrl-row" style="margin:0">
-          <span class="ctrl-row-label">Rotate:</span>
+          <span class="ctrl-row-label">${tr('ctl_rotate')}</span>
           <input type="number" class="num-input" id="shaperot-${i}-${k}" min="-360" max="360" step="5" value="${rot}" onchange="saveShapes(${i})" />
           <span style="font-size:10px;color:#64748b;margin-left:2px">°</span>
           <button class="btn sm ghost rot-quick" onclick="document.getElementById('shaperot-${i}-${k}').value=45;saveShapes(${i})">45</button>
@@ -10687,7 +10749,7 @@
         <div id="shapefaderdurations-${i}-${k}" style="display:${anim==='fader'?'flex':'none'};align-items:center;gap:6px;margin:0">
           <span class="ctrl-row-label">${t.shape_speed}</span>
           <select id="shapefader-${i}-${k}" onchange="saveShapes(${i})" style="flex:1;max-width:160px;">
-            ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${Number(faderDuration)===v?'selected':''}>${v}s per cycle</option>`).join('')}
+            ${[0.5,1,2,3,5].map(v => `<option value="${v}" ${Number(faderDuration)===v?'selected':''}>${v}${tr('ovl_per_cycle')}</option>`).join('')}
           </select>
         </div>
         <div id="shapefadedurations-${i}-${k}" style="display:${anim==='fade'?'flex':'none'};flex-direction:column;gap:4px;margin:0">
@@ -11040,7 +11102,7 @@
     if (hRow) hRow.style.display = isSquareOrCircle ? 'none' : 'flex';
     // Adapt width label
     const wLabel = document.getElementById(`shape-w-label-${i}-${k}`);
-    if (wLabel) wLabel.textContent = isSquareOrCircle ? 'Size:' : 'Width:';
+    if (wLabel) wLabel.textContent = isSquareOrCircle ? tr('ctl_size') : tr('ctl_width');
     // Show/hide curve slider (circle is always round — no curve control needed)
     const curveRow = document.getElementById(`shape-curve-row-${i}-${k}`);
     if (curveRow) curveRow.style.display = type === 'circle' ? 'none' : 'flex';
