@@ -1,7 +1,7 @@
 {
-  "version": "1.5.11",
+  "version": "1.5.12",
   "date": "2026-06-29",
-  "notes": "Broader Japanese coverage. The overlay image / video / shape and a few scene controls are now translated too: the X / Y / Size / Width / Height / Rotate / Volume / Radius / Curve / Color / Type / Opacity / Position labels, the shape type buttons (Rect / Square / Circle / Ribbon), Replace / Remove, 'Use as blurred background', the 'Muted' readout, 'per cycle', the free-position label, scene Fade in / Fade out, and the Preview / Mute / clip-handle tooltips all read in Japanese under 日本語. Switching language rebuilds the editor so it updates immediately.",
+  "notes": "Adding a scene now jumps to the new scene instead of the top. Before, adding a scene rebuilt the list and bounced you to the top of the page, so you had to scroll all the way down to find the scene you just added. Now it scrolls straight to the new scene (added at the bottom), or selects it in Timeline view. Same fix applied to Duplicate and Add-from-draft, which were trying to scroll to the wrong element and silently doing nothing.",
   "files": [
     "index.html",
     "server.js",

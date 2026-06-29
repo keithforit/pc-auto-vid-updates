@@ -7693,6 +7693,18 @@
     }
   });
 
+  // Reveal a scene after it's added/duplicated. loadSegments() rebuilds the list and resets scroll
+  // to the top, so without this the user is bounced away from the scene they just created. In list
+  // view we scroll the card into view; in timeline view we select it so it opens in the editor.
+  function scrollToScene(i) {
+    if (i == null || i < 0) return;
+    setTimeout(() => {
+      try { if (typeof getSceneViewMode === 'function' && getSceneViewMode() !== 'list') { if (typeof sbSelect === 'function') sbSelect(i); return; } } catch (_) {}
+      const el = document.getElementById(`card-${i}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+  }
+
   async function confirmAddScene() {
     const text = document.getElementById('modal-caption').value.trim();
     const voiceover_text = document.getElementById('modal-vo').value.trim();
@@ -7701,10 +7713,12 @@
     const bgmBtn = document.getElementById('global-bgm-btn');
     const backgroundMusicEnabled = !bgmBtn || bgmBtn.dataset.bgmOn !== '0';
     closeModal();
-    await fetch('/add-scene',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({afterIndex: resetAll ? -1 : pendingInsertAfter, text, voiceover_text, resetAll, backgroundMusicEnabled}) });
+    const res = await fetch('/add-scene',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({afterIndex: resetAll ? -1 : pendingInsertAfter, text, voiceover_text, resetAll, backgroundMusicEnabled}) });
+    let newIndex = -1;
+    try { const data = await res.json(); if (typeof data.index === 'number') newIndex = data.index; } catch (_) {}
     if (isCreateTab) createDraftStarted = true;
     addEditorLog(`✅ Scene added`);
-    if (document.getElementById('tab-scenes')?.classList.contains('active')) loadSegments();
+    if (document.getElementById('tab-scenes')?.classList.contains('active')) { await loadSegments(); scrollToScene(newIndex); }
     if (document.getElementById('tab-create')?.classList.contains('active')) loadCreateScenes();
   }
 
@@ -7738,13 +7752,8 @@
     } else {
       addEditorLog(`✅ Scene added from draft "${draftName}"`);
     }
-    if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+    if (document.getElementById('tab-scenes')?.classList.contains('active')) { await loadSegments(); scrollToScene(newIndex); }
     if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
-    // Scroll to new scene
-    setTimeout(() => {
-      const el = document.getElementById(`seg-card-${newIndex}`) || document.querySelector(`[data-scene-index="${newIndex}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
   }
 
   /* Delete */
@@ -7789,13 +7798,8 @@
     const data = await res.json();
     if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
     addEditorLog(`📋 Scene ${i+1} duplicated as Scene ${data.index + 1}`);
-    if (document.getElementById('tab-scenes')?.classList.contains('active')) await loadSegments();
+    if (document.getElementById('tab-scenes')?.classList.contains('active')) { await loadSegments(); scrollToScene(data.index); }
     if (document.getElementById('tab-create')?.classList.contains('active')) await loadCreateScenes();
-    // Scroll to the new duplicate
-    setTimeout(() => {
-      const el = document.getElementById(`seg-card-${data.index}`) || document.querySelector(`[data-scene-index="${data.index}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
   }
 
   // Persist collapsed state across reloads
