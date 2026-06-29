@@ -867,6 +867,12 @@
     .tl-custom-plus::before, .tl-custom-plus::after { content: ''; position: absolute; top: 50%; left: 50%; background: #fff; border-radius: 1px; box-shadow: 0 0 2px rgba(0,0,0,0.9); }
     .tl-custom-plus::before { width: 10px; height: 2px; transform: translate(-50%, -50%); }
     .tl-custom-plus::after { width: 2px; height: 10px; transform: translate(-50%, -50%); }
+    /* Compact swatch row reused inside Scene-view text colour pickers (same look as the timeline inspector) */
+    .mini-swatches { flex: 0 1 auto; gap: 7px; }
+    .mini-swatches .tl-swatch { width: 19px; height: 19px; }
+    .mini-swatches .tl-swatch-customwrap, .mini-swatches .tl-swatch-custom { width: 19px; height: 19px; }
+    .mini-color-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .mini-color-row > label { font-size: 10px; color: #94a3b8; min-width: 64px; flex: 0 0 auto; }
     .tl-back { display: none; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-mid); color: var(--text-soft); border-radius: 9px; padding: 7px 12px; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
     .tl-back:hover { color: var(--text-main); border-color: var(--accent); }
     .timeline-mode .segment-card.tl-show-all .tl-back { display: inline-flex; }
@@ -6674,26 +6680,12 @@
               <label data-i18n="label_font">${(I18N[window._appLang||'en']||I18N.en).label_font}</label>
               ${fontSelectHTML(`main-font-${i}`, seg.font, `saveMainFont(${i})`)}
             </div>
-            <div class="ctrl-row" style="flex-wrap:wrap;gap:6px;margin-top:2px">
+            <div class="ctrl-row" style="flex-direction:column;align-items:stretch;gap:2px;margin-top:2px">
               <span class="ctrl-row-label" data-i18n="label_colors">${(I18N[window._appLang||'en']||I18N.en).label_colors}</span>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_block_bg">${(I18N[window._appLang||'en']||I18N.en).label_block_bg}</label>
-                <input type="color" class="mini-color" id="blockco-${i}"
-                       value="${seg.blockColorOverride||seg.blockColor||'#ffdd00'}"
-                       oninput="saveMainColors(${i})" title="Block/Box background color" />
-                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_text">${(I18N[window._appLang||'en']||I18N.en).label_text}</label>
-                <input type="color" class="mini-color" id="textco-${i}"
-                       value="${seg.textColorOverride||seg.textColor||'#000000'}"
-                       oninput="saveMainColors(${i})" title="Text color" />
-                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_glow">${(I18N[window._appLang||'en']||I18N.en).label_glow}</label>
-                <input type="color" class="mini-color" id="glowco-${i}"
-                       value="${seg.glowColorOverride||seg.glowColor||'#00ffff'}"
-                       oninput="saveMainColors(${i})" title="Glow effect color" />
-                <label style="font-size:9px;color:#94a3b8" data-i18n-label="label_glow_txt">${(I18N[window._appLang||'en']||I18N.en).label_glow_txt}</label>
-                <input type="color" class="mini-color" id="glowtextco-${i}"
-                       value="${seg.glowTextColorOverride||'#ffffff'}"
-                       oninput="saveMainColors(${i})" title="Glow text color" />
-              </div>
+              <div class="mini-color-row"><label data-i18n-label="label_block_bg">${(I18N[window._appLang||'en']||I18N.en).label_block_bg}</label>${miniSwatchRow(`blockco-${i}`, seg.blockColorOverride||seg.blockColor||'#ffdd00', `saveMainColors(${i})`)}</div>
+              <div class="mini-color-row"><label data-i18n-label="label_text">${(I18N[window._appLang||'en']||I18N.en).label_text}</label>${miniSwatchRow(`textco-${i}`, seg.textColorOverride||seg.textColor||'#000000', `saveMainColors(${i})`)}</div>
+              <div class="mini-color-row"><label data-i18n-label="label_glow">${(I18N[window._appLang||'en']||I18N.en).label_glow}</label>${miniSwatchRow(`glowco-${i}`, seg.glowColorOverride||seg.glowColor||'#00ffff', `saveMainColors(${i})`)}</div>
+              <div class="mini-color-row"><label data-i18n-label="label_glow_txt">${(I18N[window._appLang||'en']||I18N.en).label_glow_txt}</label>${miniSwatchRow(`glowtextco-${i}`, seg.glowTextColorOverride||'#ffffff', `saveMainColors(${i})`)}</div>
             </div>
             <div id="main-box-radius-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='box'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:6px 10px">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_box_radius}</span>
@@ -6709,9 +6701,7 @@
             </div>
             <div id="main-border-row-${i}" class="ctrl-row" style="display:${(seg.mainTextStyleOverride||seg.textStyle||'box').toLowerCase()==='block'?'flex':'none'};gap:8px;flex-wrap:wrap;margin-top:4px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:6px 10px">
               <span class="ctrl-row-label">${(I18N[window._appLang||'en']||I18N.en).label_border}</span>
-              <input type="color" class="mini-color" id="strokeco-${i}"
-                     value="${seg.textStrokeColorOverride||seg.textStrokeColor||'#000000'}"
-                     oninput="saveMainColors(${i})" title="Border colour" />
+              ${miniSwatchRow(`strokeco-${i}`, seg.textStrokeColorOverride||seg.textStrokeColor||'#000000', `saveMainColors(${i})`)}
               <input type="number" class="num-input" id="strokesize-${i}" min="0" max="12" step="0.5"
                      value="${seg.textStrokeSizeOverride ?? seg.textStrokeSize ?? 0}" oninput="saveMainColors(${i})" style="width:58px" />
               <span style="font-size:10px;color:#64748b">px</span>
@@ -8607,27 +8597,13 @@
         <details class="scene-accordion" style="margin-top:6px">
           <summary style="font-size:11px;padding:7px 10px"><span data-i18n="label_style_overrides">${t.label_style_overrides}</span> <span data-i18n="label_style_overrides_hint" style="font-size:10px;color:#64748b;font-weight:400">${t.label_style_overrides_hint}</span></summary>
           <div class="scene-accordion-body">
-            <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">${t.label_block_bg}:</span>
-              <input type="color" id="et-blockco-${i}-${j}" value="${etBlockColor || '#ffdd00'}" data-has-override="${etBlockColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Block/Box background colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
-              <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'blockco')" title="Clear override (inherit from scene)">✕</button>
-              <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">${t.label_text}:</span>
-              <input type="color" id="et-textco-${i}-${j}" value="${etTextColor || '#000000'}" data-has-override="${etTextColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
-              <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'textco')" title="Clear override">✕</button>
-            </div>
-            <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
-              <span class="ctrl-row-label" style="min-width:auto">${t.label_glow}:</span>
-              <input type="color" id="et-glowco-${i}-${j}" value="${etGlowColor || '#00ffff'}" data-has-override="${etGlowColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Glow colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
-              <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowco')" title="Clear override">✕</button>
-              <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
-              <span class="ctrl-row-label" style="min-width:auto">${t.label_glow_txt}:</span>
-              <input type="color" id="et-glowtextco-${i}-${j}" value="${etGlowTextColor || '#ffffff'}" data-has-override="${etGlowTextColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Glow text colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
-              <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowtextco')" title="Clear override">✕</button>
-            </div>
+            <div class="mini-color-row"><label>${t.label_block_bg}</label>${miniSwatchRow(`et-blockco-${i}-${j}`, etBlockColor || '#ffdd00', `this.dataset.hasOverride='1';saveExtraText(${i})`, null, `data-has-override="${etBlockColor ? '1' : '0'}"`, etBlockColor)}<button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'blockco')" title="Clear override (inherit from scene)">✕</button></div>
+            <div class="mini-color-row"><label>${t.label_text}</label>${miniSwatchRow(`et-textco-${i}-${j}`, etTextColor || '#000000', `this.dataset.hasOverride='1';saveExtraText(${i})`, null, `data-has-override="${etTextColor ? '1' : '0'}"`, etTextColor)}<button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'textco')" title="Clear override">✕</button></div>
+            <div class="mini-color-row"><label>${t.label_glow}</label>${miniSwatchRow(`et-glowco-${i}-${j}`, etGlowColor || '#00ffff', `this.dataset.hasOverride='1';saveExtraText(${i})`, null, `data-has-override="${etGlowColor ? '1' : '0'}"`, etGlowColor)}<button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowco')" title="Clear override">✕</button></div>
+            <div class="mini-color-row"><label>${t.label_glow_txt}</label>${miniSwatchRow(`et-glowtextco-${i}-${j}`, etGlowTextColor || '#ffffff', `this.dataset.hasOverride='1';saveExtraText(${i})`, null, `data-has-override="${etGlowTextColor ? '1' : '0'}"`, etGlowTextColor)}<button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'glowtextco')" title="Clear override">✕</button></div>
             <div class="ctrl-row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
               <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke}:</span>
-              <input type="color" id="et-strokeco-${i}-${j}" value="${etStrokeColor || '#000000'}" data-has-override="${etStrokeColor ? '1' : '0'}" oninput="this.dataset.hasOverride='1';saveExtraText(${i})" title="Stroke colour" style="width:30px;height:22px;padding:0;border:none;background:none;cursor:pointer" />
+              ${miniSwatchRow(`et-strokeco-${i}-${j}`, etStrokeColor || '#000000', `this.dataset.hasOverride='1';saveExtraText(${i})`, null, `data-has-override="${etStrokeColor ? '1' : '0'}"`, etStrokeColor)}
               <button class="btn sm ghost" style="padding:1px 5px;font-size:10px" onclick="clearExtraColor(${i},${j},'strokeco')" title="Clear override">✕</button>
               <span style="font-size:10px;color:#64748b;margin-left:4px">│</span>
               <span class="ctrl-row-label" style="min-width:auto">${t.label_stroke_size}</span>
@@ -9081,6 +9057,43 @@
     if (btn) { btn.textContent = '✅ Pasted!'; setTimeout(() => btn.textContent = '📌 Paste', 2000); }
   }
 
+  // ── Reusable colour-swatch row (Scene-view text colours) ────────────────────
+  // Same look as the timeline inspector: a row of preset swatches + a round custom
+  // swatch. The real <input type=color> IS the custom swatch, so it keeps its id and
+  // oninput — every existing read/save/copy path (saveMainColors, saveExtraText,
+  // copySceneStyle, _getColor…) keeps working unchanged.
+  const MINI_SWATCH_PALETTE = ['#ffffff', '#000000', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899'];
+  function miniSwatchRow(inputId, value, oninputAttr, palette, extraAttrs, selectedVal) {
+    // `value` = what the colour input shows (always a real hex). `selectedVal` = which preset gets the
+    // active ring — pass the raw override (may be empty) so an inherited field shows NO active swatch.
+    const sel = ((selectedVal !== undefined ? selectedVal : value) || '').toLowerCase();
+    const pal = palette || MINI_SWATCH_PALETTE;
+    const presets = pal.map(c =>
+      `<span class="tl-swatch${c === sel ? ' active' : ''}" data-c="${c}" style="background:${c}" onclick="_pickMiniSwatch(event,'${inputId}','${c}')"></span>`
+    ).join('');
+    const lcv = (value || '').toLowerCase();
+    const v = /^#[0-9a-f]{6}$/i.test(lcv) ? lcv : '#ffffff';
+    const custom = `<span class="tl-swatch-customwrap" title="Custom colour"><input type="color" class="tl-swatch-custom" id="${inputId}" value="${v}"${oninputAttr ? ` oninput="${oninputAttr}"` : ''}${extraAttrs ? ' ' + extraAttrs : ''}><span class="tl-custom-plus"></span></span>`;
+    return `<div class="tl-swatches mini-swatches">${presets}${custom}</div>`;
+  }
+  // Apply a preset swatch: set the hidden input, (re)assert any override flags, then fire its
+  // own oninput so the existing save handler runs exactly as a manual pick would.
+  function _pickMiniSwatch(ev, inputId, c) {
+    if (ev) ev.stopPropagation();
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.value = c;
+    if ('hasOverride' in el.dataset) el.dataset.hasOverride = '1';  // per-layer override fields
+    if ('cleared' in el.dataset)     el.dataset.cleared = '0';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    const row = el.closest('.tl-swatches');
+    if (row) {
+      const lc = c.toLowerCase();
+      row.querySelectorAll('.tl-swatch:not(.tl-swatch-custom)').forEach(s =>
+        s.classList.toggle('active', (s.dataset.c || '').toLowerCase() === lc));
+    }
+  }
+
   let _copiedStyle = null;
   function copySceneStyle(i, evt) {
     const btn = evt?.target || event?.target;
@@ -9141,8 +9154,19 @@
       btn.textContent = '✅ Pasted!';
       setTimeout(() => btn.textContent = '📌 Paste Style', 2000);
       addEditorLog(`✅ Scene ${i+1} style updated`);
-      // Reload all scenes to reflect changes - use loadSegments for full editor with previews
+      // Reload all scenes to reflect changes - use loadSegments for full editor with previews.
+      // loadSegments() rebuilds the whole list and resets scroll to the top, which would yank the
+      // user away from the scene they just edited — so restore their scroll position afterwards.
+      const _scrollY = window.scrollY;
       await loadSegments();
+      // Heights are unchanged (only the style changed), so the pixel restore lands exactly. Fall
+      // back to scrolling the edited card into view if the restore left it off-screen.
+      window.scrollTo(0, _scrollY);
+      const _card = document.getElementById(`card-${i}`);
+      if (_card) {
+        const r = _card.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) _card.scrollIntoView({ block: 'center' });
+      }
       console.log('Scenes reloaded after paste');
     } catch (err) {
       console.error('Paste error:', err);

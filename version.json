@@ -1,7 +1,7 @@
 {
-  "version": "1.5.3",
+  "version": "1.5.4",
   "date": "2026-06-29",
-  "notes": "Backgrounds can now be adjusted for Brightness and Contrast. Each scene's Background section gets a new 'Brightness & Contrast' panel with two sliders (0–200%, 100% = unchanged) plus a Reset button — they sit alongside the existing Blur control and apply to any background type (image, video, color, gradient). The adjustment shows live in the scene preview and is baked into the final render. Also rolls in the earlier fixes: Align H/V keep the other axis (v1.5.2) and updates no longer open a duplicate browser tab (v1.5.1).",
+  "notes": "Nicer text colours + Paste Style stays put. Scene view now uses the same colour swatches as the timeline inspector for the main text and each text overlay — a row of quick-pick presets plus a round custom-colour swatch, instead of the small default colour boxes. And 'Paste Style' no longer jumps you back to the top of the page: it keeps you on the scene you just pasted onto. Also rolls in recent fixes: background Brightness/Contrast (v1.5.3), Align H/V keep the other axis (v1.5.2), and updates no longer open a duplicate browser tab (v1.5.1).",
   "files": [
     "index.html",
     "server.js",
