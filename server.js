@@ -2768,7 +2768,9 @@ app.post('/apply-update', async (req, res) => {
             try {
                 const child = spawn(process.execPath, [process.argv[1], ...process.argv.slice(2)], {
                     cwd: __dirname,
-                    env: { ...process.env, PORT: String(activePort) },
+                    // NO_OPEN_TAB: the existing dashboard tab reloads itself in place once the
+                    // successor is back up, so the fresh process must NOT open a second tab.
+                    env: { ...process.env, PORT: String(activePort), PCAV_NO_OPEN_TAB: '1' },
                     detached: true,
                     stdio: 'inherit',
                 });
@@ -2809,7 +2811,9 @@ const OPEN_CMD = process.platform === 'win32' ? 'start ""' : process.platform ==
         activePort = port;
         if (port !== startPort) console.log(`⚠️  Port ${startPort} in use — running on http://localhost:${port}`);
         console.log(`🚀 Dashboard at http://localhost:${port}`);
-        exec(`${OPEN_CMD} http://localhost:${port}`);
+        // Skip the browser-open after an in-app update relaunch — the existing tab reloads
+        // itself in place, so opening another here would leave the user with a duplicate tab.
+        if (process.env.PCAV_NO_OPEN_TAB !== '1') exec(`${OPEN_CMD} http://localhost:${port}`);
     // Backfill video_duration for any existing segments that are missing it.
     // Runs once at startup so scenes already in the project loop correctly.
     (async () => {

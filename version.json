@@ -1,8 +1,8 @@
 {
-  "version": "1.5.0",
-  "date": "2026-06-26",
-  "notes": "Cleaner update notification. The top banner no longer dumps the whole changelog — it now just says 'Update available: vX.Y.Z (you have v…)' with three buttons: What's new, Install Now, Dismiss. 'What's new' opens a tidy feature-report popup that breaks the release notes into bullet points, with the version and date. The Settings → App Updates section gets a matching 'What's new' button and no longer crams notes into the status line. EN + JA. index.html only.",
+  "version": "1.5.1",
+  "date": "2026-06-29",
+  "notes": "Updating no longer opens a duplicate browser tab. Before, installing an update relaunched the server as a fresh process that always opened a new tab, while your existing dashboard tab also reloaded itself in place — leaving you with two tabs. Now the relaunched server is told to skip the browser-open (PCAV_NO_OPEN_TAB), so the update reloads cleanly in the tab you already have. server.js only.",
   "files": [
-    "index.html"
+    "server.js"
   ]
 }
