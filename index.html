@@ -6833,13 +6833,13 @@
                 <div class="stock-list">${stockOptions}</div>
               </div>
 
-              <div id="bg-video-controls-${i}" style="display:${(bgType === 'video' && hasVideo)?'block':'none'};margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;gap:8px;">
+              <div id="bg-video-controls-${i}" style="display:${(hasVideo && (bgType === 'video' || bgType === 'image'))?'block':'none'};margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;gap:8px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                  <span style="font-size:11px;color:#cbd5e1;font-weight:700">Video framing</span>
+                  <span id="framing-title-${i}" style="font-size:11px;color:#cbd5e1;font-weight:700">${bgType === 'image' ? 'Image framing' : 'Video framing'}</span>
                   <button class="btn sm ghost" type="button" onclick="resetBackgroundTransform(${i})">Reset</button>
                 </div>
-                <!-- ── Video Fit ── -->
-                <div class="ctrl-row" style="align-items:center;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #1e293b">
+                <!-- ── Video Fit (video only) ── -->
+                <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #1e293b">
                   <span class="ctrl-row-label">Fit:</span>
                   <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap" id="videofit-row-${i}">
                     ${[['cover','🔲 Fill'],['contain-black','⬛ Black Bars'],['contain-blur','🌫 Blur BG']].map(([val,lbl]) => {
@@ -6854,16 +6854,16 @@
                   <span id="bgscale-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.max(1, Number(seg.backgroundScale) || 1).toFixed(2)}x</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label" title="Pan horizontally — drag left to focus the left side of the video, right for the right">X ◀▶</span>
-                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" title="Drag left to focus the left of the video, right for the right" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="Pan horizontally — drag left to focus the left side of the background, right for the right">X ◀▶</span>
+                  <input type="range" id="bgx-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0))}" title="Drag left to focus the left of the background, right for the right" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgx-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundX) || 0)))}%</span>
                 </div>
                 <div class="ctrl-row" style="align-items:center;gap:8px">
-                  <span class="ctrl-row-label" title="Pan vertically — drag left for the top of the video, right for the bottom">Y ▲▼</span>
-                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" title="Drag left for the top of the video, right for the bottom" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
+                  <span class="ctrl-row-label" title="Pan vertically — drag left for the top of the background, right for the bottom">Y ▲▼</span>
+                  <input type="range" id="bgy-${i}" min="-100" max="100" step="1" value="${Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0))}" title="Drag left for the top of the background, right for the bottom" oninput="onBackgroundTransformInput(${i})" onchange="saveBackgroundTransform(${i})" style="flex:1" />
                   <span id="bgy-v-${i}" style="font-size:11px;color:#94a3b8;min-width:42px;text-align:right">${Math.round(Math.max(-100, Math.min(100, Number(seg.backgroundY) || 0)))}%</span>
                 </div>
-                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
                   <span class="ctrl-row-label">Speed:</span>
                   <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">
                     ${[0.25,0.5,0.75,1,1.5,2,3,4].map(s => {
@@ -6873,7 +6873,7 @@
                     }).join('')}
                   </div>
                 </div>
-                <div class="ctrl-row" style="align-items:flex-start;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:flex-start;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
                   <span class="ctrl-row-label" style="margin-top:5px">Clip:</span>
                   <div style="flex:1;min-width:0">
                     <input type="hidden" id="clip-start-${i}" value="${seg.clipStart != null ? seg.clipStart : ''}" />
@@ -6892,7 +6892,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="ctrl-row" style="align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
+                <div class="ctrl-row" data-framing="video" style="display:${bgType === 'video' ? 'flex' : 'none'};align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;margin-bottom:0">
                   <span class="ctrl-row-label">Audio:</span>
                   <input type="range" id="vidaudio-${i}" min="0" max="1" step="0.05"
                          value="${Math.max(0, Math.min(1, Number(seg.videoAudioVolume) || 0))}"
@@ -7697,9 +7697,21 @@
     }
   }
 
-  function setBackgroundTransformPanelState(i, visible) {
+  // Show the framing panel for the current background media. mediaType: 'video' shows everything;
+  // 'image' shows only Scale/X/Y (Fit/Speed/Clip/Audio don't apply); null/false hides the panel.
+  function setBackgroundFramingPanel(i, mediaType) {
     const panel = document.getElementById(`bg-video-controls-${i}`);
-    if (panel) panel.style.display = visible ? 'block' : 'none';
+    if (!panel) return;
+    if (!mediaType) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    const isVideo = mediaType === 'video';
+    panel.querySelectorAll('[data-framing="video"]').forEach(el => { el.style.display = isVideo ? 'flex' : 'none'; });
+    const title = document.getElementById(`framing-title-${i}`);
+    if (title) title.textContent = isVideo ? 'Video framing' : 'Image framing';
+  }
+  // Back-compat shim: existing callers only know show/hide and are all video contexts.
+  function setBackgroundTransformPanelState(i, visible) {
+    setBackgroundFramingPanel(i, visible ? 'video' : null);
   }
 
   function onBackgroundTransformInput(i) {
@@ -7808,7 +7820,7 @@
     if (xEl) xEl.value = '0';
     if (yEl) yEl.value = '0';
     await saveBackgroundTransform(i);
-    addEditorLog(`✅ Scene ${i+1} video framing reset`);
+    addEditorLog(`✅ Scene ${i+1} framing reset`);
   }
 
   async function toggleKenBurns(i) {
@@ -8132,7 +8144,7 @@
     if(!el)return;
     const { scale, x, y } = getBackgroundTransformValues(i);
     const style = backgroundTransformStyle(scale, x, y);
-    if(el.tagName==='VIDEO'){el.src=src;el.style.position='absolute';el.style.width='114%';el.style.height='114%';el.style.left='-7%';el.style.top='-7%';el.style.objectFit='cover';el.style.objectPosition='center center';el.style.transform=`translate(${x}%, ${y}%) scale(${scale})`;el.style.transformOrigin='center center';}
+    if(el.tagName==='VIDEO'){el.src=src;updateBackgroundTransformPreview(i);}  // new object-position model
     else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
     const vid = document.getElementById(`thumb-${i}`);
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
@@ -8397,8 +8409,11 @@
     // Update thumb
     const old = document.getElementById(`thumb-${i}`);
     old.outerHTML = `<img class="video-thumb" id="thumb-${i}" src="${data.previewUrl}" style="object-fit:cover" />`;
-    setBackgroundTransformPanelState(i, false);
-    addEditorLog(`✅ Scene ${i+1} set to image with Ken Burns effect`);
+    // Images get the same Scale/X/Y framing as videos (no Fit/Speed/Clip/Audio), so you can pan/zoom
+    // instead of being stuck with a centre crop. Apply the current transform to the new thumb.
+    setBackgroundFramingPanel(i, 'image');
+    updateBackgroundTransformPreview(i);
+    addEditorLog(`✅ Scene ${i+1} set to image — use Scale / X / Y to reposition`);
   }
 
   /* Stock */

@@ -1,7 +1,7 @@
 {
-  "version": "1.5.5",
+  "version": "1.5.6",
   "date": "2026-06-29",
-  "notes": "You can now actually reposition a landscape background. Before, a wide (landscape) video or image dropped into the portrait frame was centre-cropped, and the X/Y sliders could only slide that centre slice around — they could never reach the left or right of the source. Now X/Y choose which part of the video shows (drag X left to focus the left side, e.g. a shop on the edge of the shot), and Scale zooms toward that same spot. The X/Y sliders are labelled with arrows so the direction is clear. Works for both video and image backgrounds, in the preview and the final render.",
+  "notes": "Image backgrounds can now be repositioned too. The Scale / X / Y framing controls — previously only on video backgrounds — now show for image backgrounds as well, so you can pan and zoom an image to focus the part you want instead of being stuck with a centre crop. The render already supported this (v1.5.5); this exposes the sliders in the editor. Uploaded videos keep the same framing controls (and an old in-place-swap bug that ignored the new pan model is fixed). Video-only options (Fit, Speed, Clip, Audio) stay hidden for images.",
   "files": [
     "index.html",
     "server.js",
