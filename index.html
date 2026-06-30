@@ -2149,6 +2149,7 @@
       t_paste_failed: 'Couldn’t paste the style',
       t_effect_failed: 'Couldn’t apply the effect',
       t_preview_failed: 'Couldn’t play the preview',
+      t_preview_voicevox: 'Couldn’t play the preview — open the VOICEVOX app first. It generates the Japanese voice, and the preview needs it running.',
       t_save_failed: 'Couldn’t save — please try again',
       t_post_failed: 'Couldn’t post the video',
       t_popup_blocked: 'Please allow pop-ups to connect your account',
@@ -2852,6 +2853,7 @@
       t_paste_failed: 'スタイルを貼り付けできませんでした',
       t_effect_failed: 'エフェクトを適用できませんでした',
       t_preview_failed: 'プレビューを再生できませんでした',
+      t_preview_voicevox: 'プレビューを再生できません。先にVOICEVOXアプリを起動してください。日本語音声の生成にVOICEVOXの起動が必要です。',
       t_save_failed: '保存できませんでした。もう一度お試しください',
       t_post_failed: '動画を投稿できませんでした',
       t_popup_blocked: 'アカウント連携のためポップアップを許可してください',
@@ -3540,13 +3542,18 @@
       if (label) label.textContent = 'Light';
     }
     const savedLang = localStorage.getItem('pc-lang');
-    if (savedLang) {
-      if (savedLang !== 'en') setTimeout(() => setAppLang(savedLang), 0);
-    } else {
-      // Auto-detect from OS/browser language — only runs on first visit
-      const sysLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-      if (sysLang.startsWith('ja')) setTimeout(() => setAppLang('ja'), 0);
-    }
+    // Detect Japanese from the FULL browser language list, not just navigator.language — Chrome often
+    // reports the UI language (e.g. 'en-US') as primary even on a Japanese machine, while the user's
+    // actual preferred languages (navigator.languages) still include 'ja'. Treat any 'ja' as Japanese.
+    const prefersJa = () => {
+      const langs = [navigator.language, ...(navigator.languages || []), navigator.userLanguage].filter(Boolean);
+      return langs.some(l => String(l).toLowerCase().startsWith('ja'));
+    };
+    const initialLang = savedLang || (prefersJa() ? 'ja' : 'en');
+    // Set synchronously so the FIRST render (update banner, first-run setup) is already localised,
+    // not just re-translated a tick later.
+    window._appLang = initialLang;
+    if (initialLang !== 'en') setTimeout(() => setAppLang(initialLang), 0);
   })();
 
   /* ── Tabs ── */
@@ -3958,6 +3965,20 @@
       }
     } catch (e) { console.warn('VOICEVOX pre-check skipped:', e); }
     return true;
+  }
+
+  // Show the right "preview failed" message. If this project needs VOICEVOX and the engine isn't
+  // reachable, that's almost always the real cause (VOICEVOX is a separate app the user must open),
+  // so name it explicitly instead of a generic error.
+  async function previewFailedToast(err) {
+    if (err) { try { console.warn('preview:', err); } catch (_) {} }
+    try {
+      if (projectUsesVoicevox() && !(await isVoicevoxRunning())) {
+        toast(tr('t_preview_voicevox'), 'error', 7000);
+        return;
+      }
+    } catch (_) {}
+    toast(tr('t_preview_failed'), 'error');
   }
 
   // Localised "this will replace your scenes" confirm shown before a batch when scenes already exist.
@@ -6114,7 +6135,7 @@
       await currentVoicePreviewAudio.play();
     } catch (err) {
       _restoreVoicePreviewButton();
-      toast(tr('t_preview_failed'), 'error'); console.warn('voice preview:', err);
+      previewFailedToast(err);
     } finally {
       // Only re-enable+restore if playback never started (error path)
       if (activeButton && activeButton.disabled) {
@@ -6217,7 +6238,7 @@
       updateThumbnailAudioButtons(i, true, false);
     } catch (err) {
       stopThumbnailAudioPreview();
-      toast(tr('t_preview_failed'), 'error'); console.warn('scene preview:', err);
+      previewFailedToast(err);
     } finally {
       if (activeThumbnailPreview?.sceneIndex !== i) updateThumbnailAudioButtons(i, false, false);
     }
@@ -13687,8 +13708,11 @@
     if (!data || !data.latest) return;
     const t = I18N[window._appLang||'en'] || I18N.en;
     document.getElementById('update-info-modal')?.remove();
-    const items = String(data.notes || '')
-      .split(/(?<=[.!?。！？])\s+/)
+    // Prefer Japanese notes when the app is in Japanese and the release provides them.
+    const notesText = (window._appLang === 'ja' && data.notes_ja) ? data.notes_ja : data.notes;
+    // Split EN on sentence + space (so "v1.5" stays intact), JA after 。！？ (no space needed), and newlines.
+    const items = String(notesText || '')
+      .split(/(?<=[。！？])|(?<=[.!?])\s+|\n+/)
       .map(s => s.trim())
       .filter(Boolean);
     const body = items.length

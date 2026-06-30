@@ -2714,6 +2714,7 @@ app.get('/check-update', async (req, res) => {
             current: local,
             latest: remote.version,
             notes: remote.notes || '',
+            notes_ja: remote.notes_ja || '',   // optional Japanese release notes
             date: remote.date || '',
             upToDate: compareVersions(local, remote.version) >= 0
         });

@@ -1,7 +1,8 @@
 {
-  "version": "1.5.12",
+  "version": "1.5.13",
   "date": "2026-06-29",
-  "notes": "Adding a scene now jumps to the new scene instead of the top. Before, adding a scene rebuilt the list and bounced you to the top of the page, so you had to scroll all the way down to find the scene you just added. Now it scrolls straight to the new scene (added at the bottom), or selects it in Timeline view. Same fix applied to Duplicate and Add-from-draft, which were trying to scroll to the wrong element and silently doing nothing.",
+  "notes": "Clearer preview error + better Japanese detection. The 'preview could not be played' error now explains the cause when the project uses VOICEVOX: it tells you to open the VOICEVOX app, which generates the Japanese voice and must be running for the preview. And the app now detects Japanese more reliably — it checks your whole browser language list (not just the primary one), so a Japanese user whose browser reports English as its primary language still gets the Japanese interface from the very first screen, including the update banner and first-run setup. Release notes can now be shown in Japanese too.",
+  "notes_ja": "プレビューのエラー表示を改善し、日本語判定も強化しました。VOICEVOXを使うプロジェクトで「プレビューを再生できません」となった場合、その原因を説明するようになりました。日本語音声を生成するVOICEVOXアプリの起動が必要であることを案内します。また、日本語の判定がより確実になりました。ブラウザの優先言語リスト全体を確認するため、ブラウザの主要言語が英語でも、最初の画面（更新バナーや初回セットアップを含む）から日本語表示になります。リリースノートも日本語で表示できるようになりました。",
   "files": [
     "index.html",
     "server.js",
