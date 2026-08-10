@@ -1,12 +1,9 @@
 {
-  "version": "1.5.13",
-  "date": "2026-06-29",
-  "notes": "Clearer preview error + better Japanese detection. The 'preview could not be played' error now explains the cause when the project uses VOICEVOX: it tells you to open the VOICEVOX app, which generates the Japanese voice and must be running for the preview. And the app now detects Japanese more reliably — it checks your whole browser language list (not just the primary one), so a Japanese user whose browser reports English as its primary language still gets the Japanese interface from the very first screen, including the update banner and first-run setup. Release notes can now be shown in Japanese too.",
-  "notes_ja": "プレビューのエラー表示を改善し、日本語判定も強化しました。VOICEVOXを使うプロジェクトで「プレビューを再生できません」となった場合、その原因を説明するようになりました。日本語音声を生成するVOICEVOXアプリの起動が必要であることを案内します。また、日本語の判定がより確実になりました。ブラウザの優先言語リスト全体を確認するため、ブラウザの主要言語が英語でも、最初の画面（更新バナーや初回セットアップを含む）から日本語表示になります。リリースノートも日本語で表示できるようになりました。",
+  "version": "1.5.14",
+  "date": "2026-08-10",
+  "notes": "A missing background video no longer kills the render. If a scene points at a background file that is no longer on disk, the render used to run all the way through bundling and then fail with a raw 404 error part-way into the first frame, losing the whole job. The pre-render check now looks for each scene's background alongside the sound-effect and voiceover checks it already did: any background that cannot be found is reported by scene number in the log and that scene simply renders on a black background, so the rest of your video still comes out.",
+  "notes_ja": "背景動画が見つからない場合でもレンダリングが失敗しなくなりました。ディスク上に存在しない背景ファイルを参照しているシーンがあると、これまではバンドル処理を最後まで実行したあと、最初のフレームの途中で404エラーが発生し、レンダリング全体が失敗していました。レンダリング前のチェックが、これまでの効果音・音声ファイルの確認に加えて、各シーンの背景も確認するようになりました。見つからない背景はシーン番号とともにログに表示され、そのシーンは黒背景でレンダリングされるため、動画の残りの部分は問題なく出力されます。",
   "files": [
-    "index.html",
-    "server.js",
-    "src/Main.tsx",
-    "src/Background.tsx"
+    "server.js"
   ]
 }

@@ -236,6 +236,7 @@ const LOG = {
         saved_only:       (f) => `✅ Saved: renders/${f}`,
         warn_sfx:         (n, f) => `Scene ${n}: SFX file "${f}" not found — removed from render`,
         warn_voice:       (n, f) => `Scene ${n}: Voiceover file "${f}" not found — removed from render`,
+        warn_bg:          (n, f) => `Scene ${n}: Background video "${f}" not found — scene will render on a black background`,
     },
     ja: {
         cancelled:        '⏹ 制作がキャンセルされました。',
@@ -256,6 +257,7 @@ const LOG = {
         saved_only:       (f) => `✅ 保存しました: renders/${f}`,
         warn_sfx:         (n, f) => `シーン${n}: 効果音ファイル「${f}」が見つかりません — レンダリングから除外します`,
         warn_voice:       (n, f) => `シーン${n}: 音声ファイル「${f}」が見つかりません — レンダリングから除外します`,
+        warn_bg:          (n, f) => `シーン${n}: 背景動画「${f}」が見つかりません — 黒背景でレンダリングします`,
     },
 };
 
@@ -316,6 +318,25 @@ function validateContentForRender(logFn, lang = 'en') {
                 if (!fs.existsSync(p)) {
                     warnings.push((LOG[lang]||LOG.en).warn_voice(idx + 1, seg.voiceover_audio));
                     delete seg.voiceover_audio;
+                    changed = true;
+                }
+            }
+            // Background media. A missing file used to surface only mid-render, as a raw 404 from the
+            // Remotion bundle after minutes of bundling — clear it here so the scene falls back to the
+            // black background Background.tsx already renders for an empty src.
+            const bg = seg.background_url;
+            if (bg && typeof bg === 'string' && !/^https?:\/\//i.test(bg)
+                && seg.backgroundType !== 'color' && seg.backgroundType !== 'gradient') {
+                const pub = path.join(__dirname, 'public');
+                // Check every form the src could resolve to, so a working background is never stripped.
+                const candidates = [
+                    path.join(pub, 'backgrounds', path.basename(bg)),
+                    path.join(pub, bg),
+                    path.join(pub, bg.replace(/^\/?public\//, '')),
+                ];
+                if (!candidates.some(c => fs.existsSync(c))) {
+                    warnings.push((LOG[lang]||LOG.en).warn_bg(idx + 1, bg));
+                    seg.background_url = '';
                     changed = true;
                 }
             }
