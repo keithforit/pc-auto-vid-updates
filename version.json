@@ -1,8 +1,8 @@
 {
-  "version": "1.5.14",
+  "version": "1.5.15",
   "date": "2026-08-10",
-  "notes": "A missing background video no longer kills the render. If a scene points at a background file that is no longer on disk, the render used to run all the way through bundling and then fail with a raw 404 error part-way into the first frame, losing the whole job. The pre-render check now looks for each scene's background alongside the sound-effect and voiceover checks it already did: any background that cannot be found is reported by scene number in the log and that scene simply renders on a black background, so the rest of your video still comes out.",
-  "notes_ja": "背景動画が見つからない場合でもレンダリングが失敗しなくなりました。ディスク上に存在しない背景ファイルを参照しているシーンがあると、これまではバンドル処理を最後まで実行したあと、最初のフレームの途中で404エラーが発生し、レンダリング全体が失敗していました。レンダリング前のチェックが、これまでの効果音・音声ファイルの確認に加えて、各シーンの背景も確認するようになりました。見つからない背景はシーン番号とともにログに表示され、そのシーンは黒背景でレンダリングされるため、動画の残りの部分は問題なく出力されます。",
+  "notes": "Newly downloaded background videos are no longer deleted before you can use them. After a successful render the app clears out background videos that no scene uses, to stop the folder growing without limit. But a video you have just downloaded and not yet placed on a scene looked exactly like an abandoned one, so it could be deleted from under you — and that deletion cannot be undone. Background videos downloaded in the last 24 hours are now always kept, whether or not a scene uses them yet, and the render log tells you how many were kept as well as how many were cleaned up. Both messages now appear in Japanese too.",
+  "notes_ja": "ダウンロードしたばかりの背景動画が、使用する前に削除されることがなくなりました。レンダリング成功後、アプリはフォルダが際限なく大きくなるのを防ぐため、どのシーンでも使用していない背景動画を削除します。しかし、ダウンロードしたばかりでまだシーンに配置していない動画は、不要になった動画と見分けがつかないため、気づかないうちに削除されることがありました。この削除は元に戻せません。過去24時間以内にダウンロードした背景動画は、シーンで使用しているかどうかにかかわらず、常に保持されるようになりました。レンダリングのログには、削除した件数に加えて保持した件数も表示されます。これらのメッセージは日本語でも表示されます。",
   "files": [
     "server.js"
   ]

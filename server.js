@@ -237,6 +237,8 @@ const LOG = {
         warn_sfx:         (n, f) => `Scene ${n}: SFX file "${f}" not found — removed from render`,
         warn_voice:       (n, f) => `Scene ${n}: Voiceover file "${f}" not found — removed from render`,
         warn_bg:          (n, f) => `Scene ${n}: Background video "${f}" not found — scene will render on a black background`,
+        cleanup_bg:       (n) => `🧹 Cleaned up ${n} unused background video${n === 1 ? '' : 's'}`,
+        cleanup_kept:     (n) => `📌 Kept ${n} recently downloaded background video${n === 1 ? '' : 's'} not used by any scene yet`,
     },
     ja: {
         cancelled:        '⏹ 制作がキャンセルされました。',
@@ -258,11 +260,19 @@ const LOG = {
         warn_sfx:         (n, f) => `シーン${n}: 効果音ファイル「${f}」が見つかりません — レンダリングから除外します`,
         warn_voice:       (n, f) => `シーン${n}: 音声ファイル「${f}」が見つかりません — レンダリングから除外します`,
         warn_bg:          (n, f) => `シーン${n}: 背景動画「${f}」が見つかりません — 黒背景でレンダリングします`,
+        cleanup_bg:       (n) => `🧹 使用していない背景動画を${n}件削除しました`,
+        cleanup_kept:     (n) => `📌 まだどのシーンでも使用していない最近ダウンロードした背景動画${n}件を保持しました`,
     },
 };
 
-// Delete background videos no longer referenced in any draft or content file.
-function cleanupUnusedBackgrounds(logFn) {
+// A freshly downloaded background often sits unassigned while the user picks which scene to
+// put it on, which made it indistinguishable from an abandoned file to the sweep below — and
+// deletion here has no undo. Anything downloaded inside this window is kept regardless.
+const BACKGROUND_GRACE_MS = 24 * 60 * 60 * 1000;   // 24 hours
+
+// Delete background videos no longer referenced in any draft or content file,
+// except recent downloads still inside BACKGROUND_GRACE_MS.
+function cleanupUnusedBackgrounds(logFn, lang = 'en') {
     const bgDir = path.join(__dirname, 'public', 'backgrounds');
     if (!fs.existsSync(bgDir)) return;
 
@@ -283,16 +293,25 @@ function cleanupUnusedBackgrounds(logFn) {
     }
 
     const files = fs.readdirSync(bgDir).filter(f => f.endsWith('.mp4'));
+    const now = Date.now();
+    const L = LOG[lang] || LOG.en;
     let deleted = 0;
+    let kept = 0;
     for (const file of files) {
-        if (!referenced.has(file)) {
-            try {
-                fs.unlinkSync(path.join(bgDir, file));
-                deleted++;
-            } catch { /* skip if locked */ }
-        }
+        if (referenced.has(file)) continue;
+        const full = path.join(bgDir, file);
+        let age;
+        try {
+            age = now - fs.statSync(full).mtimeMs;
+        } catch { continue; }              // can't stat it — leave it alone rather than guess
+        if (age < BACKGROUND_GRACE_MS) { kept++; continue; }
+        try {
+            fs.unlinkSync(full);
+            deleted++;
+        } catch { /* skip if locked */ }
     }
-    if (deleted > 0) logFn(`🧹 Cleaned up ${deleted} unused background video${deleted === 1 ? '' : 's'}`);
+    if (deleted > 0) logFn(L.cleanup_bg(deleted));
+    if (kept > 0) logFn(L.cleanup_kept(kept));
 }
 
 // Pre-render validation: strip any asset references whose files are missing from disk.
@@ -1858,7 +1877,7 @@ io.on('connection', (socket) => {
 
                 if (!fs.existsSync('renders')) fs.mkdirSync('renders');
                 fs.renameSync('out/1.mp4', `renders/${finalName}`);
-                cleanupUnusedBackgrounds(msg => socket.emit('log', msg));
+                cleanupUnusedBackgrounds(msg => socket.emit('log', msg), lang);
                 socket.emit('status', { msg: L.done_status(finalName), progress: ((i + 1) / scripts.length) * 100 });
                 socket.emit('log', L.saved(finalName));
 
@@ -1931,7 +1950,7 @@ io.on('connection', (socket) => {
             const finalName = `render_${Date.now()}.mp4`;
             if (!fs.existsSync('renders')) fs.mkdirSync('renders');
             fs.renameSync('out/1.mp4', `renders/${finalName}`);
-            cleanupUnusedBackgrounds(msg => socket.emit('log', msg));
+            cleanupUnusedBackgrounds(msg => socket.emit('log', msg), lang);
             socket.emit('render-done', { file: `renders/${finalName}` });
             socket.emit('log', L.saved_only(finalName));
         } catch (err) {
