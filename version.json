@@ -1,9 +1,10 @@
 {
-  "version": "1.5.15",
-  "date": "2026-08-10",
-  "notes": "Newly downloaded background videos are no longer deleted before you can use them. After a successful render the app clears out background videos that no scene uses, to stop the folder growing without limit. But a video you have just downloaded and not yet placed on a scene looked exactly like an abandoned one, so it could be deleted from under you — and that deletion cannot be undone. Background videos downloaded in the last 24 hours are now always kept, whether or not a scene uses them yet, and the render log tells you how many were kept as well as how many were cleaned up. Both messages now appear in Japanese too.",
-  "notes_ja": "ダウンロードしたばかりの背景動画が、使用する前に削除されることがなくなりました。レンダリング成功後、アプリはフォルダが際限なく大きくなるのを防ぐため、どのシーンでも使用していない背景動画を削除します。しかし、ダウンロードしたばかりでまだシーンに配置していない動画は、不要になった動画と見分けがつかないため、気づかないうちに削除されることがありました。この削除は元に戻せません。過去24時間以内にダウンロードした背景動画は、シーンで使用しているかどうかにかかわらず、常に保持されるようになりました。レンダリングのログには、削除した件数に加えて保持した件数も表示されます。これらのメッセージは日本語でも表示されます。",
+  "version": "1.5.16",
+  "date": "2026-09-07",
+  "notes": "Pasting a Pexels URL onto a scene now works for large clips. The app always downloaded the biggest version of a clip Pexels offers — often 4K, 150MB or more — but it also gave up on any download that took longer than 55 seconds, even while it was still arriving normally. On a typical connection a 4K clip needs longer than that, so the download was cut off part-way, the half-finished file was left behind, and the scene simply never changed. The app now downloads the version that matches what it renders (up to 2K) instead of the 4K master — the same clip that failed at 165MB now arrives in about 15 seconds at 41MB — and the time limit only applies when a download has genuinely stalled, not while it is still making progress. A part-finished file is deleted rather than kept. When a fetch does fail, the reason is now shown on the URL field and as a pop-up message, instead of only in the log where it was easy to miss.",
+  "notes_ja": "Pexels の URL をシーンに貼り付けたとき、大きなクリップでも正しく反映されるようになりました。これまでアプリは Pexels が提供する最大サイズ（多くは 4K、150MB 以上）を必ずダウンロードする一方で、55 秒を超えたダウンロードは正常に受信中であっても中断していました。通常の回線では 4K のクリップに 55 秒以上かかるため、ダウンロードは途中で打ち切られ、未完成のファイルだけが残り、シーンは何も変わりませんでした。今後は 4K のマスターではなく、書き出し解像度に合ったサイズ（最大 2K）をダウンロードします。165MB で失敗していた同じクリップが、41MB・約 15 秒で取得できます。また時間制限は、ダウンロードが本当に停止した場合にのみ適用され、進行中に打ち切られることはありません。途中まで取得したファイルは保持せず削除します。取得に失敗した場合は、見落としやすいログだけでなく、URL 欄と通知メッセージに理由を表示します。",
   "files": [
-    "server.js"
+    "server.js",
+    "index.html"
   ]
 }

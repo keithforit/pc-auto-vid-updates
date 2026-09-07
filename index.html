@@ -2143,6 +2143,9 @@
       t_enter_search: 'Enter a search query first',
       t_paste_url: 'Paste a video URL first',
       t_invalid_pexels: 'That doesn’t look like a Pexels video URL. Example: pexels.com/video/19232967/',
+      t_no_video_returned: 'The fetch finished but no video came back — try again.',
+      t_url_timeout: 'The download took too long and was stopped. Try again, or pick a shorter clip.',
+      t_scene: 'Scene',
       t_invalid_pixabay: 'That doesn’t look like a Pixabay video URL. Example: pixabay.com/videos/radio-tower-night-view-211067/',
       t_no_style: 'No style copied yet — copy one from a scene or text layer first',
       t_copy_failed: 'Couldn’t copy the style',
@@ -2847,6 +2850,9 @@
       t_enter_search: '検索キーワードを入力してください',
       t_paste_url: '動画URLを貼り付けてください',
       t_invalid_pexels: 'Pexelsの動画URLではないようです。例: pexels.com/video/19232967/',
+      t_no_video_returned: '取得は完了しましたが動画が返ってきませんでした。もう一度お試しください。',
+      t_url_timeout: 'ダウンロードに時間がかかりすぎたため中止しました。もう一度お試しになるか、短いクリップを選んでください。',
+      t_scene: 'シーン',
       t_invalid_pixabay: 'Pixabayの動画URLではないようです。例: pixabay.com/videos/radio-tower-night-view-211067/',
       t_no_style: 'スタイルが未コピーです。先にシーンかテキストからコピーしてください',
       t_copy_failed: 'スタイルをコピーできませんでした',
@@ -8341,7 +8347,7 @@
     }, 15000);
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+      const timeout = setTimeout(() => controller.abort(), 150000);
       const res = await fetch('/replace-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8394,7 +8400,7 @@
     }, 15000);
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+      const timeout = setTimeout(() => controller.abort(), 150000);
       const res = await fetch('/replace-video-by-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8403,19 +8409,24 @@
       });
       clearTimeout(timeout);
       const data = await res.json();
-      if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
-      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
+      if (data.error) { addEditorLog(`❌ ${data.error}`); fieldError(`pexels-url-${i}`, data.error); toast(data.error, 'error', 6000); return; }
+      if (!data.url) {
+        const m = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
+        addEditorLog(`⚠️ ${m}`); fieldError(`pexels-url-${i}`, m); toast(m, 'error', 6000); return;
+      }
       setThumb(i, data.url);
       markVideoSource(i, 'pexels');
       addEditorLog(`✅ Scene ${i+1} updated from Pexels URL (saved locally)`);
+      toast(`${tr('t_scene')} ${i+1} ✓`, 'success');
       const urlInput = document.getElementById(`pexels-url-${i}`);
       if (urlInput) urlInput.value = '';
     } catch (err) {
-      if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pexels URL fetch timed out after 60s. The video may be too large — try again.`);
-      } else {
-        addEditorLog(`❌ Pexels URL error: ${err.message}`);
-      }
+      const m = err.name === 'AbortError'
+        ? tr('t_url_timeout')
+        : `${err.message}`;
+      addEditorLog(`❌ Pexels URL error: ${m}`);
+      fieldError(`pexels-url-${i}`, m);
+      toast(m, 'error', 6000);
     } finally {
       clearTimeout(slowWarn);
       document.getElementById(`card-${i}`)?.classList.remove('replacing');
@@ -8438,7 +8449,7 @@
     }, 15000);
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+      const timeout = setTimeout(() => controller.abort(), 150000);
       const res = await fetch('/replace-video-pixabay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8490,7 +8501,7 @@
     }, 15000);
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+      const timeout = setTimeout(() => controller.abort(), 150000);
       const res = await fetch('/replace-video-pixabay-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -532,25 +532,52 @@ async function getVideoAspectRatio(filepath) {
     });
 }
 
+// Pexels lists every rendition of a clip, up to 4K. We render at 1080x1920, so a 4K
+// file is ~10x the bytes for no visible gain — and on a normal connection it takes long
+// enough that the download used to be killed mid-stream. Take the best rendition that is
+// no bigger than 2K on its longest side; if a clip only exists in 4K, take its smallest.
+const MAX_SOURCE_DIM = 2200;
+function pickPexelsVideoFile(files) {
+    const byArea = [...files].sort((a, b) => ((b.width || 0) * (b.height || 0)) - ((a.width || 0) * (a.height || 0)));
+    const fits = byArea.find(f => Math.max(f.width || 0, f.height || 0) <= MAX_SOURCE_DIM);
+    return fits || byArea[byArea.length - 1];
+}
+
+// Download to ./public/backgrounds. The timeout is a STALL timeout: it is reset every time
+// bytes arrive, so a large-but-progressing download is never cut off. A separate absolute
+// cap stops a pathologically slow transfer from hanging the request forever. On any failure
+// the partial file is removed, so a truncated mp4 can never be handed to the renderer.
 async function downloadVideo(url) {
     if (!fs.existsSync('./public/backgrounds')) fs.mkdirSync('./public/backgrounds', { recursive: true });
     const axios = require('axios');
     const filename = `pexels-${Date.now()}.mp4`;
     const dest = `./public/backgrounds/${filename}`;
-    const response = await axios.get(url, { responseType: 'stream', timeout: 55000 });
-    await new Promise((resolve, reject) => {
-        const writer = fs.createWriteStream(dest);
-        response.data.pipe(writer);
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-        // Abort if download stalls for more than 55 seconds
-        const stall = setTimeout(() => {
-            writer.destroy();
-            reject(new Error('Video download timed out'));
-        }, 55000);
-        writer.on('finish', () => clearTimeout(stall));
-        writer.on('error', () => clearTimeout(stall));
-    });
+    const STALL_MS = 30000;   // no bytes at all for this long -> give up
+    const HARD_CAP_MS = 300000; // absolute ceiling on one download
+    const response = await axios.get(url, { responseType: 'stream', timeout: 30000 });
+    try {
+        await new Promise((resolve, reject) => {
+            const writer = fs.createWriteStream(dest);
+            let stall;
+            const fail = (err) => { clearTimeout(stall); clearTimeout(hard); response.data.destroy(); writer.destroy(); reject(err); };
+            const armStall = () => {
+                clearTimeout(stall);
+                stall = setTimeout(() => fail(new Error('Video download stalled (no data for 30s)')), STALL_MS);
+            };
+            const hard = setTimeout(() => fail(new Error('Video download timed out')), HARD_CAP_MS);
+            response.data.on('error', fail);
+            writer.on('error', fail);
+            writer.on('finish', () => { clearTimeout(stall); clearTimeout(hard); resolve(); });
+            // Pipe first: attaching a 'data' listener is what puts the stream into flowing
+            // mode, so the destination must already be wired up before we add ours.
+            response.data.pipe(writer);
+            response.data.on('data', armStall);
+            armStall();
+        });
+    } catch (e) {
+        try { if (fs.existsSync(dest)) fs.unlinkSync(dest); } catch {}
+        throw e;
+    }
     return filename;
 }
 
@@ -567,7 +594,7 @@ app.post('/replace-video', async (req, res) => {
         if (!result.data.videos?.length) return res.status(404).json({ error: 'No videos found' });
         const idx = result.data.videos.length > 1 ? 1 : 0;
         const chosen = result.data.videos[idx];
-        const remoteUrl = chosen.video_files.sort((a, b) => b.width - a.width)[0].link;
+        const remoteUrl = pickPexelsVideoFile(chosen.video_files).link;
 
         const filename = await downloadVideo(remoteUrl);
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
@@ -602,7 +629,7 @@ app.post('/replace-video-by-url', async (req, res) => {
             if (!video || !video.video_files || !video.video_files.length) {
                 return res.status(404).json({ error: 'No video files found for this Pexels video.' });
             }
-            const remoteUrl = video.video_files.sort((a, b) => b.width - a.width)[0].link;
+            const remoteUrl = pickPexelsVideoFile(video.video_files).link;
             const filename = await downloadVideo(remoteUrl);
             const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
             const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
