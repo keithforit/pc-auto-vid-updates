@@ -547,14 +547,22 @@ function pickPexelsVideoFile(files) {
 // bytes arrive, so a large-but-progressing download is never cut off. A separate absolute
 // cap stops a pathologically slow transfer from hanging the request forever. On any failure
 // the partial file is removed, so a truncated mp4 can never be handed to the renderer.
-async function downloadVideo(url) {
+async function downloadVideo(url, onProgress) {
     if (!fs.existsSync('./public/backgrounds')) fs.mkdirSync('./public/backgrounds', { recursive: true });
     const axios = require('axios');
     const filename = `pexels-${Date.now()}.mp4`;
     const dest = `./public/backgrounds/${filename}`;
     const STALL_MS = 30000;   // no bytes at all for this long -> give up
     const HARD_CAP_MS = 300000; // absolute ceiling on one download
+    const report = typeof onProgress === 'function' ? onProgress : () => {};
+    report({ phase: 'connecting' });
     const response = await axios.get(url, { responseType: 'stream', timeout: 30000 });
+    // Pexels and Pixabay both send Content-Length, so the bar is normally determinate.
+    // If it is ever missing we still report bytes received and the client shows a
+    // moving-but-unmeasured bar rather than a fake percentage.
+    const total = Number(response.headers['content-length']) || 0;
+    let received = 0, lastEmit = 0;
+    report({ phase: 'downloading', received: 0, total });
     try {
         await new Promise((resolve, reject) => {
             const writer = fs.createWriteStream(dest);
@@ -571,14 +579,27 @@ async function downloadVideo(url) {
             // Pipe first: attaching a 'data' listener is what puts the stream into flowing
             // mode, so the destination must already be wired up before we add ours.
             response.data.pipe(writer);
-            response.data.on('data', armStall);
+            response.data.on('data', (chunk) => {
+                armStall();
+                received += chunk.length;
+                // Throttle: a 40MB file arrives in ~2500 chunks and the bar only needs ~6fps.
+                const now = Date.now();
+                if (now - lastEmit >= 150) { lastEmit = now; report({ phase: 'downloading', received, total }); }
+            });
             armStall();
         });
     } catch (e) {
         try { if (fs.existsSync(dest)) fs.unlinkSync(dest); } catch {}
         throw e;
     }
+    report({ phase: 'downloading', received: total || received, total });
     return filename;
+}
+
+// One progress channel for every stock-video fetch. The scene index is echoed back so the
+// client can put the bar on the right card.
+function bgFetchReporter(index) {
+    return (p) => { try { io.emit('bg-fetch', { index, ...p }); } catch (_) {} };
 }
 
 // Replace the video for one segment by searching Pexels with a new query
@@ -596,7 +617,9 @@ app.post('/replace-video', async (req, res) => {
         const chosen = result.data.videos[idx];
         const remoteUrl = pickPexelsVideoFile(chosen.video_files).link;
 
-        const filename = await downloadVideo(remoteUrl);
+        const report = bgFetchReporter(index);
+        const filename = await downloadVideo(remoteUrl, report);
+        report({ phase: 'probing' });
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
@@ -630,7 +653,9 @@ app.post('/replace-video-by-url', async (req, res) => {
                 return res.status(404).json({ error: 'No video files found for this Pexels video.' });
             }
             const remoteUrl = pickPexelsVideoFile(video.video_files).link;
-            const filename = await downloadVideo(remoteUrl);
+            const report = bgFetchReporter(index);
+            const filename = await downloadVideo(remoteUrl, report);
+            report({ phase: 'probing' });
             const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
             const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
             segments[index].background_url  = filename;
@@ -694,7 +719,9 @@ app.post('/replace-video-pixabay', async (req, res) => {
         const remoteUrl = (vids.large?.url && vids.large.size > 0 ? vids.large.url :
                            vids.medium?.url ? vids.medium.url :
                            vids.small?.url  ? vids.small.url  : vids.tiny.url);
-        const filename = await downloadVideo(remoteUrl);
+        const report = bgFetchReporter(index);
+        const filename = await downloadVideo(remoteUrl, report);
+        report({ phase: 'probing' });
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
@@ -730,7 +757,9 @@ app.post('/replace-video-pixabay-url', async (req, res) => {
         const remoteUrl = (vids.large?.url && vids.large.size > 0 ? vids.large.url :
                            vids.medium?.url ? vids.medium.url :
                            vids.small?.url  ? vids.small.url  : vids.tiny.url);
-        const filename = await downloadVideo(remoteUrl);
+        const report = bgFetchReporter(index);
+        const filename = await downloadVideo(remoteUrl, report);
+        report({ phase: 'probing' });
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;

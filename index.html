@@ -297,7 +297,41 @@
     /* Overlay shape blocks */
     .shape-block { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 5px; }
     .shape-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .replacing { opacity: 0.5; pointer-events: none; }
+    .replacing { pointer-events: none; }
+    /* ── Stock-fetch progress overlay ───────────────────────────────────────────
+       A background download can run 15s or more. The card used to only dim, which
+       read as "nothing is happening", so the fetch now draws a live bar on the card.
+       The dim is applied to the card's children, not the card: opacity on the card
+       itself would create a stacking context and fade the overlay with it. */
+    .segment-card { position: relative; }
+    .segment-card.replacing > *:not(.bg-fetch) { opacity: 0.4; }
+    .bg-fetch { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+                background: rgba(15,23,42,0.7); border-radius: 14px; }
+    .bg-fetch.done, .bg-fetch.failed { pointer-events: none; }
+    .bg-fetch-box { width: min(320px, 84%); background: var(--bg-card); border: 1px solid var(--border);
+                    border-radius: 10px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+    .bg-fetch-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+    .bg-fetch-spin { width: 15px; height: 15px; flex: none; border-radius: 50%;
+                     border: 2px solid rgba(148,163,184,0.35); border-top-color: var(--accent);
+                     animation: bgFetchSpin 0.7s linear infinite; }
+    .bg-fetch-phase { font-size: 12.5px; font-weight: 600; color: var(--text-soft, #e2e8f0); }
+    .bg-fetch-track { height: 6px; border-radius: 99px; background: rgba(148,163,184,0.22); overflow: hidden; }
+    .bg-fetch-fill { height: 100%; width: 0%; border-radius: 99px;
+                     background: linear-gradient(90deg, #38bdf8, #6366f1); transition: width 0.18s linear; }
+    /* No Content-Length from the CDN -> show motion without claiming a percentage. */
+    .bg-fetch.indeterminate .bg-fetch-fill { width: 35%; transition: none; animation: bgFetchSlide 1.1s ease-in-out infinite; }
+    .bg-fetch-meta { margin-top: 7px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .bg-fetch.done .bg-fetch-spin { border-color: #10b981; animation: none; }
+    .bg-fetch.done .bg-fetch-fill { background: #10b981; }
+    .bg-fetch.failed .bg-fetch-spin { border-color: #ef4444; animation: none; }
+    .bg-fetch.failed .bg-fetch-fill { background: #ef4444; }
+    .bg-fetch.leaving { opacity: 0; transition: opacity 0.35s ease; }
+    @keyframes bgFetchSpin { to { transform: rotate(360deg); } }
+    @keyframes bgFetchSlide { 0% { transform: translateX(-110%); } 100% { transform: translateX(340%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .bg-fetch-spin, .bg-fetch.indeterminate .bg-fetch-fill { animation: none; }
+      .bg-fetch.indeterminate .bg-fetch-fill { width: 100%; opacity: 0.5; }
+    }
 
     /* Text position + extra layers */
     .text-controls { margin-top: 0; padding-top: 0; border-top: none; }
@@ -2146,6 +2180,12 @@
       t_no_video_returned: 'The fetch finished but no video came back — try again.',
       t_url_timeout: 'The download took too long and was stopped. Try again, or pick a shorter clip.',
       t_scene: 'Scene',
+      t_search_timeout: 'The search took too long and was stopped. Try again, or use a different query.',
+      bgf_contacting: 'Contacting',
+      bgf_downloading: 'Downloading video…',
+      bgf_processing: 'Processing video…',
+      bgf_done: 'Added to this scene',
+      bgf_failed: 'Could not fetch the video',
       t_invalid_pixabay: 'That doesn’t look like a Pixabay video URL. Example: pixabay.com/videos/radio-tower-night-view-211067/',
       t_no_style: 'No style copied yet — copy one from a scene or text layer first',
       t_copy_failed: 'Couldn’t copy the style',
@@ -2853,6 +2893,12 @@
       t_no_video_returned: '取得は完了しましたが動画が返ってきませんでした。もう一度お試しください。',
       t_url_timeout: 'ダウンロードに時間がかかりすぎたため中止しました。もう一度お試しになるか、短いクリップを選んでください。',
       t_scene: 'シーン',
+      t_search_timeout: '検索に時間がかかりすぎたため中止しました。もう一度お試しになるか、別のキーワードをお使いください。',
+      bgf_contacting: '接続中:',
+      bgf_downloading: '動画をダウンロード中…',
+      bgf_processing: '動画を処理中…',
+      bgf_done: 'このシーンに追加しました',
+      bgf_failed: '動画を取得できませんでした',
       t_invalid_pixabay: 'Pixabayの動画URLではないようです。例: pixabay.com/videos/radio-tower-night-view-211067/',
       t_no_style: 'スタイルが未コピーです。先にシーンかテキストからコピーしてください',
       t_copy_failed: 'スタイルをコピーできませんでした',
@@ -8332,6 +8378,78 @@
     setBackgroundTransformPanelState(i, true);
   }
 
+  /* ── Stock-fetch progress overlay ───────────────────────────────────────────
+     Driven by the server's 'bg-fetch' socket events (see downloadVideo in server.js).
+     beginBgFetch puts the overlay up as soon as the request leaves the browser, so
+     there is feedback even before the first progress event arrives. */
+  const _bgFetch = {};   // scene index -> { el, source }
+  const _mb = b => (Number(b) / 1048576).toFixed(1);
+
+  function beginBgFetch(i, sourceLabel) {
+    const card = document.getElementById(`card-${i}`);
+    if (!card) return;
+    endBgFetch(i, null, null, true);   // drop any overlay left over from a previous run
+    card.classList.add('replacing');
+    const el = document.createElement('div');
+    el.className = 'bg-fetch indeterminate';
+    el.innerHTML = `<div class="bg-fetch-box">
+        <div class="bg-fetch-head"><span class="bg-fetch-spin"></span><span class="bg-fetch-phase"></span></div>
+        <div class="bg-fetch-track"><div class="bg-fetch-fill"></div></div>
+        <div class="bg-fetch-meta"></div>
+      </div>`;
+    card.appendChild(el);
+    _bgFetch[i] = { el, source: sourceLabel || '' };
+    _setBgFetchText(i, `${tr('bgf_contacting')} ${sourceLabel || ''}`.trim(), '');
+  }
+
+  function _setBgFetchText(i, phaseText, metaText) {
+    const st = _bgFetch[i]; if (!st) return;
+    st.el.querySelector('.bg-fetch-phase').textContent = phaseText;
+    if (metaText != null) st.el.querySelector('.bg-fetch-meta').textContent = metaText;
+  }
+
+  function onBgFetchProgress(d) {
+    const st = _bgFetch[d && d.index]; if (!st) return;
+    const fill = st.el.querySelector('.bg-fetch-fill');
+    if (d.phase === 'connecting') {
+      _setBgFetchText(d.index, `${tr('bgf_contacting')} ${st.source}`.trim(), '');
+    } else if (d.phase === 'probing') {
+      st.el.classList.remove('indeterminate');
+      fill.style.width = '100%';
+      _setBgFetchText(d.index, tr('bgf_processing'), '');
+    } else if (d.phase === 'downloading') {
+      const received = Number(d.received) || 0, total = Number(d.total) || 0;
+      if (total > 0) {
+        const pct = Math.min(100, Math.round((received / total) * 100));
+        st.el.classList.remove('indeterminate');
+        fill.style.width = pct + '%';
+        _setBgFetchText(d.index, tr('bgf_downloading'), `${_mb(received)} / ${_mb(total)} MB · ${pct}%`);
+      } else {
+        st.el.classList.add('indeterminate');
+        _setBgFetchText(d.index, tr('bgf_downloading'), `${_mb(received)} MB`);
+      }
+    }
+  }
+
+  // ok === true -> green tick, brief. ok === false -> red, held long enough to read.
+  // immediate === true -> tear down with no outro (used when restarting a fetch).
+  function endBgFetch(i, ok, message, immediate) {
+    document.getElementById(`card-${i}`)?.classList.remove('replacing');
+    const st = _bgFetch[i];
+    delete _bgFetch[i];
+    if (!st) return;
+    const el = st.el;
+    if (immediate) { el.remove(); return; }
+    el.classList.remove('indeterminate');
+    el.classList.add(ok ? 'done' : 'failed');
+    el.querySelector('.bg-fetch-fill').style.width = '100%';
+    el.querySelector('.bg-fetch-phase').textContent = message || tr(ok ? 'bgf_done' : 'bgf_failed');
+    el.querySelector('.bg-fetch-meta').textContent = '';
+    setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 400); }, ok ? 800 : 3000);
+  }
+
+  socket.on('bg-fetch', onBgFetchProgress);
+
   /* Pexels */
   async function replacePexels(i) {
     const query=document.getElementById(`q-${i}`).value.trim();
@@ -8339,12 +8457,13 @@
     const btn = document.querySelector(`#card-${i} .replace-row button`);
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
-    document.getElementById(`card-${i}`).classList.add('replacing');
+    beginBgFetch(i, 'Pexels');
     addEditorLog(`🔍 Searching Pexels for "${query}"...`);
     const slowWarn = setTimeout(() => {
       addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
       if (btn) btn.textContent = '⏳ Still working...';
     }, 15000);
+    let _ok = false, _failMsg = '';   // handed to endBgFetch so the overlay can close green or red
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 150000);
@@ -8356,20 +8475,24 @@
       });
       clearTimeout(timeout);
       const data = await res.json();
-      if (data.error) { addEditorLog(`❌ ${data.error}`); return; }
-      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
+      if (data.error) { _failMsg = data.error; addEditorLog(`❌ ${data.error}`); fieldError(`q-${i}`, data.error); toast(data.error, 'error', 6000); return; }
+      if (!data.url) {
+        _failMsg = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
+        addEditorLog(`⚠️ ${_failMsg}`); fieldError(`q-${i}`, _failMsg); toast(_failMsg, 'error', 6000); return;
+      }
+      _ok = true;
       setThumb(i, data.url);
       markVideoSource(i, 'pexels');
       addEditorLog(`✅ Scene ${i+1} updated from Pexels (saved locally)`);
+      toast(`${tr('t_scene')} ${i+1} ✓`, 'success');
     } catch (err) {
-      if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pexels search timed out after 60s. The video download may be too slow — try a different query.`);
-      } else {
-        addEditorLog(`❌ Pexels error: ${err.message}`);
-      }
+      _failMsg = err.name === 'AbortError' ? tr('t_search_timeout') : `${err.message}`;
+      addEditorLog(`❌ Pexels error: ${_failMsg}`);
+      fieldError(`q-${i}`, _failMsg);
+      toast(_failMsg, 'error', 6000);
     } finally {
       clearTimeout(slowWarn);
-      document.getElementById(`card-${i}`)?.classList.remove('replacing');
+      endBgFetch(i, _ok, _failMsg);
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
   }
@@ -8392,12 +8515,13 @@
     const btn = document.getElementById(`pexels-url-btn-${i}`);
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Fetching...'; btn.disabled = true; }
-    document.getElementById(`card-${i}`).classList.add('replacing');
+    beginBgFetch(i, 'Pexels');
     addEditorLog(`🔗 Fetching Pexels video from URL...`);
     const slowWarn = setTimeout(() => {
       addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
       if (btn) btn.textContent = '⏳ Still working...';
     }, 15000);
+    let _ok = false, _failMsg = '';   // handed to endBgFetch so the overlay can close green or red
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 150000);
@@ -8409,11 +8533,12 @@
       });
       clearTimeout(timeout);
       const data = await res.json();
-      if (data.error) { addEditorLog(`❌ ${data.error}`); fieldError(`pexels-url-${i}`, data.error); toast(data.error, 'error', 6000); return; }
+      if (data.error) { _failMsg = data.error; addEditorLog(`❌ ${data.error}`); fieldError(`pexels-url-${i}`, data.error); toast(data.error, 'error', 6000); return; }
       if (!data.url) {
-        const m = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
-        addEditorLog(`⚠️ ${m}`); fieldError(`pexels-url-${i}`, m); toast(m, 'error', 6000); return;
+        _failMsg = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
+        addEditorLog(`⚠️ ${_failMsg}`); fieldError(`pexels-url-${i}`, _failMsg); toast(_failMsg, 'error', 6000); return;
       }
+      _ok = true;
       setThumb(i, data.url);
       markVideoSource(i, 'pexels');
       addEditorLog(`✅ Scene ${i+1} updated from Pexels URL (saved locally)`);
@@ -8421,15 +8546,13 @@
       const urlInput = document.getElementById(`pexels-url-${i}`);
       if (urlInput) urlInput.value = '';
     } catch (err) {
-      const m = err.name === 'AbortError'
-        ? tr('t_url_timeout')
-        : `${err.message}`;
-      addEditorLog(`❌ Pexels URL error: ${m}`);
-      fieldError(`pexels-url-${i}`, m);
-      toast(m, 'error', 6000);
+      _failMsg = err.name === 'AbortError' ? tr('t_url_timeout') : `${err.message}`;
+      addEditorLog(`❌ Pexels URL error: ${_failMsg}`);
+      fieldError(`pexels-url-${i}`, _failMsg);
+      toast(_failMsg, 'error', 6000);
     } finally {
       clearTimeout(slowWarn);
-      document.getElementById(`card-${i}`)?.classList.remove('replacing');
+      endBgFetch(i, _ok, _failMsg);
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
   }
@@ -8441,12 +8564,13 @@
     const btn = document.getElementById(`pixabay-q-${i}`)?.nextElementSibling;
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Searching...'; btn.disabled = true; }
-    document.getElementById(`card-${i}`).classList.add('replacing');
+    beginBgFetch(i, 'Pixabay');
     addEditorLog(`🔍 Searching Pixabay for "${query}"...`);
     const slowWarn = setTimeout(() => {
       addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
       if (btn) btn.textContent = '⏳ Still working...';
     }, 15000);
+    let _ok = false, _failMsg = '';   // handed to endBgFetch so the overlay can close green or red
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 150000);
@@ -8458,20 +8582,24 @@
       });
       clearTimeout(timeout);
       const data = await res.json();
-      if (data.error) { addEditorLog(`❌ Pixabay: ${data.error}`); return; }
-      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
+      if (data.error) { _failMsg = data.error; addEditorLog(`❌ Pixabay: ${data.error}`); fieldError(`pixabay-q-${i}`, data.error); toast(data.error, 'error', 6000); return; }
+      if (!data.url) {
+        _failMsg = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
+        addEditorLog(`⚠️ ${_failMsg}`); fieldError(`pixabay-q-${i}`, _failMsg); toast(_failMsg, 'error', 6000); return;
+      }
+      _ok = true;
       setThumb(i, data.url);
       markVideoSource(i, 'pixabay');
       addEditorLog(`✅ Scene ${i+1} updated from Pixabay (saved locally)`);
+      toast(`${tr('t_scene')} ${i+1} ✓`, 'success');
     } catch (err) {
-      if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pixabay search timed out after 60s. The video download may be too slow — try a different query.`);
-      } else {
-        addEditorLog(`❌ Pixabay error: ${err.message}`);
-      }
+      _failMsg = err.name === 'AbortError' ? tr('t_search_timeout') : `${err.message}`;
+      addEditorLog(`❌ Pixabay error: ${_failMsg}`);
+      fieldError(`pixabay-q-${i}`, _failMsg);
+      toast(_failMsg, 'error', 6000);
     } finally {
       clearTimeout(slowWarn);
-      document.getElementById(`card-${i}`)?.classList.remove('replacing');
+      endBgFetch(i, _ok, _failMsg);
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
   }
@@ -8493,12 +8621,13 @@
     const btn = document.getElementById(`pixabay-url-${i}`)?.nextElementSibling;
     const origBtnText = btn ? btn.textContent : '';
     if (btn) { btn.textContent = '⏳ Fetching...'; btn.disabled = true; }
-    document.getElementById(`card-${i}`).classList.add('replacing');
+    beginBgFetch(i, 'Pixabay');
     addEditorLog(`🔗 Fetching Pixabay video from URL...`);
     const slowWarn = setTimeout(() => {
       addEditorLog(`⏳ Still downloading — large videos can take 30–60 seconds on a slow connection...`);
       if (btn) btn.textContent = '⏳ Still working...';
     }, 15000);
+    let _ok = false, _failMsg = '';   // handed to endBgFetch so the overlay can close green or red
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 150000);
@@ -8510,22 +8639,26 @@
       });
       clearTimeout(timeout);
       const data = await res.json();
-      if (data.error) { addEditorLog(`❌ Pixabay: ${data.error}`); return; }
-      if (!data.url) { addEditorLog(`⚠️ Scene ${i+1}: fetch completed but no video was returned — try again`); return; }
+      if (data.error) { _failMsg = data.error; addEditorLog(`❌ Pixabay: ${data.error}`); fieldError(`pixabay-url-${i}`, data.error); toast(data.error, 'error', 6000); return; }
+      if (!data.url) {
+        _failMsg = `${tr('t_scene')} ${i+1}: ${tr('t_no_video_returned')}`;
+        addEditorLog(`⚠️ ${_failMsg}`); fieldError(`pixabay-url-${i}`, _failMsg); toast(_failMsg, 'error', 6000); return;
+      }
+      _ok = true;
       setThumb(i, data.url);
       markVideoSource(i, 'pixabay');
       addEditorLog(`✅ Scene ${i+1} updated from Pixabay URL (saved locally)`);
+      toast(`${tr('t_scene')} ${i+1} ✓`, 'success');
       const urlInput = document.getElementById(`pixabay-url-${i}`);
       if (urlInput) urlInput.value = '';
     } catch (err) {
-      if (err.name === 'AbortError') {
-        addEditorLog(`❌ Pixabay URL fetch timed out after 60s. The video may be too large — try again.`);
-      } else {
-        addEditorLog(`❌ Pixabay URL error: ${err.message}`);
-      }
+      _failMsg = err.name === 'AbortError' ? tr('t_url_timeout') : `${err.message}`;
+      addEditorLog(`❌ Pixabay URL error: ${_failMsg}`);
+      fieldError(`pixabay-url-${i}`, _failMsg);
+      toast(_failMsg, 'error', 6000);
     } finally {
       clearTimeout(slowWarn);
-      document.getElementById(`card-${i}`)?.classList.remove('replacing');
+      endBgFetch(i, _ok, _failMsg);
       if (btn) { btn.textContent = origBtnText; btn.disabled = false; }
     }
   }
