@@ -42,11 +42,12 @@ export const BannerCaption: React.FC<{ text: string; y?: string; size?: number }
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  // Springs always ease, and any easing on a 0.5-1s caption reads as "loading".
-  // These are frame counts, not physics: visible on frame 1, settled by frame 3.
-  const o = interpolate(frame, [0, 1], [0, 1], { extrapolateRight: "clamp" });
-  const pop = interpolate(frame, [0, 3], [0.94, 1], { extrapolateRight: "clamp" });
-  const lift = interpolate(frame, [0, 3], [6, 0], { extrapolateRight: "clamp" });
+  // No entrance at all: full size, full opacity, on the very first frame. Even a
+  // 3-frame scale ramp reads as the caption loading rather than cutting in, and at
+  // 24fps there is no way to animate inside ~0.035s anyway.
+  const o = 1;
+  const pop = 1;
+  const lift = 0;
 
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start" }}>
