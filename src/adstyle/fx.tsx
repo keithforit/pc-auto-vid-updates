@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig, random } from "remotion";
+import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, random } from "remotion";
 
 /**
  * Effect kit modelled on the TikTok Lite spot: a banner caption, a speech
@@ -329,51 +329,31 @@ export const Particles: React.FC<{ count?: number }> = ({ count = 9 }) => {
   );
 };
 
-/** Closing card: blurred hold, chromatic wordmark, glowing CTA pill. */
-export const EndCard: React.FC<{ kicker: string; wordmark: string; cta: string }> = ({ kicker, wordmark, cta }) => {
+/** Closing card: blurred hold, the TikTok Lite lockup, glowing CTA pill. */
+export const EndCard: React.FC<{ kicker: string; logo: string; cta: string }> = ({ kicker, logo, cta }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 200, mass: 0.6 } });
   const ctaS = spring({ frame: frame - 8, fps, config: { damping: 13, mass: 0.5 } });
   const sweep = interpolate(frame, [10, 34], [-140, 240], { extrapolateRight: "clamp" });
 
-  const chroma = (dx: number, dy: number, color: string) => (
-    <div style={{ position: "absolute", inset: 0, color, transform: `translate(${dx}px, ${dy}px)` }}>{wordmark}</div>
-  );
-
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: s }}>
-      <div style={{ fontFamily: JP, fontWeight: 900, fontSize: 38, color: "#fff", opacity: 0.92, marginBottom: 26, letterSpacing: 1 }}>
+      <div style={{ fontFamily: JP, fontWeight: 900, fontSize: 38, color: "#fff", opacity: 0.92, marginBottom: 40, letterSpacing: 1 }}>
         {kicker}
       </div>
 
-      {/* logo slot — drop the official mark in here if you have the creative kit */}
-      <div
+      {/* supplied lockup — already carries the chromatic split, so nothing is drawn over it */}
+      <Img
+        src={staticFile(logo)}
         style={{
-          width: 190,
-          height: 190,
-          borderRadius: 44,
-          background: "#0d0d12",
-          border: "2px solid rgba(255,255,255,0.14)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 34,
-          transform: `scale(${interpolate(s, [0, 1], [0.86, 1])})`,
+          width: Math.round(width * 0.72),
+          height: "auto",
+          marginBottom: 48,
+          transform: `scale(${interpolate(s, [0, 1], [0.88, 1])})`,
+          filter: "drop-shadow(0 6px 26px rgba(0,0,0,0.45))",
         }}
-      >
-        <div style={{ position: "relative", fontFamily: DISPLAY, fontSize: 96, lineHeight: 1 }}>
-          <div style={{ position: "absolute", inset: 0, color: C.cyan, transform: "translate(-5px,-4px)" }}>♪</div>
-          <div style={{ position: "absolute", inset: 0, color: C.magenta, transform: "translate(5px,4px)" }}>♪</div>
-          <div style={{ color: "#fff" }}>♪</div>
-        </div>
-      </div>
-
-      <div style={{ position: "relative", fontFamily: DISPLAY, fontSize: 76, lineHeight: 1.1, marginBottom: 40 }}>
-        {chroma(-4, -3, C.cyan)}
-        {chroma(4, 3, C.magenta)}
-        <div style={{ color: "#fff", position: "relative" }}>{wordmark}</div>
-      </div>
+      />
 
       <div
         style={{

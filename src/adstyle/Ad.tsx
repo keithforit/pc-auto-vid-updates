@@ -10,8 +10,7 @@ import {
   useCurrentFrame,
   interpolate,
 } from "remotion";
-import { Caption } from "../Caption";
-import { Particles, EndCard, C } from "./fx";
+import { BannerCaption, SpeechBubble, ComicBurst, Particles, EndCard, C } from "./fx";
 
 const FPS = 24;
 const sec = (s: number) => Math.round(s * FPS);
@@ -20,24 +19,6 @@ const sec = (s: number) => Math.round(s * FPS);
 const SHOT1_LEN = 8.0;   // hook.mp4 — the offer explainer
 const SHOT2_LEN = 10.0;  // close.mp4 — the CTA
 const ENDCARD_AT = 7.7;  // into shot 2, right as the VO finishes
-
-/**
- * Everything textual here goes through the app's own <Caption>, using only props the
- * editor already exposes — so whatever this renders is reproducible from the UI.
- */
-const PILL = {
-  textStyle: "block",
-  blockColor: "#ffffff",
-  textColor: "#201814",
-  textStrokeColor: "#201814",
-  textStrokeSize: 4,
-  blockBorderRadius: 16,
-  font: "noto",
-  position: "bottom",
-  fontSize: 46,
-  animation: "pop",
-  noWrap: true,
-} as const;
 
 /** Pulls in the two display faces before the first frame is captured. */
 const useAdFonts = () => {
@@ -97,58 +78,25 @@ export const Ad: React.FC = () => {
         />
 
         <Sequence from={0} durationInFrames={sec(1.8)}>
-          <Caption
-            text="TikTok Lite 新規ユーザー特典"
-            textStyle="shadow"
-            textColor="#ffffff"
-            font="noto"
-            textX={40}
-            textY={13}
-            fontSize={30}
-            animation="pop"
-            noWrap
-            totalDurationInFrames={sec(1.8)}
-          />
-          <Caption
-            text={"えっ、TikTok\n見るだけで？"}
-            textStyle="bubble"
-            font="noto"
-            textX={40}
-            textY={22}
-            fontSize={46}
-            animation="pop"
-            noWrap
-            totalDurationInFrames={sec(1.8)}
-          />
+          <SpeechBubble kicker="TikTok Lite 新規ユーザー特典" text={"えっ、TikTok\n見るだけで？"} />
         </Sequence>
 
         <Sequence from={sec(1.8)} durationInFrames={sec(1.6)}>
-          <Caption {...PILL} text="これ、TikTok Liteなら" totalDurationInFrames={sec(1.6)} />
+          <BannerCaption text="これ、TikTok Liteなら" />
         </Sequence>
 
         <Sequence from={sec(3.4)} durationInFrames={sec(1.3)}>
-          <Caption {...PILL} text="新規ユーザー特典で" totalDurationInFrames={sec(1.3)} />
+          <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
-        {/* the money beat — burst style, with the particle layer behind it */}
+        {/* the money beat */}
         <Sequence from={sec(4.7)} durationInFrames={sec(1.7)}>
           <Particles />
-          <Caption
-            text={"1300円相当\nポイント獲得！"}
-            textStyle="burst"
-            font="dela"
-            textX={34}
-            textY={26}
-            rotation={-8}
-            fontSize={54}
-            animation="pop"
-            noWrap
-            totalDurationInFrames={sec(1.7)}
-          />
+          <ComicBurst line1="1300円相当" line2="ポイント獲得！" />
         </Sequence>
 
         <Sequence from={sec(6.4)} durationInFrames={sec(1.6)}>
-          <Caption {...PILL} text="ゲットできるみたいです" totalDurationInFrames={sec(1.6)} />
+          <BannerCaption text="ゲットできるみたいです" />
         </Sequence>
       </Sequence>
 
@@ -157,28 +105,23 @@ export const Ad: React.FC = () => {
         <ClosingShot />
 
         <Sequence from={0} durationInFrames={sec(1.5)}>
-          <Caption {...PILL} text="いつもTikTok見てるなら" totalDurationInFrames={sec(1.5)} />
+          <BannerCaption text="いつもTikTok見てるなら" />
         </Sequence>
 
         <Sequence from={sec(1.5)} durationInFrames={sec(2.4)}>
-          <Caption
-            {...PILL}
-            text={"対象かだけでも\n確認しておいたほうがよさそう"}
-            fontSize={40}
-            totalDurationInFrames={sec(2.4)}
-          />
+          <BannerCaption text={"対象かだけでも\n確認しておいたほうがよさそう"} size={40} />
         </Sequence>
 
         <Sequence from={sec(4.0)} durationInFrames={sec(1.4)}>
-          <Caption {...PILL} text="新規ユーザーの人は" totalDurationInFrames={sec(1.4)} />
+          <BannerCaption text="新規ユーザーの人は" />
         </Sequence>
 
         <Sequence from={sec(5.4)} durationInFrames={sec(2.3)}>
-          <Caption {...PILL} text="一回チェックしに行ってください" fontSize={42} totalDurationInFrames={sec(2.3)} />
+          <BannerCaption text="一回チェックしに行ってください" size={42} />
         </Sequence>
 
         <Sequence from={sec(ENDCARD_AT)} durationInFrames={sec(SHOT2_LEN - ENDCARD_AT)}>
-          <EndCard kicker="TikTok Lite 新規ユーザー特典" wordmark="TikTok Lite" cta="今すぐダウンロード" />
+          <EndCard kicker="TikTok Lite 新規ユーザー特典" logo="adstyle/tiktok-lite.png" cta="今すぐダウンロード" />
         </Sequence>
       </Sequence>
     </AbsoluteFill>
