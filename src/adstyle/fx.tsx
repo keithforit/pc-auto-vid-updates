@@ -42,11 +42,11 @@ export const BannerCaption: React.FC<{ text: string; y?: string; size?: number }
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  // measured: the old { damping: 200, mass: 0.5 } took 0.50s to reach full opacity,
-  // which on a 1.4s caption reads as the text still loading in. This settles in 0.21s.
-  const s = spring({ frame, fps, config: { damping: 200, mass: 0.12, stiffness: 220 } });
-  const pop = interpolate(s, [0, 1], [0.86, 1]);
-  const lift = interpolate(s, [0, 1], [16, 0]);
+  // Springs always ease, and any easing on a 0.5-1s caption reads as "loading".
+  // These are frame counts, not physics: visible on frame 1, settled by frame 3.
+  const o = interpolate(frame, [0, 1], [0, 1], { extrapolateRight: "clamp" });
+  const pop = interpolate(frame, [0, 3], [0.94, 1], { extrapolateRight: "clamp" });
+  const lift = interpolate(frame, [0, 3], [6, 0], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start" }}>
@@ -55,7 +55,7 @@ export const BannerCaption: React.FC<{ text: string; y?: string; size?: number }
           position: "absolute",
           top: y,
           transform: `translateY(${lift}px) scale(${pop})`,
-          opacity: s,
+          opacity: o,
           background: "#fff",
           border: `4px solid ${C.ink}`,
           borderRadius: 16,
@@ -109,12 +109,13 @@ export const SpeechBubble: React.FC<{
 }> = ({ kicker, text, left = "11%", top = "16%", size = 46 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  // 0.25s settle with a ~4% overshoot, so it still pops without dawdling
-  const s = spring({ frame, fps, config: { damping: 12, mass: 0.28, stiffness: 260 } });
+  // frame-counted like the captions: up on frame 1, overshoots at 3, settled by 5
+  const o = interpolate(frame, [0, 1], [0, 1], { extrapolateRight: "clamp" });
+  const s = interpolate(frame, [0, 3, 5], [0.9, 1.03, 1], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill>
-      <div style={{ position: "absolute", left, top, transformOrigin: "left bottom", transform: `scale(${s})`, opacity: s }}>
+      <div style={{ position: "absolute", left, top, transformOrigin: "left bottom", transform: `scale(${s})`, opacity: o }}>
         {/* sparkles hang off the bubble's top-left corner and scale with it */}
         <div style={{ position: "absolute", left: -54, top: 2, width: 0, height: 0 }}>
           <Sparkle delay={2} x={-6} y={0} size={62} />
@@ -223,7 +224,7 @@ export const ComicBurst: React.FC<{
   // derive the centre from the placement so the speed lines can't drift out of sync
   const cx = left + (size / 2 / width) * 100;
   const cy = top + (size / 2 / height) * 100;
-  const s = spring({ frame, fps, config: { damping: 9, mass: 0.55, stiffness: 140 } });
+  const s = spring({ frame, fps, config: { damping: 11, mass: 0.22, stiffness: 320 } });
   const wobble = Math.sin(frame / 7) * 1.2;
   const progress = Math.min(1, frame / (fps * 0.9));
 
