@@ -24,12 +24,12 @@ const sec = (s: number) => Math.round(s * FPS);
  *   hook.mp4   speech 1.07s -> 9.60s, five clean phrase gaps
  *   close.mp4  speech 0.00s -> 9.61s, anchored on the 0.52s and 0.58s pauses
  *
- * Shot 1 cues then lead their phrase by 0.20s: landing exactly on the word means
- * the viewer is always reading behind her. The opening bubble is the exception --
- * it is held back 0.50s so it lands on the line rather than on the "eh" before it.
- * Shot 2 is left on the word; it reads correctly as-is.
+ * Lines are split into sub-phrase chunks so the captions track her voice rather
+ * than sitting on one long phrase. The opening bubble is held back 0.50s so it
+ * lands on the line rather than on the "eh" before it.
  */
-const LEAD = 0.2;
+// Captions are chunked to sub-phrases and each runs to the next one's start, so
+// there are no blank holes; splits are snapped to real pauses where one exists.
 const SHOT1_LEN = 9.8;
 const SHOT2_LEN = 10.0;
 const TAIL_LEN = 1.6;    // frozen last frame, so the end card gets a full beat
@@ -124,21 +124,29 @@ export const Ad: React.FC = () => {
           />
         </Sequence>
 
-        <Sequence from={sec(2.82 - LEAD)} durationInFrames={sec(1.75 + LEAD)}>
-          <BannerCaption text="これ、TikTok Liteなら" />
+        <Sequence from={sec(2.62)} durationInFrames={sec(0.51)}>
+          <BannerCaption text="これ、" />
         </Sequence>
 
-        <Sequence from={sec(4.74 - LEAD)} durationInFrames={sec(1.36 + LEAD)}>
+        <Sequence from={sec(3.13)} durationInFrames={sec(1.41)}>
+          <BannerCaption text="TikTok Liteなら" />
+        </Sequence>
+
+        <Sequence from={sec(4.54)} durationInFrames={sec(1.48)}>
           <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
         {/* the money beat — burst only; the coin/shard layer read as clutter */}
-        <Sequence from={sec(6.22 - LEAD)} durationInFrames={sec(1.45 + LEAD)}>
+        <Sequence from={sec(6.02)} durationInFrames={sec(1.80)}>
           <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
-        <Sequence from={sec(8.02 - LEAD)} durationInFrames={sec(1.58 + LEAD)}>
-          <BannerCaption text="ゲットできるみたいです" />
+        <Sequence from={sec(7.82)} durationInFrames={sec(1.06)}>
+          <BannerCaption text="ゲットできる" />
+        </Sequence>
+
+        <Sequence from={sec(8.88)} durationInFrames={sec(0.92)}>
+          <BannerCaption text="みたいです" />
         </Sequence>
       </Sequence>
 
@@ -146,20 +154,37 @@ export const Ad: React.FC = () => {
       <Sequence from={sec(SHOT2_START)} durationInFrames={sec(SHOT2_LEN)}>
         <ClosingShot />
 
-        <Sequence from={0} durationInFrames={sec(1.43)}>
-          <BannerCaption text="いつもTikTok見てるなら" />
+        <Sequence from={0} durationInFrames={sec(0.74)}>
+          <BannerCaption text="いつもTikTok" />
         </Sequence>
 
-        <Sequence from={sec(1.43)} durationInFrames={sec(2.30)}>
-          <BannerCaption text={"対象かだけでも\n確認しておいたほうがよさそう"} size={40} />
+        <Sequence from={sec(0.74)} durationInFrames={sec(0.69)}>
+          <BannerCaption text="見てるなら" />
         </Sequence>
 
-        <Sequence from={sec(4.24)} durationInFrames={sec(1.92)}>
+        <Sequence from={sec(1.43)} durationInFrames={sec(0.97)}>
+          <BannerCaption text="対象かだけでも" />
+        </Sequence>
+
+        <Sequence from={sec(2.40)} durationInFrames={sec(0.56)}>
+          <BannerCaption text="確認しておいた" />
+        </Sequence>
+
+        <Sequence from={sec(2.96)} durationInFrames={sec(1.28)}>
+          <BannerCaption text="ほうがよさそう" />
+        </Sequence>
+
+        <Sequence from={sec(4.24)} durationInFrames={sec(2.02)}>
           <BannerCaption text="新規ユーザーの人は" />
         </Sequence>
 
-        <Sequence from={sec(6.26)} durationInFrames={sec(2.34)}>
-          <BannerCaption text="一回チェックしに行ってください" size={42} />
+        {/* split on her own 0.58s pause before 行ってください */}
+        <Sequence from={sec(6.26)} durationInFrames={sec(1.43)}>
+          <BannerCaption text="一回チェックしに" />
+        </Sequence>
+
+        <Sequence from={sec(7.69)} durationInFrames={sec(0.91)}>
+          <BannerCaption text="行ってください" />
         </Sequence>
       </Sequence>
 
