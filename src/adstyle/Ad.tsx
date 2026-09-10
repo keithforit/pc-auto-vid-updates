@@ -207,6 +207,43 @@ export const Ad: React.FC = () => {
   );
 };
 
+/**
+ * Diagnostic build: same timeline with a running timecode and the current cue
+ * boundary burned in, so caption timings can be checked against what is actually
+ * spoken. Not part of the deliverable.
+ */
+export const AdTimecode: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const t = frame / fps;
+  const shot = t < SHOT1_LEN ? `shot1 ${t.toFixed(2)}` : `shot2 ${(t - SHOT2_START).toFixed(2)}`;
+  return (
+    <AbsoluteFill>
+      <Ad />
+      <AbsoluteFill style={{ pointerEvents: "none" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            background: "rgba(0,0,0,0.78)",
+            color: "#4ade80",
+            fontFamily: "monospace",
+            fontWeight: 700,
+            fontSize: 34,
+            lineHeight: 1.25,
+            padding: "8px 14px",
+            borderRadius: 8,
+            whiteSpace: "pre",
+          }}
+        >
+          {`${t.toFixed(2)}s\n${shot}`}
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
 export const AD_TOTAL_FRAMES = sec(TOTAL);
 export const AD_FPS = FPS;
 export { C };
