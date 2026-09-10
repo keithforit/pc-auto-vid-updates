@@ -145,11 +145,14 @@ export const Ad: React.FC = () => {
           <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
-        <Sequence from={sec(7.91)} durationInFrames={sec(0.97)}>
+        <Sequence from={sec(7.91)} durationInFrames={sec(0.67)}>
           <BannerCaption text="ゲットできる" />
         </Sequence>
 
-        <Sequence from={sec(8.88)} durationInFrames={sec(0.92)}>
+        {/* 8.88 sat inside unbroken speech (8.60-9.15 has no gap at all), so this
+            was cutting in mid-word. 8.58 is the dip; the later 9.20-9.30 gap is
+            more likely the break before 「です」 than the phrase boundary. */}
+        <Sequence from={sec(8.58)} durationInFrames={sec(1.22)}>
           <BannerCaption text="みたいです" />
         </Sequence>
       </Sequence>
