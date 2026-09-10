@@ -113,8 +113,11 @@ export const Ad: React.FC = () => {
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
 
-        {/* upper right, clear of her head, tail pointing back at her */}
-        <Sequence from={sec(1.57)} durationInFrames={sec(1.05)}>
+        {/* Upper right, clear of her head, tail pointing back at her.
+            Measured at 0.025s: 「えっ」 is 1.050-1.175, silence to 1.275, and the
+            clause the bubble actually shows starts at 1.300 — so it lands there.
+            1.07 fired on the grunt; 1.57 fired mid-word. */}
+        <Sequence from={sec(1.30)} durationInFrames={sec(1.32)}>
           <SpeechBubble
             kicker="TikTok Lite 新規ユーザー特典"
             text={"えっ、TikTok\n見るだけで？"}
