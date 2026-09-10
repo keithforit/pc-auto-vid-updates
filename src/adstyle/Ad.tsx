@@ -24,16 +24,17 @@ const sec = (s: number) => Math.round(s * FPS);
  *   hook.mp4   speech 1.07s -> 9.60s, five clean phrase gaps
  *   close.mp4  speech 0.00s -> 9.61s, anchored on the 0.52s and 0.58s pauses
  *
- * Lines are split into sub-phrase chunks so the captions track her voice rather
- * than sitting on one long phrase. The opening bubble is held back 0.50s so it
- * lands on the line rather than on the "eh" before it.
+ * Boundaries marked (obs) were read off the timecoded build by ear and override
+ * anything inferred from pause detection — matching srt lines to gaps assumes the
+ * spoken words match the transcript, and here they did not. The rest are still
+ * pause-derived. Render AdStyleTimecode to check any of them.
  */
 // Captions are chunked to sub-phrases and each runs to the next one's start, so
 // there are no blank holes; splits are snapped to real pauses where one exists.
 const SHOT1_LEN = 9.8;
 const SHOT2_LEN = 10.0;
 const TAIL_LEN = 1.6;    // frozen last frame, so the end card gets a full beat
-const ENDCARD_AT = 8.6;  // into shot 2
+const ENDCARD_AT = 7.85; // into shot 2 = 17.65s on the timeline
 
 const SHOT2_START = SHOT1_LEN;
 const TAIL_START = SHOT1_LEN + SHOT2_LEN;
@@ -131,20 +132,20 @@ export const Ad: React.FC = () => {
           <BannerCaption text="これ、" />
         </Sequence>
 
-        <Sequence from={sec(3.13)} durationInFrames={sec(1.41)}>
+        <Sequence from={sec(3.13)} durationInFrames={sec(1.06)}>
           <BannerCaption text="TikTok Liteなら" />
         </Sequence>
 
-        <Sequence from={sec(4.54)} durationInFrames={sec(1.48)}>
+        <Sequence from={sec(4.19)} durationInFrames={sec(0.85)}>
           <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
         {/* the money beat — burst only; the coin/shard layer read as clutter */}
-        <Sequence from={sec(6.02)} durationInFrames={sec(1.80)}>
+        <Sequence from={sec(5.04)} durationInFrames={sec(2.87)}>
           <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
-        <Sequence from={sec(7.82)} durationInFrames={sec(1.06)}>
+        <Sequence from={sec(7.91)} durationInFrames={sec(0.97)}>
           <BannerCaption text="ゲットできる" />
         </Sequence>
 
@@ -177,16 +178,16 @@ export const Ad: React.FC = () => {
           <BannerCaption text="ほうがよさそう" />
         </Sequence>
 
-        <Sequence from={sec(4.24)} durationInFrames={sec(2.02)}>
+        <Sequence from={sec(4.24)} durationInFrames={sec(1.58)}>
           <BannerCaption text="新規ユーザーの人は" />
         </Sequence>
 
         {/* split on her own 0.58s pause before 行ってください */}
-        <Sequence from={sec(6.26)} durationInFrames={sec(1.43)}>
+        <Sequence from={sec(5.82)} durationInFrames={sec(0.82)}>
           <BannerCaption text="一回チェックしに" />
         </Sequence>
 
-        <Sequence from={sec(7.69)} durationInFrames={sec(0.91)}>
+        <Sequence from={sec(6.64)} durationInFrames={sec(0.64)}>
           <BannerCaption text="行ってください" />
         </Sequence>
       </Sequence>
