@@ -24,6 +24,8 @@ const sec = (s: number) => Math.round(s * FPS);
  *   hook.mp4   speech 1.07s -> 9.60s, five clean phrase gaps
  *   close.mp4  speech 0.00s -> 9.61s, anchored on the 0.52s and 0.58s pauses
  *
+ * Observed START times are authoritative — they are what syncs to the voice. Ends
+ * are extended to the next cue so no blank frames appear between captions.
  * Boundaries marked (obs) were read off the timecoded build by ear and override
  * anything inferred from pause detection — matching srt lines to gaps assumes the
  * spoken words match the transcript, and here they did not. The rest are still
@@ -147,11 +149,11 @@ export const Ad: React.FC = () => {
         </Sequence>
 
         {/* (obs) — these run under the burst, which holds to 7.91 */}
-        <Sequence from={sec(6.08)} durationInFrames={sec(0.86)}>
+        <Sequence from={sec(6.08)} durationInFrames={sec(1.04)}>
           <BannerCaption text="ゲットできる" />
         </Sequence>
 
-        <Sequence from={sec(7.12)} durationInFrames={sec(2.55)}>
+        <Sequence from={sec(7.12)} durationInFrames={sec(2.68)}>
           <BannerCaption text="みたいです" />
         </Sequence>
       </Sequence>
@@ -189,7 +191,7 @@ export const Ad: React.FC = () => {
           <BannerCaption text="一回チェックしに" />
         </Sequence>
 
-        <Sequence from={sec(6.64)} durationInFrames={sec(0.64)}>
+        <Sequence from={sec(6.64)} durationInFrames={sec(1.21)}>
           <BannerCaption text="行ってください" />
         </Sequence>
       </Sequence>
