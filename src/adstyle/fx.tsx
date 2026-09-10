@@ -98,34 +98,45 @@ const Sparkle: React.FC<{ delay: number; x: number; y: number; size: number }> =
 };
 
 /** Kicker line + white bubble with a tail, used for the opening hook. */
-export const SpeechBubble: React.FC<{ kicker: string; text: string }> = ({ kicker, text }) => {
+export const SpeechBubble: React.FC<{
+  kicker: string;
+  text: string;
+  left?: string;
+  top?: string;
+  size?: number;
+}> = ({ kicker, text, left = "11%", top = "16%", size = 46 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 14, mass: 0.6 } });
 
   return (
     <AbsoluteFill>
-      <div style={{ position: "absolute", left: "11%", top: "16%", transformOrigin: "left bottom", transform: `scale(${s})`, opacity: s }}>
+      <div style={{ position: "absolute", left, top, transformOrigin: "left bottom", transform: `scale(${s})`, opacity: s }}>
         {/* sparkles hang off the bubble's top-left corner and scale with it */}
-        <div style={{ position: "absolute", left: -54, top: 44, width: 0, height: 0 }}>
+        <div style={{ position: "absolute", left: -54, top: 2, width: 0, height: 0 }}>
           <Sparkle delay={2} x={-6} y={0} size={62} />
           <Sparkle delay={6} x={16} y={72} size={40} />
         </div>
-        <div
-          style={{
-            fontFamily: JP,
-            fontWeight: 900,
-            fontSize: 30,
-            color: C.ink,
-            marginLeft: 18,
-            marginBottom: 8,
-            WebkitTextStroke: `6px ${C.paper}`,
-            paintOrder: "stroke fill",
-          }}
-        >
-          {kicker}
-        </div>
         <div style={{ position: "relative" }}>
+          {/* pinned to the bubble's right edge and never wrapped, so it cannot run
+              off frame when the bubble is placed to the right of the subject */}
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              bottom: "100%",
+              marginBottom: 10,
+              whiteSpace: "nowrap",
+              fontFamily: JP,
+              fontWeight: 900,
+              fontSize: 28,
+              color: C.ink,
+              WebkitTextStroke: `6px ${C.paper}`,
+              paintOrder: "stroke fill",
+            }}
+          >
+            {kicker}
+          </div>
           <div
             style={{
               background: "#fff",
@@ -134,7 +145,7 @@ export const SpeechBubble: React.FC<{ kicker: string; text: string }> = ({ kicke
               padding: "18px 30px",
               fontFamily: JP,
               fontWeight: 900,
-              fontSize: 46,
+              fontSize: size,
               lineHeight: 1.3,
               color: C.ink,
               boxShadow: "0 8px 0 rgba(32,24,20,0.18)",
@@ -142,7 +153,7 @@ export const SpeechBubble: React.FC<{ kicker: string; text: string }> = ({ kicke
               whiteSpace: "pre-wrap",
             }}
           >
-            {highlight(text, 46)}
+            {highlight(text, size)}
           </div>
           {/* tail */}
           <svg width="70" height="58" viewBox="0 0 70 58" style={{ position: "absolute", left: 58, bottom: -49 }}>
