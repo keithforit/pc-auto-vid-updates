@@ -153,7 +153,9 @@ export const Ad: React.FC = () => {
           <BannerCaption text="ゲットできる" />
         </Sequence>
 
-        <Sequence from={sec(7.12)} durationInFrames={sec(2.68)}>
+        {/* Clears at 8.50. Her みたいです tails off ~7.75 and a separate utterance
+            runs 8.00-9.65 that is not in the srt, so nothing captions it yet. */}
+        <Sequence from={sec(7.12)} durationInFrames={sec(1.38)}>
           <BannerCaption text="みたいです" />
         </Sequence>
       </Sequence>
