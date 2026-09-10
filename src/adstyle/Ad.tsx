@@ -11,7 +11,7 @@ import {
   useCurrentFrame,
   interpolate,
 } from "remotion";
-import { BannerCaption, SpeechBubble, ComicBurst, Particles, EndCard, C } from "./fx";
+import { BannerCaption, SpeechBubble, ComicBurst, EndCard, C } from "./fx";
 
 const FPS = 24;
 const sec = (s: number) => Math.round(s * FPS);
@@ -128,9 +128,8 @@ export const Ad: React.FC = () => {
           <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
-        {/* the money beat */}
+        {/* the money beat — burst only; the coin/shard layer read as clutter */}
         <Sequence from={sec(6.22)} durationInFrames={sec(1.45)}>
-          <Particles />
           <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
