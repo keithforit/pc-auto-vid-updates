@@ -17,19 +17,19 @@ const FPS = 24;
 const sec = (s: number) => Math.round(s * FPS);
 
 /**
- * Cue times are NOT taken from the .srt files as-is. Measured against the actual
- * audio, both transcripts run fast:
+ * Cue times come from the pauses actually present in the audio (silencedetect at
+ * -26/-22dB), NOT from the .srt files and NOT from stretching them — speech does
+ * not scale linearly, so a uniform stretch drifted further out with every line.
  *
- *   hook.mp4   speech 0.81s -> 9.71s   (srt claims 0.0 -> 8.0)
- *   close.mp4  speech 0.00s -> 9.65s   (srt claims 0.0 -> 7.7)
+ *   hook.mp4   speech 1.07s -> 9.60s, five clean phrase gaps
+ *   close.mp4  speech 0.00s -> 9.61s, anchored on the 0.52s and 0.58s pauses
  *
- * So each cue is offset to the real speech onset and stretched to the real
- * duration, which is why the numbers below don't match the srt.
+ * Each caption below now covers its own phrase and nothing else.
  */
-const SHOT1_LEN = 9.9;
+const SHOT1_LEN = 9.8;
 const SHOT2_LEN = 10.0;
 const TAIL_LEN = 1.6;    // frozen last frame, so the end card gets a full beat
-const ENDCARD_AT = 8.5;  // into shot 2
+const ENDCARD_AT = 8.6;  // into shot 2
 
 const SHOT2_START = SHOT1_LEN;
 const TAIL_START = SHOT1_LEN + SHOT2_LEN;
@@ -110,7 +110,7 @@ export const Ad: React.FC = () => {
         />
 
         {/* upper right, clear of her head, tail pointing back at her */}
-        <Sequence from={sec(0.81)} durationInFrames={sec(2.0)}>
+        <Sequence from={sec(1.07)} durationInFrames={sec(1.51)}>
           <SpeechBubble
             kicker="TikTok Lite 新規ユーザー特典"
             text={"えっ、TikTok\n見るだけで？"}
@@ -120,21 +120,21 @@ export const Ad: React.FC = () => {
           />
         </Sequence>
 
-        <Sequence from={sec(2.81)} durationInFrames={sec(1.78)}>
+        <Sequence from={sec(2.82)} durationInFrames={sec(1.75)}>
           <BannerCaption text="これ、TikTok Liteなら" />
         </Sequence>
 
-        <Sequence from={sec(4.59)} durationInFrames={sec(1.45)}>
+        <Sequence from={sec(4.74)} durationInFrames={sec(1.36)}>
           <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
         {/* the money beat */}
-        <Sequence from={sec(6.04)} durationInFrames={sec(1.89)}>
+        <Sequence from={sec(6.22)} durationInFrames={sec(1.45)}>
           <Particles />
-          <ComicBurst line1="1300円相当" line2="ポイント獲得！" />
+          <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
-        <Sequence from={sec(7.93)} durationInFrames={sec(1.78)}>
+        <Sequence from={sec(8.02)} durationInFrames={sec(1.58)}>
           <BannerCaption text="ゲットできるみたいです" />
         </Sequence>
       </Sequence>
@@ -143,19 +143,19 @@ export const Ad: React.FC = () => {
       <Sequence from={sec(SHOT2_START)} durationInFrames={sec(SHOT2_LEN)}>
         <ClosingShot />
 
-        <Sequence from={0} durationInFrames={sec(1.88)}>
+        <Sequence from={0} durationInFrames={sec(1.43)}>
           <BannerCaption text="いつもTikTok見てるなら" />
         </Sequence>
 
-        <Sequence from={sec(1.88)} durationInFrames={sec(3.01)}>
+        <Sequence from={sec(1.43)} durationInFrames={sec(2.30)}>
           <BannerCaption text={"対象かだけでも\n確認しておいたほうがよさそう"} size={40} />
         </Sequence>
 
-        <Sequence from={sec(5.01)} durationInFrames={sec(1.76)}>
+        <Sequence from={sec(4.24)} durationInFrames={sec(1.92)}>
           <BannerCaption text="新規ユーザーの人は" />
         </Sequence>
 
-        <Sequence from={sec(6.77)} durationInFrames={sec(1.73)}>
+        <Sequence from={sec(6.26)} durationInFrames={sec(2.34)}>
           <BannerCaption text="一回チェックしに行ってください" size={42} />
         </Sequence>
       </Sequence>

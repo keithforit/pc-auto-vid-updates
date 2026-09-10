@@ -211,9 +211,18 @@ const SpeedLines: React.FC<{ progress: number }> = ({ progress }) => (
 );
 
 /** The loud one: outlined text on a yellow starburst, with speed lines. */
-export const ComicBurst: React.FC<{ line1: string; line2: string }> = ({ line1, line2 }) => {
+export const ComicBurst: React.FC<{
+  line1: string;
+  line2: string;
+  left?: number;  // % of frame width
+  top?: number;   // % of frame height
+  size?: number;  // px
+}> = ({ line1, line2, left = -3, top = 9, size = 490 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
+  // derive the centre from the placement so the speed lines can't drift out of sync
+  const cx = left + (size / 2 / width) * 100;
+  const cy = top + (size / 2 / height) * 100;
   const s = spring({ frame, fps, config: { damping: 9, mass: 0.55, stiffness: 140 } });
   const wobble = Math.sin(frame / 7) * 1.2;
   const progress = Math.min(1, frame / (fps * 0.9));
@@ -221,18 +230,18 @@ export const ComicBurst: React.FC<{ line1: string; line2: string }> = ({ line1, 
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
       {/* anchored on the burst's centre so the lines actually radiate from it */}
-      <div style={{ position: "absolute", left: "31%", top: "28%", width: 0, height: 0 }}>
+      <div style={{ position: "absolute", left: `${cx}%`, top: `${cy}%`, width: 0, height: 0 }}>
         <SpeedLines progress={progress} />
       </div>
 
-      {/* Sits in the upper-left like the reference, so the face stays readable. */}
+      {/* Placed by the caller — kept below the shoulder line so the face stays clear. */}
       <div
         style={{
           position: "absolute",
-          top: "9%",
-          left: "-3%",
-          width: 490,
-          height: 490,
+          top: `${top}%`,
+          left: `${left}%`,
+          width: size,
+          height: size,
           transform: `scale(${s}) rotate(${-8 + wobble}deg)`,
           opacity: Math.min(1, s * 2),
         }}
