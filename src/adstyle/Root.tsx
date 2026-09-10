@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { Ad, AdTimecode, AD_TOTAL_FRAMES, AD_FPS } from "./Ad";
 import { Ad2, AD2_TOTAL_FRAMES, AD2_FPS } from "./Ad2";
 import { Ad3, AD3_TOTAL_FRAMES, AD3_FPS } from "./Ad3";
+import { Ad4, Ad4Timecode, AD4_TOTAL_FRAMES, AD4_FPS } from "./Ad4";
 
 export const AdStyleRoot: React.FC = () => (
   <>
@@ -30,6 +31,8 @@ export const AdStyleRoot: React.FC = () => (
       width={720}
       height={1280}
     />
+    <Composition id="AdStyle4" component={Ad4} durationInFrames={AD4_TOTAL_FRAMES} fps={AD4_FPS} width={720} height={1280} />
+    <Composition id="AdStyle4Timecode" component={Ad4Timecode} durationInFrames={AD4_TOTAL_FRAMES} fps={AD4_FPS} width={720} height={1280} />
     {/* diagnostic only — burns a running timecode over the same timeline */}
     <Composition
       id="AdStyleTimecode"
