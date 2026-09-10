@@ -140,8 +140,9 @@ export const Ad: React.FC = () => {
           <BannerCaption text="新規ユーザー特典で" />
         </Sequence>
 
-        {/* the money beat — burst only; the coin/shard layer read as clutter */}
-        <Sequence from={sec(5.04)} durationInFrames={sec(2.87)}>
+        {/* The money beat. Ends at 6.08 where ゲットできる takes over: held to the
+            observed 7.91 it sat underneath that caption on screen. */}
+        <Sequence from={sec(5.04)} durationInFrames={sec(1.04)}>
           <ComicBurst line1="1300円相当" line2="ポイント獲得！" left={-3} top={50} />
         </Sequence>
 
