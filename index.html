@@ -1733,6 +1733,8 @@
       text_style_block: 'Block',
       text_style_shadow: 'Shadow',
       text_style_plain: 'Plain',
+      text_style_burst: 'Burst',
+      text_style_bubble: 'Bubble',
       anim_static: 'Static',
       anim_pop: 'Pop',
       anim_fade_in: 'Fade in',
@@ -2445,6 +2447,8 @@
       text_style_block: 'ブロック',
       text_style_shadow: 'シャドウ',
       text_style_plain: 'プレーン',
+      text_style_burst: '集中線バースト',
+      text_style_bubble: '吹き出し',
       anim_static: '静的',
       anim_pop: 'ポップ',
       anim_fade_in: 'フェードイン',
@@ -4772,6 +4776,58 @@
     return `calc(var(--thumb-w, 96px) * ${ratio.toFixed(6)})`;
   }
 
+  // Starburst + bubble tail for the 'burst' / 'bubble' text styles. These MUST stay in
+  // step with burstBackground()/bubbleTail() in src/Caption.tsx, or the editor preview
+  // will show something the render does not produce.
+  const BURST_POINTS = 16;
+  const burstPolygon = (() => {
+    const pts = [];
+    for (let i = 0; i < BURST_POINTS * 2; i++) {
+      const isOuter = i % 2 === 0;
+      const jitter = 1 + (Math.sin(i * 12.9898) * 0.5) * (isOuter ? 0.16 : 0.1);
+      const r = (isOuter ? 47 : 33) * jitter;
+      const a = (Math.PI * i) / BURST_POINTS - Math.PI / 2;
+      pts.push(`${(50 + Math.cos(a) * r).toFixed(2)},${(50 + Math.sin(a) * r).toFixed(2)}`);
+    }
+    return pts.join(' ');
+  })();
+
+  function burstBackgroundCSS(fill, ink) {
+    return `url("data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">` +
+      `<defs><pattern id="h" width="2.6" height="2.6" patternUnits="userSpaceOnUse">` +
+      `<circle cx="1.3" cy="1.3" r="0.62" fill="${ink}" opacity="0.22"/></pattern></defs>` +
+      `<polygon points="${burstPolygon}" fill="${fill}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>` +
+      `<polygon points="${burstPolygon}" fill="url(#h)" opacity="0.55"/></svg>`
+    )}")`;
+  }
+
+  function bubbleTailCSS(fill, ink, stroke) {
+    return `url("data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 62">` +
+      `<path d="M4 0 L66 3 L22 60 Z" fill="${fill}" stroke="${ink}" stroke-width="${stroke}" stroke-linejoin="round"/>` +
+      `<rect x="7" y="-10" width="56" height="13" fill="${fill}"/></svg>`
+    )}")`;
+  }
+
+  // Shared by both preview modes so 'burst'/'bubble' can't drift between them.
+  function previewFxInner(style, blockColor, textColor, textStrokeColor, textStrokeSize, blockBorderRadius, _sc) {
+    if (style === 'burst') {
+      const ink = textStrokeColor || '#000000';
+      const strokePx = ((Number(textStrokeSize) > 0 ? Number(textStrokeSize) : 10) * _sc * 0.5).toFixed(2);
+      const fill = (!textColor || textColor.toLowerCase() === '#000000') ? '#FCFBF6' : textColor;
+      return `background-image:${burstBackgroundCSS(blockColor || '#ffdd00', ink)};background-size:100% 100%;background-repeat:no-repeat;`
+        + `padding:${(6 * _sc).toFixed(1)}px ${(5 * _sc).toFixed(1)}px;color:${fill};`
+        + `-webkit-text-stroke:${strokePx}px ${ink};paint-order:stroke fill;`;
+    }
+    const ink = textStrokeColor || '#000000';
+    const strokePx = ((Number(textStrokeSize) > 0 ? Number(textStrokeSize) : 5) * _sc * 0.5).toFixed(1);
+    const bubbleFill = (!blockColor || blockColor.toLowerCase() === '#ffdd00') ? '#ffffff' : blockColor;
+    return `position:relative;background:${bubbleFill};color:${textColor || '#000000'};`
+      + `padding:${(2 * _sc).toFixed(1)}px ${(4 * _sc).toFixed(1)}px;border-radius:${((blockBorderRadius || 26) * _sc).toFixed(1)}px;`
+      + `border:${strokePx}px solid ${ink};box-sizing:border-box;`;
+  }
+
   function calcPreviewStyle(vPos, hPos, textAlign, style, glowColor, blockColor, textColor, glowTextColor, rotation, fontSize, boxBorderRadius = 20, blockBorderRadius = 10, textStrokeColor = '#000000', textStrokeSize = 0, glowSize = 1) {
     const jc = vPos==='top' ? 'flex-start' : vPos==='center' ? 'center' : 'flex-end';
     // hPos = horizontal screen position (where the text block sits on screen)
@@ -4794,6 +4850,8 @@
       inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
+    } else if (style === 'burst' || style === 'bubble') {
+      inner += previewFxInner(style, blockColor, textColor, textStrokeColor, textStrokeSize, blockBorderRadius, _sc);
     } else {
       inner += `background:rgba(0,0,0,0.72);color:${textColor || '#ffffff'};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(boxBorderRadius*_sc).toFixed(1)}px;`;
     }
@@ -4822,6 +4880,8 @@
       inner += `color:${textColor};text-shadow:${(1*_sc).toFixed(1)}px ${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px rgba(0,0,0,0.85);padding:0 ${(2*_sc).toFixed(1)}px;`;
     } else if (style === 'plain') {
       inner += `color:${textColor||'white'};padding:0 ${(2*_sc).toFixed(1)}px;`;
+    } else if (style === 'burst' || style === 'bubble') {
+      inner += previewFxInner(style, blockColor, textColor, textStrokeColor, textStrokeSize, blockBorderRadius, _sc);
     } else {
       inner += `background:rgba(0,0,0,0.72);color:${textColor || '#ffffff'};padding:${(2*_sc).toFixed(1)}px ${(4*_sc).toFixed(1)}px;border-radius:${(boxBorderRadius*_sc).toFixed(1)}px;`;
     }
@@ -4877,7 +4937,11 @@
       data-fulltext="${escapeHtml(rawText)}"
       style="${wrap};display:${previewDisplay}">
       <div class="tprev-block-strip" id="tprev-strip-${i}" style="background:${glowColor || blockColor}"></div>
-      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner};font-family:${fontFamilyFor(seg.font)}">${highlightHTML(rawText)}</div>
+      <div class="tprev-inner" id="tprev-inner-${i}" style="${inner};font-family:${fontFamilyFor(seg.font)}">${highlightHTML(rawText)}${
+        style === 'bubble'
+          ? `<div style="position:absolute;left:16%;top:100%;width:0.72em;height:0.64em;background-image:${bubbleTailCSS((!blockColor || blockColor.toLowerCase() === '#ffdd00') ? '#ffffff' : blockColor, textStrokeColor || '#201814', textStrokeSize > 0 ? textStrokeSize : 5)};background-size:100% 100%;background-repeat:no-repeat;"></div>`
+          : ''
+      }</div>
     </div>`;
   }
 
@@ -6859,7 +6923,9 @@
                   ['glow',   _t.text_style_glow || 'Glow'],
                   ['block',  _t.text_style_block || 'Block'],
                   ['shadow', _t.text_style_shadow || 'Shadow'],
-                  ['plain',  _t.text_style_plain || 'Plain']
+                  ['plain',  _t.text_style_plain || 'Plain'],
+                  ['burst',  _t.text_style_burst || 'Burst'],
+                  ['bubble', _t.text_style_bubble || 'Bubble']
                 ].map(([s,lbl]) => {
                   const active = (seg.mainTextStyleOverride || seg.textStyle || 'box') === s;
                   return `<div class="pos-btn style-text-btn ${active?'active':''}" data-style="${s}" onclick="setMainTextStyle(${i},'${s}')">${lbl}</div>`;
@@ -8872,7 +8938,7 @@
         <div class="ctrl-row">
           <span class="ctrl-row-label">${t.text_style}:</span>
           <div style="display:flex;gap:4px;flex-wrap:wrap" id="et-stylerow-${i}-${j}">
-            ${[[ 'box', t.text_style_box || 'Box' ], [ 'glow', t.text_style_glow || 'Glow' ], [ 'block', t.text_style_block || 'Block' ], [ 'shadow', t.text_style_shadow || 'Shadow' ], [ 'plain', t.text_style_plain || 'Plain' ]].map(([s,lbl]) =>
+            ${[[ 'box', t.text_style_box || 'Box' ], [ 'glow', t.text_style_glow || 'Glow' ], [ 'block', t.text_style_block || 'Block' ], [ 'shadow', t.text_style_shadow || 'Shadow' ], [ 'plain', t.text_style_plain || 'Plain' ], [ 'burst', t.text_style_burst || 'Burst' ], [ 'bubble', t.text_style_bubble || 'Bubble' ]].map(([s,lbl]) =>
               `<div class="pos-btn style-text-btn ${sty===s?'active':''}" data-style="${s}" onclick="setExtraStyle(${i},${j},'${s}')">${lbl}</div>`
             ).join('')}
           </div>

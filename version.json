@@ -1,10 +1,10 @@
 {
-  "version": "1.5.17",
-  "date": "2026-09-07",
-  "notes": "Fetching a background video now shows you what is happening. Pasting a Pexels or Pixabay link, or searching for a clip, used to dim the scene and leave you guessing for anything up to a minute. The scene now shows a panel with a live progress bar: it tells you when the app is contacting the site, how much of the video has downloaded so far in megabytes and percent, and when the download has finished and the video is being processed. It closes with a green tick when the video has been added, or stays up in red with the reason when something went wrong. The reason for a failure is also shown on the link field itself and as a pop-up message, so a failed fetch can no longer look like nothing happened. This covers all four ways of fetching a clip — Pexels search, Pexels link, Pixabay search and Pixabay link.",
-  "notes_ja": "背景動画を取得する際の進行状況が表示されるようになりました。これまでは Pexels や Pixabay のリンクを貼り付けたり、クリップを検索したりすると、シーンが暗くなるだけで、最長 1 分ほど何が起きているのか分からない状態でした。今後はシーン上にパネルが表示され、進行状況バーとともに、サイトへの接続中であること、動画のダウンロード済み容量（MB）と進捗（％）、ダウンロード完了後の処理中であることをお知らせします。動画が追加されると緑のチェックで閉じ、失敗した場合は理由とともに赤い表示のまま残ります。失敗の理由はリンク入力欄と通知メッセージにも表示されるため、取得に失敗したことに気づかないということがなくなります。Pexels 検索・Pexels リンク・Pixabay 検索・Pixabay リンクの 4 つすべてに対応しています。",
+  "version": "1.5.18",
+  "date": "2026-09-10",
+  "notes": "Two new text styles: Burst and Bubble. Burst puts your words in white with a heavy black outline on a jagged yellow comic starburst with a halftone dot texture — the treatment Japanese ads use for the moment a price or a reward is announced. The star is drawn to fit whatever you type, so it grows and shrinks with the text instead of being a fixed image. Bubble is a white speech balloon with a thick border and a tail pointing down at whoever is talking. Both sit alongside Box, Glow, Block, Shadow and Plain, for the main text of a scene and for extra texts, and both work with everything you already use: position, free X/Y placement, rotation, font, size, the animations, and the [word|#hex] colour highlight for calling out a number. Pick a colour with the existing block colour and outline controls; leave them alone and Burst comes out yellow with white text, Bubble comes out white with black text. The scene thumbnails show both styles exactly as they will render.",
+  "notes_ja": "新しい文字スタイルを 2 つ追加しました。「集中線バースト」は、黄色いギザギザの集中線バースト（ハーフトーンのドット模様つき）の上に、白文字＋太い黒フチで文字を表示します。金額や特典を打ち出す瞬間に日本の広告でよく使われる演出です。バーストは入力した文字に合わせて描画されるため、固定画像とは違い、文字量に応じて大きさが変わります。「吹き出し」は、太いフチと下向きのしっぽが付いた白い吹き出しです。どちらも「ボックス」「グロー」「ブロック」「シャドウ」「プレーン」と並んで、シーンのメインテキストにも追加テキストにも使えます。位置・自由配置（X/Y）・回転・フォント・サイズ・アニメーション・[文字|#色] のハイライト指定など、これまでの機能はすべてそのまま利用できます。色はこれまでのブロック色・フチ色の設定で変更でき、何も変更しなければバーストは黄色地に白文字、吹き出しは白地に黒文字になります。シーンのサムネイルにも、実際のレンダリングと同じ見た目で表示されます。",
   "files": [
-    "server.js",
-    "index.html"
+    "index.html",
+    "src/Caption.tsx"
   ]
 }

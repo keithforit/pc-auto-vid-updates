@@ -17,6 +17,39 @@ function fitFontSize(text: string, fontFamily: string, fontWeight: string | numb
     return Math.max(12, Math.floor(maxPx * (availPx / widest)));
 }
 
+// Jagged starburst behind the 'burst' style. Built once, deterministically, so the
+// star never shifts between frames; stretched to the text box via preserveAspectRatio.
+const BURST_POINTS = 16;
+const burstPolygon = (() => {
+    const pts: string[] = [];
+    for (let i = 0; i < BURST_POINTS * 2; i++) {
+        const isOuter = i % 2 === 0;
+        // fixed pseudo-jitter keeps it hand-drawn rather than mechanically regular
+        const jitter = 1 + (Math.sin(i * 12.9898) * 0.5) * (isOuter ? 0.16 : 0.1);
+        const r = (isOuter ? 47 : 33) * jitter;
+        const a = (Math.PI * i) / BURST_POINTS - Math.PI / 2;
+        pts.push(`${(50 + Math.cos(a) * r).toFixed(2)},${(50 + Math.sin(a) * r).toFixed(2)}`);
+    }
+    return pts.join(' ');
+})();
+
+export const burstBackground = (fill: string, ink: string) =>
+    `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">` +
+        `<defs><pattern id="h" width="2.6" height="2.6" patternUnits="userSpaceOnUse">` +
+        `<circle cx="1.3" cy="1.3" r="0.62" fill="${ink}" opacity="0.22"/></pattern></defs>` +
+        `<polygon points="${burstPolygon}" fill="${fill}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>` +
+        `<polygon points="${burstPolygon}" fill="url(#h)" opacity="0.55"/></svg>`
+    )}")`;
+
+// Downward tail for the 'bubble' style, drawn to match the bubble's fill and border.
+export const bubbleTail = (fill: string, ink: string, stroke: number) =>
+    `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 62">` +
+        `<path d="M4 0 L66 3 L22 60 Z" fill="${fill}" stroke="${ink}" stroke-width="${stroke}" stroke-linejoin="round"/>` +
+        `<rect x="7" y="-10" width="56" height="13" fill="${fill}"/></svg>`
+    )}")`;
+
 // Parse [word|#hex] or [word] inline color spans within a single line of text.
 // [word] without a color uses highlightColor (if provided), otherwise renders plainly.
 function renderLine(line: string, highlightColor?: string, revealProgress?: number): React.ReactNode[] {
@@ -260,6 +293,7 @@ export const Caption: React.FC<CaptionProps> = ({
     // Auto-fit: when on (default) and not wrapping, shrink the font so the longest line
     // fits within ~88% of the frame width — so no-wrap text never runs off the edge.
     const fontWeightForFit = textStyle === 'box' ? 600 : 900;
+    // 'burst' carries a heavy outline, so autoFit must budget for the stroke bleeding outwards
     const _visibleText = String(text || '').replace(/\[([^\]|]+)(?:\|[^\]]+)?\]/g, '$1');
     const renderFontSize = (autoFit && noWrap)
         ? fitFontSize(_visibleText, fontFamily, fontWeightForFit, fontSize, videoWidth * 0.88)
@@ -291,6 +325,12 @@ export const Caption: React.FC<CaptionProps> = ({
     const blockBorderStyle = strokeWidth > 0
         ? { border: `${strokeWidth}px solid ${textStrokeColor}`, boxSizing: 'border-box' as const }
         : {};
+    // blockColor/textColor default to the 'block' style's yellow-on-black. A speech bubble
+    // wants white, and burst text sits inside a dark outline — so for those two styles the
+    // shared defaults are treated as "unset" and replaced with ones that read correctly.
+    const bubbleFill = (!blockColor || blockColor.toLowerCase() === '#ffdd00') ? '#ffffff' : blockColor;
+    const bubbleInk = textStrokeColor || '#201814';
+    const bubbleStroke = strokeWidth > 0 ? strokeWidth : 5;
     const glowAmount = Math.max(0, Number(glowSize) || 0);
     const glowShadow = glowAmount > 0
         ? [
@@ -327,15 +367,57 @@ export const Caption: React.FC<CaptionProps> = ({
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: shadowCss, ...widthStyle };
     } else if (textStyle === 'plain') {
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || 'white', fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...widthStyle };
+    } else if (textStyle === 'burst') {
+        // Outlined text on a stretched starburst. blockColor tints the star,
+        // textStroke* drives the outline, so the existing controls all still apply.
+        const burstInk = bubbleInk;
+        const burstStroke = strokeWidth > 0 ? strokeWidth : Math.max(4, Math.round(renderFontSize * 0.16));
+        textContentStyle = {
+            textAlign: textAlign as any,
+            // the star stretches to this box, so keep it nearer square than the text is
+            padding: `${Math.round(renderFontSize * 1.5)}px ${Math.round(renderFontSize * 1.2)}px`,
+            backgroundImage: burstBackground(blockColor || '#EFD442', burstInk),
+            backgroundSize: '100% 100%',
+            backgroundRepeat: 'no-repeat',
+            // textColor defaults to black for every other style; inside a dark outline that
+            // would be unreadable, so treat the shared default as "unset" here.
+            color: (!textColor || textColor.toLowerCase() === '#000000') ? '#FCFBF6' : textColor,
+            fontSize: renderFontSize,
+            fontWeight: '900',
+            fontFamily,
+            lineHeight: 1.2,
+            WebkitTextStroke: `${burstStroke}px ${burstInk}`,
+            paintOrder: 'stroke fill',
+            textShadow: `0 ${Math.round(burstStroke * 0.6)}px 0 ${burstInk}`,
+            ...widthStyle,
+        };
+    } else if (textStyle === 'bubble') {
+        textContentStyle = {
+            textAlign: textAlign as any,
+            padding: blockPad,
+            borderRadius: `${blockBorderRadius || 26}px`,
+            backgroundColor: bubbleFill,
+            color: textColor || '#201814',
+            fontSize: renderFontSize,
+            fontWeight: '900',
+            fontFamily,
+            lineHeight: 1.3,
+            border: `${bubbleStroke}px solid ${bubbleInk}`,
+            boxSizing: 'border-box' as const,
+            boxShadow: '0 8px 0 rgba(32,24,20,0.18)',
+            ...widthStyle,
+        };
     } else {
         textContentStyle = { backgroundColor: 'rgba(0,0,0,0.7)', padding: boxPad, borderRadius: `${boxBorderRadius}px`, textAlign: textAlign as any, color: textColor || 'white', fontSize: renderFontSize, fontWeight: '600', fontFamily, ...widthStyle };
     }
 
     const shellBorderRadius = textStyle === 'block'
         ? `${blockBorderRadius}px`
-        : textStyle === 'box'
-            ? `${boxBorderRadius}px`
-            : '10px';
+        : textStyle === 'bubble'
+            ? `${blockBorderRadius || 26}px`
+            : textStyle === 'box'
+                ? `${boxBorderRadius}px`
+                : '10px';
     const stripColor = textStyle === 'glow' ? glowColor : blockColor;
 
     return (
@@ -363,6 +445,22 @@ export const Caption: React.FC<CaptionProps> = ({
                             </React.Fragment>
                         ))}
                     </div>
+                    {textStyle === 'bubble' && (
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: '16%',
+                                top: '100%',
+                                marginTop: -2,
+                                width: Math.round(renderFontSize * 0.72),
+                                height: Math.round(renderFontSize * 0.64),
+                                backgroundImage: bubbleTail(bubbleFill, bubbleInk, bubbleStroke),
+                                backgroundSize: '100% 100%',
+                                backgroundRepeat: 'no-repeat',
+                                pointerEvents: 'none',
+                            }}
+                        />
+                    )}
                 </div>
             </div>
         </AbsoluteFill>
