@@ -1,11 +1,33 @@
 {
-  "version": "1.5.24",
+  "version": "1.5.25",
   "date": "2026-09-17",
-  "notes": "Captions for imported video. Video to Scenes now has a Captions section with two ways to bring in subtitles for the clip you're cutting up. Drop a subtitle file (.srt or .vtt) onto the window, or paste the video's YouTube or TikTok link, press Find, and pick one of the subtitle tracks the video offers — creator-uploaded tracks first, then the automatic ones, including YouTube's own translations such as Japanese from English. Only the small caption file is fetched, never the video. The captions are then laid over the scenes at their original timings: each cue appears and disappears when it should, gaps stay empty, and you'll see them in every scene's Captions row and preview. They use the caption style, size and position from Settings and can be switched off per scene like the voice captions. The link lookup needs yt-dlp on your computer (Mac: brew install yt-dlp · Windows: winget install yt-dlp); the subtitle-file route needs nothing extra.",
-  "notes_ja": "取り込んだ動画に字幕を付けられるようになりました。「動画からシーン」に「字幕」欄が追加され、分割する動画の字幕を 2 つの方法で取り込めます。字幕ファイル（.srt または .vtt）をウィンドウにドロップするか、動画の YouTube / TikTok リンクを貼り付けて「検索」を押し、その動画が持つ字幕トラックから選びます。投稿者がアップロードした字幕が先に、続いて自動字幕（「英語から日本語」のような YouTube の翻訳を含む）が並びます。取得するのは小さな字幕ファイルだけで、動画本体はダウンロードしません。字幕は元のタイミングどおりに各シーンに配置され、表示・非表示のタイミングもそのまま、字幕のない区間は空のままです。各シーンの「字幕」行とプレビューで確認できます。スタイル・サイズ・位置は設定の字幕設定に従い、音声字幕と同じくシーンごとにオフにできます。リンクからの検索には yt-dlp が必要です（Mac: brew install yt-dlp · Windows: winget install yt-dlp）。字幕ファイルからの取り込みには追加のインストールは不要です。",
+  "notes": "Update reliability. Updating from an older version now brings in every file the app needs, not only the ones that changed in the newest release — so skipping several versions can no longer leave a file behind. The updater also checks each download before writing anything, and won't replace files if one of them failed to download. No new features in this release; it makes the previous ones arrive intact on every computer.",
+  "notes_ja": "アップデートの信頼性を改善しました。古いバージョンからアップデートする際に、最新リリースで変更されたファイルだけでなく、アプリに必要なすべてのファイルを取り込むようにしました。複数のバージョンをまとめて飛ばしても、ファイルが欠けることはありません。また、書き込みの前に各ファイルのダウンロードを確認し、1 つでも失敗した場合はファイルを置き換えません。このリリースに新機能はありません。これまでの機能がどのパソコンにも欠けなく届くようにするための更新です。",
   "files": [
     "index.html",
     "server.js",
-    "src/Main.tsx"
+    "caption-cues.js",
+    "voice-levels.js",
+    "generate-audio.js",
+    "generate-audio-ja.js",
+    "generate-audio-voicevox.js",
+    "parser.js",
+    "parser-captions.js",
+    "render.ts",
+    "remotion.config.ts",
+    "src/index.ts",
+    "src/index.css",
+    "src/Root.tsx",
+    "src/Main.tsx",
+    "src/Caption.tsx",
+    "src/Background.tsx",
+    "src/BackgroundMusic.tsx",
+    "src/Composition.tsx",
+    "src/DynamicText.tsx",
+    "src/FollowCTA.tsx",
+    "src/OverlayImage.tsx",
+    "src/OverlayShape.tsx",
+    "src/OverlayVideo.tsx",
+    "src/ProgressBar.tsx"
   ]
 }

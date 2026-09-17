@@ -3010,12 +3010,37 @@ app.post('/apply-update', async (req, res) => {
         // Fetch remote version.json (pc-auto-vid update track)
         const versionBuf = await downloadFile(`${UPDATE_REPO_RAW}/version.json?t=${Date.now()}`);
         const remote = JSON.parse(versionBuf.toString());
-        const filesToUpdate = remote.files || UPDATABLE_FILES;
+        const filesToUpdate = [...new Set(remote.files || UPDATABLE_FILES)];
+        // Download everything first and only then write, so a failed download can't leave the
+        // install half-updated. downloadFile() resolves on any status — a missing file would
+        // otherwise be saved as a "404: Not Found" text file, so check the status here.
+        const fetchRepoFile = async (remoteFile) => {
+            const url = `${UPDATE_REPO_RAW}/${remoteFile}?t=${Date.now()}`;
+            const buf = await downloadFile(url);
+            const head = buf.subarray(0, 40).toString('utf8');
+            if (buf.length === 0 || /^404: Not Found/.test(head)) throw new Error(`Update file missing in the release: ${remoteFile}`);
+            return buf;
+        };
+        const downloaded = new Map();
         for (let idx = 0; idx < filesToUpdate.length; idx++) {
             const remoteFile = filesToUpdate[idx];
-            const localFile  = remoteFile;
-            io.emit('update-progress', { file: localFile, current: idx + 1, total: filesToUpdate.length });
-            const buf = await downloadFile(`${UPDATE_REPO_RAW}/${remoteFile}?t=${Date.now()}`);
+            io.emit('update-progress', { file: remoteFile, current: idx + 1, total: filesToUpdate.length });
+            downloaded.set(remoteFile, await fetchRepoFile(remoteFile));
+        }
+        // A newer server.js may require local modules that an older release never shipped (a user
+        // several versions behind would otherwise get a server that can't start). Pull any that
+        // are neither downloaded nor already on disk.
+        const newServer = downloaded.get('server.js');
+        if (newServer) {
+            const wanted = [...newServer.toString('utf8').matchAll(/require\('\.\/([\w./-]+)'\)/g)]
+                .map(m => m[1].endsWith('.js') ? m[1] : `${m[1]}.js`);
+            for (const mod of wanted) {
+                if (downloaded.has(mod) || fs.existsSync(path.join(__dirname, mod))) continue;
+                io.emit('update-progress', { file: mod, current: filesToUpdate.length, total: filesToUpdate.length });
+                downloaded.set(mod, await fetchRepoFile(mod));
+            }
+        }
+        for (const [localFile, buf] of downloaded) {
             fs.mkdirSync(path.dirname(path.join(__dirname, localFile)), { recursive: true });
             fs.writeFileSync(path.join(__dirname, localFile), buf);
         }
