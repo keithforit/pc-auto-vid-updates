@@ -383,4 +383,4 @@ async function refreshCaptionCues({ contentPath, settings, voiceDir, log = () =>
     return merged;
 }
 
-module.exports = { splitCaptionText, buildSceneCues, refreshCaptionCues, loudnessEnvelope, estimateWeight };
+module.exports = { splitCaptionText, buildSceneCues, refreshCaptionCues, loudnessEnvelope, estimateWeight, ffmpegCandidates };

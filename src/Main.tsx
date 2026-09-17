@@ -144,6 +144,74 @@ export const Main: React.FC = () => {
         };
     });
     const totalDurationFrames = Math.max(1, runningBgmFrame);
+
+    // ── Music ducking: music keeps its level under the voice and lifts where nobody is speaking.
+    // Speech spans come from the server's voice analysis (voiceActivity); a scene that hasn't been
+    // analysed counts as speaking for its whole voice, which is exactly the old constant level.
+    const duckingOn = settings.musicDucking !== false;
+    const MUSIC_LIFT = Math.pow(10, 8 / 20);   // +8 dB between phrases
+    const LIFT_MIN_GAP = 1.2;                   // shorter pauses stay ducked, so the music doesn't pump
+    const DUCK_ATTACK = 0.3;                    // seconds to settle back under the next phrase
+    const DUCK_RELEASE = 0.6;                   // seconds to rise after speech stops
+    const speechSpans: [number, number][] = (() => {
+        const spans: [number, number][] = [];
+        let offset = 0;
+        for (const seg of segments as any[]) {
+            const dur = Number(seg.duration) || 0;
+            if (seg.audioFile && seg.audioFile !== 'null') {
+                const own: [number, number][] = Array.isArray(seg.voiceActivity)
+                    ? seg.voiceActivity
+                    : [[0, Number(seg.audioDuration) || dur]];
+                for (const [s, e] of own) {
+                    const start = offset + Math.max(0, s);
+                    const end = offset + Math.min(dur, e);
+                    if (end > start) spans.push([start, end]);
+                }
+            }
+            offset += Math.round(dur * fps) / fps;
+        }
+        spans.sort((a, b) => a[0] - b[0]);
+        const merged: [number, number][] = [];
+        for (const sp of spans) {
+            const last = merged[merged.length - 1];
+            if (last && sp[0] - last[1] < LIFT_MIN_GAP) last[1] = Math.max(last[1], sp[1]);
+            else merged.push([sp[0], sp[1]]);
+        }
+        return merged;
+    })();
+    const musicLiftAt = (t: number) => {
+        let near = 0; // 1 = under speech, 0 = well clear of it
+        for (const [s, e] of speechSpans) {
+            if (t >= s && t <= e) { near = 1; break; }
+            if (t < s) { near = Math.max(near, 1 - (s - t) / DUCK_ATTACK); break; }
+            near = Math.max(near, 1 - (t - e) / DUCK_RELEASE);
+        }
+        near = Math.max(0, Math.min(1, near));
+        const eased = near * near * (3 - 2 * near);
+        return MUSIC_LIFT + (1 - MUSIC_LIFT) * eased;
+    };
+
+    // ── Voice levels: bring every scene's voice to one shared loudness, never past -1 dBTP.
+    // Gain alone can't lift a peaky scene as far as a smooth one, so the shared target is the
+    // loudest level every scene can reach — otherwise evening out would leave scenes further apart.
+    // It never drops below VOICE_FLOOR_LUFS; a scene that can't reach even that just stays at its max.
+    const VOICE_TARGET_LUFS = -16;
+    const VOICE_FLOOR_LUFS = -20;
+    const VOICE_CEILING_DBTP = -1;
+    const hasLoudness = (seg: any) => seg.audioFile && seg.audioFile !== 'null'
+        && seg.voiceLoudness && Number.isFinite(seg.voiceLoudness.i) && Number.isFinite(seg.voiceLoudness.tp);
+    const sharedVoiceTarget = (segments as any[]).filter(hasLoudness).reduce(
+        (t, seg) => Math.min(t, seg.voiceLoudness.i + (VOICE_CEILING_DBTP - seg.voiceLoudness.tp)),
+        VOICE_TARGET_LUFS,
+    );
+    const voiceTarget = Math.max(VOICE_FLOOR_LUFS, sharedVoiceTarget);
+    const voiceGainFor = (seg: any) => {
+        if (settings.voiceNormalize === false || !hasLoudness(seg)) return 1;
+        const l = seg.voiceLoudness;
+        const db = Math.max(-12, Math.min(12, voiceTarget - l.i, VOICE_CEILING_DBTP - l.tp));
+        return Math.pow(10, db / 20);
+    };
+
     const getBackgroundMusicVolumeForFrame = (frame: number) => {
         const sceneRange = bgMusicRanges.find((range) => frame >= range.startFrame && frame < range.endFrame);
         const sceneVolume = sceneRange ? sceneRange.volume : 1;
@@ -153,7 +221,8 @@ export const Main: React.FC = () => {
             extrapolateLeft: 'clamp',
             extrapolateRight: 'clamp',
         });
-        return bgMusicBaseVolume * sceneVolume * fadeOutMultiplier;
+        const lift = duckingOn ? musicLiftAt(frame / fps) : 1;
+        return bgMusicBaseVolume * sceneVolume * fadeOutMultiplier * lift;
     };
 
     return (
@@ -206,7 +275,7 @@ export const Main: React.FC = () => {
                                     )}
 
                             {(segment as any).audioFile && (segment as any).audioFile !== 'null' && (
-                                <Audio src={staticFile(`voiceovers/${(segment as any).audioFile}`)} />
+                                <Audio src={staticFile(`voiceovers/${(segment as any).audioFile}`)} volume={voiceGainFor(segment)} />
                             )}
                             {(() => {
                                 const sfx = (segment as any).soundEffect;

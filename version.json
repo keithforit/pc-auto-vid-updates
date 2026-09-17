@@ -1,13 +1,13 @@
 {
-  "version": "1.5.20",
+  "version": "1.5.21",
   "date": "2026-09-17",
-  "notes": "Voice captions. Turn them on in Settings and each scene's narration appears on screen as short captions that change in time with the voice, the way TikTok and Reels videos subtitle speech. The narration is split into natural phrases rather than cut at a fixed length, so a caption never breaks a word or a verb in half. With VOICEVOX voices the timing comes straight from VOICEVOX, so each caption changes exactly when that phrase is spoken; with other voices and uploaded audio it is worked out from the recording itself. Each caption stays up until the next one starts, so there are no blank moments between phrases or between scenes. Choose Outline (white text with a thick black edge), Box or Block, and set the size and how high on screen they sit. Every scene's timeline gets a Captions on/off button and a Captions row showing where each phrase starts, and the scene preview shows the captions changing as the voice plays. Captions are off until you switch them on, so existing videos render exactly as before, and they are re-timed automatically whenever the voice is regenerated.",
-  "notes_ja": "音声字幕を追加しました。設定でオンにすると、各シーンのナレーションが音声に合わせて切り替わる短い字幕として画面に表示されます。TikTok やリールでよく見る、話している内容をそのまま字幕にするスタイルです。ナレーションは決まった文字数ではなく自然な区切りで分けるため、単語や動詞の途中で字幕が切れることはありません。VOICEVOX の音声では VOICEVOX 自体のタイミング情報を使うので、各フレーズが話される瞬間にぴったり字幕が切り替わります。その他の音声やアップロードした音声では、録音そのものからタイミングを割り出します。字幕は次の字幕が始まるまで表示し続けるため、フレーズの間やシーンの切り替わりで字幕が消える瞬間はありません。スタイルは「フチ取り」（白文字＋太い黒フチ）「ボックス」「ブロック」から選べ、サイズと画面上の高さも調整できます。各シーンのタイムラインに「字幕オン／オフ」ボタンと、各フレーズの開始位置がわかる「字幕」行が追加され、シーンのプレビューでも音声の再生に合わせて字幕が切り替わります。字幕はオンにするまで表示されないため、既存の動画はこれまでどおりレンダリングされます。音声を再生成すると、字幕のタイミングも自動で合わせ直されます。",
+  "notes": "Better sound, automatically. Voices are now evened out across scenes: every scene's voice is measured once and brought to the same loudness in the render, so a video no longer jumps in volume when it moves between VOICEVOX voices and uploaded recordings, which were almost 10 dB apart before. Voices also come out a little louder than before, without ever clipping. Background music now makes room for the voice: it stays low while someone is speaking and rises in longer pauses, in scenes without narration and at the ending, then settles back just before the voice returns. Short pauses between phrases keep the music low, so it never pumps up and down mid-sentence. Both are on by default and can be switched off in Settings — 'Even out voice volume across scenes' under Voice, and 'Duck music under the voice' under Background Music. They apply to the rendered video; the in-editor preview still plays the voice and music at their recorded levels.",
+  "notes_ja": "音声が自動でより聞きやすくなりました。シーン間で音声の音量をそろえるようにしました。各シーンの音声を一度測定し、レンダリング時に同じ音量に合わせるため、VOICEVOX の音声とアップロードした音声（これまで約 10 dB の差がありました）の間でシーンが切り替わっても、音量が急に変わらなくなります。音声はこれまでより少し大きくなり、音割れすることはありません。BGM は音声の邪魔をしないようになりました。話している間は控えめに流れ、長めの間やナレーションのないシーン、エンディングでは大きくなり、音声が戻る直前に再び下がります。フレーズ間の短い間では BGM は下がったままなので、話の途中で音量が上下することはありません。どちらも既定でオンになっており、設定の「音声」にある「シーン間の音声の音量をそろえる」と、「バックグラウンドミュージック」にある「音声の間はBGMを下げる」でオフにできます。これらはレンダリングした動画に適用されます。エディターのプレビューでは、音声と BGM は録音時の音量のまま再生されます。",
   "files": [
+    "voice-levels.js",
     "caption-cues.js",
     "server.js",
     "index.html",
-    "src/Caption.tsx",
     "src/Main.tsx"
   ]
 }

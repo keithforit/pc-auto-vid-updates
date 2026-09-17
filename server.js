@@ -7,6 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const mp3Duration = require('mp3-duration');
 const { refreshCaptionCues } = require('./caption-cues');
+const { refreshVoiceLevels } = require('./voice-levels');
 
 // ── Single-instance guard ─────────────────────────────────────────────────────
 // Kill ALL stale server instances so re-running the script always binds to 3000
@@ -242,6 +243,7 @@ const LOG = {
         cleanup_kept:     (n) => `📌 Kept ${n} recently downloaded background video${n === 1 ? '' : 's'} not used by any scene yet`,
         captions_timed:   (n, count, exact) => `💬 Scene ${n}: ${count} caption${count === 1 ? '' : 's'} timed to the voice${exact ? ' (VOICEVOX)' : ''}`,
         captions_failed:  (n, msg) => `Scene ${n}: couldn't time captions (${msg}) — the scene renders without them`,
+        levels_failed:    (n, msg) => `Scene ${n}: couldn't measure the voice level (${msg}) — its volume is left as recorded`,
     },
     ja: {
         cancelled:        '⏹ 制作がキャンセルされました。',
@@ -267,6 +269,7 @@ const LOG = {
         cleanup_kept:     (n) => `📌 まだどのシーンでも使用していない最近ダウンロードした背景動画${n}件を保持しました`,
         captions_timed:   (n, count, exact) => `💬 シーン${n}: 字幕${count}件を音声に合わせました${exact ? '（VOICEVOX）' : ''}`,
         captions_failed:  (n, msg) => `シーン${n}: 字幕のタイミングを取得できませんでした（${msg}）— 字幕なしでレンダリングします`,
+        levels_failed:    (n, msg) => `シーン${n}: 音声の音量を測定できませんでした（${msg}）— 録音時の音量のままにします`,
     },
 };
 
@@ -321,9 +324,19 @@ function cleanupUnusedBackgrounds(logFn, lang = 'en') {
 
 // Pre-render validation: strip any asset references whose files are missing from disk.
 // Returns a list of warning strings (empty = all good).
-// Time voice captions against the current voice files, rebuilding only scenes whose narration or audio changed.
-async function refreshCaptionsForRender(logFn, lang = 'en') {
+// Measure voice loudness/speech (for voice levelling and music ducking) and time voice captions against
+// the current voice files. Both are cached per scene and only redone when the narration or audio changed.
+async function prepareVoiceForRender(logFn, lang = 'en') {
     const L = LOG[lang] || LOG.en;
+    try {
+        await refreshVoiceLevels({
+            contentPath: CONTENT_PATH,
+            voiceDir: path.join(__dirname, 'public', 'voiceovers'),
+            log: (i, err) => logFn(L.levels_failed(i + 1, err?.message || 'unknown')),
+        });
+    } catch (e) {
+        logFn(L.levels_failed('?', e.message));
+    }
     try {
         await refreshCaptionCues({
             contentPath: CONTENT_PATH,
@@ -1962,7 +1975,7 @@ io.on('connection', (socket) => {
                 const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
                 const finalName = `${title}_${Date.now()}.mp4`;
 
-                await refreshCaptionsForRender(msg => socket.emit('log', msg), lang);
+                await prepareVoiceForRender(msg => socket.emit('log', msg), lang);
                 validateContentForRender(msg => socket.emit('log', msg), lang);
                 socket.emit('log', L.rendering);
                 await runProc('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
@@ -2031,7 +2044,7 @@ io.on('connection', (socket) => {
             if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
             socket.emit('log', L.voice_ready);
 
-            await refreshCaptionsForRender(msg => socket.emit('log', msg), lang);
+            await prepareVoiceForRender(msg => socket.emit('log', msg), lang);
             validateContentForRender(msg => socket.emit('log', msg), lang);
             socket.emit('log', L.rendering_only);
             const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true, detached: true });

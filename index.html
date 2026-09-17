@@ -623,6 +623,9 @@
     .cap-sample.cap-outline { color: #fff; -webkit-text-stroke: 4px #000; paint-order: stroke fill; }
     .cap-sample.cap-box { color: #fff; background: rgba(0,0,0,0.7); font-weight: 600; }
     .cap-sample.cap-block { color: #000; background: #ffdd00; }
+    .settings-check { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; font-size: 13px; color: var(--text-main); cursor: pointer; }
+    .settings-check input { margin-top: 3px; }
+    .settings-check small { display: block; margin-top: 3px; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
     .caption-range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .caption-range-row input[type=range] { flex: 1; }
     .caption-range-row span { font-size: 12px; color: var(--text-muted); min-width: 44px; text-align: right; font-family: monospace; }
@@ -1226,6 +1229,12 @@
         <button class="btn sm blue" style="margin-top:8px" onclick="loadVoicevoxSpeakers()">Load available speakers from VOICEVOX</button>
         <div class="speaker-list" id="speakerList" style="display:none"></div>
       </div>
+
+      <label class="settings-check">
+        <input type="checkbox" id="voiceNormalizeToggle" checked />
+        <span><span data-i18n="voice_normalize">Even out voice volume across scenes</span>
+        <small data-i18n="voice_normalize_hint">Brings every scene's voice to the same loudness in the render, so generated and uploaded voices don't jump in volume between scenes.</small></span>
+      </label>
     </div>
 
     <!-- TEXT STYLE -->
@@ -1379,6 +1388,12 @@
         <option value="yes" data-i18n="bgmusic_yes">Yes</option>
         <option value="no" data-i18n="bgmusic_no">No</option>
       </select>
+
+      <label class="settings-check">
+        <input type="checkbox" id="musicDuckingToggle" checked />
+        <span><span data-i18n="music_ducking">Duck music under the voice</span>
+        <small data-i18n="music_ducking_hint">Music stays low while someone is speaking and rises in longer pauses, scenes without narration and the ending.</small></span>
+      </label>
 
       <div id="bgMusicManualSection" style="display:none; margin-top:12px;">
         <div class="field-label">Music</div>
@@ -1758,6 +1773,10 @@
       timeline_title: 'Timeline',
       scene_label: 'Scene',
       voice_label: 'Voice',
+      voice_normalize: 'Even out voice volume across scenes',
+      voice_normalize_hint: "Brings every scene's voice to the same loudness in the render, so generated and uploaded voices don't jump in volume between scenes.",
+      music_ducking: 'Duck music under the voice',
+      music_ducking_hint: 'Music stays low while someone is speaking and rises in longer pauses, scenes without narration and the ending.',
       settings_captions: '💬 Voice captions',
       settings_captions_hint: "Shows each scene's narration as short captions, timed to the voice. Each scene can switch them off or on from its timeline.",
       captions_enable: 'Show voice captions',
@@ -2488,6 +2507,10 @@
       timeline_title: 'タイムライン',
       scene_label: 'シーン',
       voice_label: '音声',
+      voice_normalize: 'シーン間の音声の音量をそろえる',
+      voice_normalize_hint: 'レンダリング時に各シーンの音声を同じ音量にそろえます。生成した音声とアップロードした音声で、シーンごとに音量が急に変わることがなくなります。',
+      music_ducking: '音声の間はBGMを下げる',
+      music_ducking_hint: '話している間はBGMを控えめにし、長めの間やナレーションのないシーン、エンディングではBGMを大きくします。',
       settings_captions: '💬 音声字幕',
       settings_captions_hint: '各シーンのナレーションを、音声に合わせた短い字幕で表示します。シーンごとにタイムラインからオン・オフを切り替えられます。',
       captions_enable: '音声字幕を表示する',
@@ -4412,6 +4435,8 @@
     applyVideoSizePreset(normalizeVideoSizePreset(s.videoSizePreset, s.outputWidth, s.outputHeight));
     updateBackgroundMusicUI();
 
+    document.getElementById('voiceNormalizeToggle').checked = s.voiceNormalize !== false;
+    document.getElementById('musicDuckingToggle').checked = s.musicDucking !== false;
     document.getElementById('voiceCaptionsToggle').checked = s.voiceCaptions === true;
     currentSettings.voiceCaptionStyle = s.voiceCaptionStyle || 'outline';
     document.getElementById('voiceCaptionSizeRange').value = s.voiceCaptionSize ?? 64;
@@ -4854,6 +4879,8 @@
       backgroundMusicFile: document.getElementById('bgMusicFileSelect').value,
       backgroundMusicUseCustom: document.getElementById('bgMusicUseCustom').checked,
       backgroundMusicCustomFile: document.getElementById('bgMusicCustomFile').value,
+      voiceNormalize: document.getElementById('voiceNormalizeToggle').checked,
+      musicDucking: document.getElementById('musicDuckingToggle').checked,
       voiceCaptions: document.getElementById('voiceCaptionsToggle').checked,
       voiceCaptionStyle: currentSettings.voiceCaptionStyle || 'outline',
       voiceCaptionSize: parseInt(document.getElementById('voiceCaptionSizeRange').value) || 64,
