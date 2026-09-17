@@ -2295,7 +2295,9 @@ io.on('connection', (socket) => {
     // The long side is capped at 1920px so a 4K source doesn't bloat the project.
     // `framing[i]` is the client's face-based pan for scene i ({ x, y } in the -100..100 range of
     // the framing sliders), or null when no face was found — the scene then keeps the centre crop.
-    socket.on('lv-cut', async ({ filename, timestamps = [], framing = [] }) => {
+    // `subtitles[i]` is an optional list of caption cues for scene i ({ text, start, end } in
+    // seconds from the scene start), taken from a subtitle file or the video's own YouTube track.
+    socket.on('lv-cut', async ({ filename, timestamps = [], framing = [], subtitles = [] }) => {
         const srcPath = path.join(__dirname, 'public', 'long-video-input', path.basename(String(filename || '')));
         if (!filename || !fs.existsSync(srcPath)) return socket.emit('lv-cut-error', { message: 'Source file not found.' });
         const cuts = [...new Set((timestamps || []).map(Number).filter(t => Number.isFinite(t) && t > 0))].sort((a, b) => a - b);
@@ -2335,8 +2337,17 @@ io.on('connection', (socket) => {
             const pan = {};
             if (fr && Number.isFinite(Number(fr.x))) pan.backgroundX = Math.max(-100, Math.min(100, Math.round(Number(fr.x))));
             if (fr && Number.isFinite(Number(fr.y))) pan.backgroundY = Math.max(-100, Math.min(100, Math.round(Number(fr.y))));
+            const cues = Array.isArray(subtitles) && Array.isArray(subtitles[i])
+                ? subtitles[i]
+                    .map(c => ({ text: String(c?.text || '').trim(), start: Math.round(Number(c?.start) * 100) / 100, end: c?.end == null ? null : Math.round(Number(c.end) * 100) / 100 }))
+                    .filter(c => c.text && Number.isFinite(c.start) && c.start >= 0 && c.start < dur)
+                : [];
+            const caps = cues.length
+                ? { captionCues: cues, captionCuesSource: 'subtitles', captionCuesKey: 'subtitles', voiceCaptions: true }
+                : {};
             scenes.push({
                 ...pan,
+                ...caps,
                 text: '',
                 voiceover_text: '',
                 background_url: file,
@@ -2552,6 +2563,52 @@ app.post('/media-library/delete-image', (req, res) => {
 // ─────────────────────────────────────────
 // LONG VIDEO EDITOR ROUTES
 // ─────────────────────────────────────────
+
+// ── Subtitles for Video to Scenes ────────────────────────────────────────────
+// Lists the subtitle tracks a YouTube/TikTok link offers (via yt-dlp's JSON dump, no video
+// download) and fetches one of them. Only caption files from the platforms' own hosts are
+// fetched, so this can't be pointed at arbitrary URLs.
+const SUB_PAGE_HOSTS = ['youtube.com', 'youtu.be', 'tiktok.com'];
+const SUB_FILE_HOSTS = ['youtube.com', 'googlevideo.com', 'tiktok.com', 'tiktokcdn.com', 'tiktokcdn-us.com'];
+const hostAllowed = (u, list) => {
+    try { const h = new URL(u).hostname.toLowerCase(); return list.some(d => h === d || h.endsWith('.' + d)); }
+    catch { return false; }
+};
+
+app.post('/yt-subs-list', (req, res) => {
+    const { execFile } = require('child_process');
+    const url = String(req.body?.url || '').trim();
+    if (!/^https?:\/\//i.test(url) || !hostAllowed(url, SUB_PAGE_HOSTS)) return res.status(400).json({ error: 'bad-url' });
+    execFile('yt-dlp', ['--no-update', '--no-warnings', '-J', '--skip-download', url], { timeout: 120000, maxBuffer: 64 * 1024 * 1024 }, (err, stdout) => {
+        if (err && err.code === 'ENOENT') return res.json({ error: 'yt-dlp-missing' });
+        let info = null;
+        try { info = JSON.parse(stdout); } catch { }
+        if (!info) return res.status(500).json({ error: 'lookup-failed', detail: String(err?.message || '').slice(0, 300) });
+        const pick = (entries) => (entries || []).find(f => f.ext === 'vtt' && f.url) || (entries || []).find(f => f.ext === 'srt' && f.url) || null;
+        const options = [];
+        for (const [auto, map] of [[false, info.subtitles], [true, info.automatic_captions]]) {
+            for (const [key, entries] of Object.entries(map || {})) {
+                const f = pick(entries);
+                if (f && hostAllowed(f.url, SUB_FILE_HOSTS)) options.push({ key, name: f.name || key, auto, url: f.url, ext: f.ext });
+            }
+        }
+        // creator-uploaded tracks first, then Japanese/English before the rest
+        const rank = o => (o.auto ? 100 : 0) + (/^ja(-|$)/.test(o.key) ? 0 : /^en(-|$)/.test(o.key) ? 1 : 10);
+        options.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+        res.json({ title: info.title || '', duration: info.duration || 0, options });
+    });
+});
+
+app.post('/yt-subs-fetch', (req, res) => {
+    const https = require('https');
+    const url = String(req.body?.url || '');
+    if (!/^https:\/\//i.test(url) || !hostAllowed(url, SUB_FILE_HOSTS)) return res.status(400).json({ error: 'bad-url' });
+    https.get(url, r => {
+        const chunks = [];
+        r.on('data', c => chunks.push(c));
+        r.on('end', () => res.json({ text: Buffer.concat(chunks).toString('utf8') }));
+    }).on('error', e => res.status(502).json({ error: e.message }));
+});
 
 // GET /lv-video-info?filename=X  →  { duration }
 app.get('/lv-video-info', (req, res) => {

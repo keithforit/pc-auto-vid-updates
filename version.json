@@ -1,10 +1,11 @@
 {
-  "version": "1.5.23",
+  "version": "1.5.24",
   "date": "2026-09-17",
-  "notes": "Video to Scenes now frames each scene on the speaker. When the video is wider than the output — a 16:9 recording going to 9:16 — the crop no longer simply takes the middle: the app looks at a few frames of each scene, finds the face, and pans that scene's crop so the person is in view. Someone standing at the left of a wide shot ends up centred in the vertical version instead of cropped out. It works for wide shots as well as close-ups, picks the most prominent face when several people are in frame, and falls back to the centre for scenes with no face, which you can still adjust with the framing sliders. The face detector runs on your own PC in the browser; it downloads once (about 11 MB) the first time you use it, so that first run needs an internet connection. It's on by default in the Video to Scenes window and can be switched off there.",
-  "notes_ja": "「動画からシーン」で、各シーンを話している人に合わせて自動でフレーミングするようになりました。動画が出力サイズより横長の場合（16:9 の録画を 9:16 にする場合など）、これまでは単純に中央を切り抜いていましたが、各シーンの数フレームを解析して顔を検出し、その人が映るように切り抜き位置を調整します。横長の画面の左端に立っている人も、縦動画では中央に収まり、切れてしまうことがなくなります。引きの画にもアップにも対応し、複数の人が映っている場合は最も大きく映っている顔を優先します。顔が見つからないシーンは中央で切り抜かれ、フレーミングスライダーで調整できます。顔検出はブラウザ内で、お使いの PC 上で動作します。初回のみ約 11 MB をダウンロードするため、最初の実行時はインターネット接続が必要です。「動画からシーン」ウィンドウで既定でオンになっており、そこでオフにもできます。",
+  "notes": "Captions for imported video. Video to Scenes now has a Captions section with two ways to bring in subtitles for the clip you're cutting up. Drop a subtitle file (.srt or .vtt) onto the window, or paste the video's YouTube or TikTok link, press Find, and pick one of the subtitle tracks the video offers — creator-uploaded tracks first, then the automatic ones, including YouTube's own translations such as Japanese from English. Only the small caption file is fetched, never the video. The captions are then laid over the scenes at their original timings: each cue appears and disappears when it should, gaps stay empty, and you'll see them in every scene's Captions row and preview. They use the caption style, size and position from Settings and can be switched off per scene like the voice captions. The link lookup needs yt-dlp on your computer (Mac: brew install yt-dlp · Windows: winget install yt-dlp); the subtitle-file route needs nothing extra.",
+  "notes_ja": "取り込んだ動画に字幕を付けられるようになりました。「動画からシーン」に「字幕」欄が追加され、分割する動画の字幕を 2 つの方法で取り込めます。字幕ファイル（.srt または .vtt）をウィンドウにドロップするか、動画の YouTube / TikTok リンクを貼り付けて「検索」を押し、その動画が持つ字幕トラックから選びます。投稿者がアップロードした字幕が先に、続いて自動字幕（「英語から日本語」のような YouTube の翻訳を含む）が並びます。取得するのは小さな字幕ファイルだけで、動画本体はダウンロードしません。字幕は元のタイミングどおりに各シーンに配置され、表示・非表示のタイミングもそのまま、字幕のない区間は空のままです。各シーンの「字幕」行とプレビューで確認できます。スタイル・サイズ・位置は設定の字幕設定に従い、音声字幕と同じくシーンごとにオフにできます。リンクからの検索には yt-dlp が必要です（Mac: brew install yt-dlp · Windows: winget install yt-dlp）。字幕ファイルからの取り込みには追加のインストールは不要です。",
   "files": [
     "index.html",
-    "server.js"
+    "server.js",
+    "src/Main.tsx"
   ]
 }

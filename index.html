@@ -509,6 +509,9 @@
     .v2s-shape { display: block; margin: 0 auto 7px; background: var(--text-dim); border-radius: 3px; }
     .v2s-size.active .v2s-shape { background: var(--accent); }
     .v2s-create { margin-top: 18px; }
+    .v2s-input { flex: 1; min-width: 0; width: auto; font-size: 12px; padding: 5px 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); outline: none; }
+    .v2s-input:focus { border-color: var(--accent); }
+    .v2s-subs-x { color: #f87171; cursor: pointer; margin-left: 6px; }
     .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
     .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
     .editor-actions { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -1160,6 +1163,20 @@
             <span style="font-size:12px;color:var(--text-muted)">s</span>
             <button class="btn sm ghost" type="button" onclick="v2sEvery()" data-i18n="v2s_every_apply">Apply</button>
           </div>
+          <h4 data-i18n="v2s_subs">Captions</h4>
+          <div class="v2s-row">
+            <button class="btn sm ghost" type="button" onclick="document.getElementById('v2s-subs-input').click()" data-i18n="v2s_subs_file">📄 Subtitle file (.srt / .vtt)</button>
+            <input type="file" id="v2s-subs-input" accept=".srt,.vtt,text/vtt,application/x-subrip" style="display:none" />
+          </div>
+          <div class="v2s-row">
+            <input type="text" id="v2s-yt-url" class="v2s-input" placeholder="YouTube / TikTok link" spellcheck="false" />
+            <button class="btn sm ghost" type="button" id="v2s-yt-btn" onclick="v2sYtList()" data-i18n="v2s_yt_find">Find</button>
+          </div>
+          <div class="v2s-row" id="v2s-yt-langs-row" style="display:none">
+            <select id="v2s-yt-langs" class="v2s-input"></select>
+            <button class="btn sm blue" type="button" onclick="v2sYtUse()" data-i18n="v2s_yt_use">Use</button>
+          </div>
+          <div class="v2s-status" id="v2s-subs-status" style="margin:0 0 6px"></div>
           <button class="btn full v2s-create" type="button" id="v2s-create-btn" onclick="v2sCreate()">🎬 Create scenes</button>
           <div id="v2s-cut-progress" style="display:none"><div class="v2s-progress"><div id="v2s-cut-fill"></div></div></div>
           <div class="v2s-status" id="v2s-create-status"></div>
@@ -2338,6 +2355,20 @@
       v2s_framing: (k, n) => `Finding the speaker… scene ${k}/${n}`,
       v2s_framed: (f, n) => `Framed ${f} of ${n} scene${n === 1 ? '' : 's'} on a face; the rest use the centre.`,
       v2s_frame_unavailable: 'Face detection needs an internet connection the first time — using the centre for now.',
+      v2s_subs: 'Captions',
+      v2s_subs_file: '📄 Subtitle file (.srt / .vtt)',
+      v2s_yt_find: 'Find',
+      v2s_yt_use: 'Use',
+      v2s_yt_bad: 'Paste a YouTube or TikTok link first.',
+      v2s_yt_looking: 'Looking up the subtitle tracks…',
+      v2s_yt_none: 'That video has no subtitle tracks.',
+      v2s_yt_missing: 'yt-dlp is not installed. Mac: brew install yt-dlp · Windows: winget install yt-dlp',
+      v2s_yt_failed: "Couldn't look up that link",
+      v2s_yt_auto: 'auto',
+      v2s_subs_loading: 'Loading captions…',
+      v2s_subs_loaded: (n, a, b) => `📝 ${n} caption${n === 1 ? '' : 's'} · ${a} – ${b}`,
+      v2s_subs_empty: 'No captions found in that file.',
+      v2s_subs_remove: 'remove',
       v2s_cutting: 'Cutting video…',
       v2s_done: (n) => `Created ${n} scene${n === 1 ? '' : 's'} from the video`,
       v2s_failed: 'Could not cut the video',
@@ -3108,6 +3139,20 @@
       v2s_framing: (k, n) => `顔を検出中… シーン ${k}/${n}`,
       v2s_framed: (f, n) => `${n}シーン中${f}シーンで顔に合わせました。残りは中央で切り抜きます。`,
       v2s_frame_unavailable: '顔検出には初回のみインターネット接続が必要です。今回は中央で切り抜きます。',
+      v2s_subs: '字幕',
+      v2s_subs_file: '📄 字幕ファイル（.srt / .vtt）',
+      v2s_yt_find: '検索',
+      v2s_yt_use: '使用',
+      v2s_yt_bad: 'YouTube または TikTok のリンクを入力してください。',
+      v2s_yt_looking: '字幕トラックを探しています…',
+      v2s_yt_none: 'この動画には字幕トラックがありません。',
+      v2s_yt_missing: 'yt-dlp がインストールされていません。Mac: brew install yt-dlp · Windows: winget install yt-dlp',
+      v2s_yt_failed: 'リンクを確認できませんでした',
+      v2s_yt_auto: '自動',
+      v2s_subs_loading: '字幕を読み込み中…',
+      v2s_subs_loaded: (n, a, b) => `📝 字幕${n}件 · ${a} – ${b}`,
+      v2s_subs_empty: 'このファイルに字幕が見つかりませんでした。',
+      v2s_subs_remove: '削除',
       v2s_cutting: '動画を分割中…',
       v2s_done: (n) => `動画から${n}シーンを作成しました`,
       v2s_failed: '動画を分割できませんでした',
@@ -6887,7 +6932,7 @@
     let cue = null;
     if (sceneCaptionsOn(i) && cues.length) {
       if (atSec == null) cue = cues[0];
-      else for (const c of cues) if (atSec >= Number(c.start)) cue = c;
+      else for (const c of cues) if (atSec >= Number(c.start) && (c.end == null || atSec < Number(c.end))) cue = c;
     }
     if (!cue) { el.style.display = 'none'; el.dataset.cue = ''; return; }
     const key = `${cue.text}|${captionPreviewCss()}`;
@@ -6978,13 +7023,14 @@
       seg.text || t.main_text_label, mainAnim, mainFadeIn, mainFadeOut, i, 'maintext', 0, 'stl-lbl-maintext'));
 
     // ── Voice captions (read-only: timed from the voice, so they follow it rather than being dragged)
-    if (capOn && String(sdSegments?.[i]?.voiceover_text || '').trim()) {
+    if (capOn && (String(sdSegments?.[i]?.voiceover_text || '').trim() || sceneCaptionCues(i).length)) {
       const cues = sceneCaptionCues(i);
       const status = sdSegments?.[i]?._captionError ? t.captions_failed : hasAudioDur ? t.captions_timing : t.captions_need_voice;
       const bars = cues.length
         ? cues.map((c, k) => {
             const cs = Math.min(Number(c.start) || 0, duration);
-            const ce = Math.min(cues[k + 1] ? Number(cues[k + 1].start) : duration, duration);
+            let ce = Math.min(cues[k + 1] ? Number(cues[k + 1].start) : duration, duration);
+            if (c.end != null && Number.isFinite(Number(c.end))) ce = Math.min(ce, Number(c.end));
             if (ce <= cs) return '';
             return `<div class="stl-cue" style="left:${cs * pps}px;width:${Math.max(6, (ce - cs) * pps)}px" title="${escapeHtml(c.text)} · ${cs.toFixed(2)}s"><span class="stl-bar-lbl">${escapeHtml(c.text)}</span></div>`;
           }).join('')
@@ -14645,7 +14691,7 @@
      project opens in the normal editor. Server side: /upload-long-video,
      /lv-video-info, /lv-detect-scenes and the 'lv-cut' socket event.
   ══════════════════════════════════════════════════════════════════════════ */
-  const _v2s = { filename: null, duration: 0, cuts: [], size: '9:16', busy: false, bound: false, xhr: null };
+  const _v2s = { filename: null, duration: 0, cuts: [], size: '9:16', busy: false, bound: false, xhr: null, subs: [], ytOptions: [] };
   const v2sT = () => (I18N[window._appLang||'en']||I18N.en);
 
   function openVideoToScenes() {
@@ -14675,6 +14721,9 @@
     document.getElementById('v2s-detect-status').textContent = '';
     document.getElementById('v2s-create-status').textContent = '';
     document.getElementById('v2s-cut-progress').style.display = 'none';
+    v2sSetSubs([]);
+    document.getElementById('v2s-yt-url').value = '';
+    document.getElementById('v2s-yt-langs-row').style.display = 'none';
     const vid = document.getElementById('v2s-video');
     vid.pause(); vid.removeAttribute('src'); vid.load();
     v2sRenderCuts();
@@ -14689,7 +14738,9 @@
     // The whole modal is a drop target, not only the dashed box.
     ['dragenter', 'dragover'].forEach(ev => modal.addEventListener(ev, e => { stop(e); zone.classList.add('dragover'); }));
     modal.addEventListener('dragleave', e => { stop(e); if (!modal.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
-    modal.addEventListener('drop', e => { stop(e); zone.classList.remove('dragover'); const f = e.dataTransfer?.files?.[0]; if (f) v2sUpload(f); });
+    modal.addEventListener('drop', e => { stop(e); zone.classList.remove('dragover'); const f = e.dataTransfer?.files?.[0]; if (!f) return; if (/\.(srt|vtt)$/i.test(f.name)) v2sLoadSubsFile(f); else v2sUpload(f); });
+    document.getElementById('v2s-subs-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) v2sLoadSubsFile(f); e.target.value = ''; });
+    document.getElementById('v2s-yt-url').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); v2sYtList(); } });
     zone.addEventListener('click', () => document.getElementById('v2s-file-input').click());
     document.getElementById('v2s-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) v2sUpload(f); });
     document.addEventListener('keydown', e => {
@@ -14858,7 +14909,7 @@
         socket.on('lv-cut-progress', onProg);
         socket.once('lv-cut-done', onDone);
         socket.once('lv-cut-error', onFail);
-        socket.emit('lv-cut', { filename: _v2s.filename, timestamps: _v2s.cuts, framing });
+        socket.emit('lv-cut', { filename: _v2s.filename, timestamps: _v2s.cuts, framing, subtitles: v2sSubsForScenes() });
       });
       _v2s.busy = false;
       closeVideoToScenes();
@@ -14871,6 +14922,109 @@
       btn.disabled = false;
       wrap.style.display = 'none';
     }
+  }
+
+  // ── Captions from a subtitle file or the video's own YouTube/TikTok track ──
+  // Parses SRT and WebVTT. YouTube's auto-generated tracks repeat the previous line in every
+  // cue and carry <c>/timestamp tags, so tags are stripped and lines already shown are dropped.
+  function v2sParseSubs(raw) {
+    const text = String(raw || '').replace(/^\uFEFF/, '').replace(/\r/g, '');
+    const time = /(?:(\d+):)?(\d{1,2}):(\d{2})[.,](\d{1,3})/;
+    const toSec = m => (m[1] ? parseInt(m[1]) * 3600 : 0) + parseInt(m[2]) * 60 + parseInt(m[3]) + parseInt(m[4].padEnd(3, '0')) / 1000;
+    const decode = t => t.replace(/<[^>]*>/g, '').replace(/\{\\[^}]*\}/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+    const cues = [];
+    let prevLines = [], prevEnd = -1;
+    for (const block of text.split(/\n{2,}/)) {
+      const lines = block.split('\n');
+      const ti = lines.findIndex(l => l.includes('-->'));
+      if (ti < 0) continue;
+      const [a, b] = lines[ti].split('-->');
+      const ma = a.match(time), mb = (b || '').match(time);
+      if (!ma || !mb) continue;
+      const start = toSec(ma), end = toSec(mb);
+      let body = lines.slice(ti + 1).map(decode).filter(Boolean);
+      // rolling repeats only happen in back-to-back cues; a line said again later is real
+      if (start - prevEnd < 0.1) body = body.filter(l => !prevLines.includes(l));
+      if (!body.length || end - start < 0.05) continue;
+      prevLines = lines.slice(ti + 1).map(decode).filter(Boolean);
+      prevEnd = end;
+      cues.push({ start: Math.round(start * 1000) / 1000, end: Math.round(end * 1000) / 1000, text: body.join('\n') });
+    }
+    cues.sort((x, y) => x.start - y.start);
+    return cues;
+  }
+
+  function v2sSetSubs(cues) {
+    const t = v2sT();
+    _v2s.subs = cues || [];
+    const el = document.getElementById('v2s-subs-status');
+    if (!el) return;
+    if (!_v2s.subs.length) { el.textContent = ''; return; }
+    el.innerHTML = `${t.v2s_subs_loaded(_v2s.subs.length, lvFmtSec(_v2s.subs[0].start), lvFmtSec(_v2s.subs[_v2s.subs.length - 1].end))}<span class="v2s-subs-x" onclick="v2sSetSubs([])">✕ ${t.v2s_subs_remove}</span>`;
+  }
+
+  async function v2sLoadSubsFile(file) {
+    const t = v2sT();
+    const cues = v2sParseSubs(await file.text());
+    if (!cues.length) { toast(t.v2s_subs_empty, 'error'); return; }
+    v2sSetSubs(cues);
+  }
+
+  async function v2sYtList() {
+    const t = v2sT();
+    const url = document.getElementById('v2s-yt-url').value.trim();
+    const status = document.getElementById('v2s-subs-status');
+    const btn = document.getElementById('v2s-yt-btn');
+    const row = document.getElementById('v2s-yt-langs-row');
+    if (!/^https?:\/\/(www\.|m\.|vm\.)?(youtube\.com|youtu\.be|tiktok\.com)\//i.test(url)) { toast(t.v2s_yt_bad, 'error'); return; }
+    row.style.display = 'none';
+    status.textContent = t.v2s_yt_looking;
+    btn.disabled = true;
+    try {
+      const data = await fetch('/yt-subs-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }).then(r => r.json());
+      if (data.error === 'yt-dlp-missing') { status.textContent = '⚠️ ' + t.v2s_yt_missing; return; }
+      if (data.error) throw new Error(data.detail || data.error);
+      _v2s.ytOptions = data.options || [];
+      if (!_v2s.ytOptions.length) { status.textContent = t.v2s_yt_none; return; }
+      const sel = document.getElementById('v2s-yt-langs');
+      sel.innerHTML = _v2s.ytOptions.map((o, i) => `<option value="${i}">${escapeHtml(o.name)}${o.auto ? ` (${t.v2s_yt_auto})` : ''} · ${escapeHtml(o.key)}</option>`).join('');
+      row.style.display = '';
+      status.textContent = data.title ? `🎬 ${data.title}` : '';
+    } catch (err) {
+      status.textContent = `❌ ${t.v2s_yt_failed}: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function v2sYtUse() {
+    const t = v2sT();
+    const opt = _v2s.ytOptions[parseInt(document.getElementById('v2s-yt-langs').value)];
+    if (!opt) return;
+    const status = document.getElementById('v2s-subs-status');
+    status.textContent = t.v2s_subs_loading;
+    try {
+      const data = await fetch('/yt-subs-fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: opt.url }) }).then(r => r.json());
+      if (data.error) throw new Error(data.error);
+      const cues = v2sParseSubs(data.text);
+      if (!cues.length) { status.textContent = t.v2s_subs_empty; return; }
+      v2sSetSubs(cues);
+    } catch (err) {
+      status.textContent = `❌ ${t.v2s_yt_failed}: ${err.message}`;
+    }
+  }
+
+  // Cues clipped to each scene's range, in seconds from that scene's start.
+  function v2sSubsForScenes() {
+    if (!_v2s.subs.length) return [];
+    const bounds = [0, ..._v2s.cuts, _v2s.duration];
+    return bounds.slice(0, -1).map((s, k) => {
+      const e = bounds[k + 1];
+      return _v2s.subs
+        .filter(c => c.end > s + 0.05 && c.start < e - 0.05)
+        .map(c => ({ text: c.text, start: Math.max(0, Math.round((c.start - s) * 100) / 100), end: Math.round((Math.min(c.end, e) - s) * 100) / 100 }));
+    });
   }
 
   // ── Auto-framing: pan each scene's crop onto the largest face ──────────────

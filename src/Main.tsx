@@ -490,14 +490,17 @@ export const Main: React.FC = () => {
                             const seg = segment as any;
                             const captionsOn = seg.voiceCaptions === true || (seg.voiceCaptions !== false && settings.voiceCaptions === true);
                             const cues: any[] = Array.isArray(seg.captionCues) ? seg.captionCues : [];
-                            if (!captionsOn || !cues.length || !seg.audioFile) return null;
+                            const hasVoice = seg.audioFile && seg.audioFile !== 'null';
+                            if (!captionsOn || !cues.length || !(hasVoice || seg.captionCuesSource === 'subtitles')) return null;
                             const style = settings.voiceCaptionStyle || 'outline';
                             return (
                                 <AbsoluteFill style={{ zIndex: 50 }}>
                                     {cues.map((cue: any, k: number) => {
                                         const from = Math.max(0, Math.round(Number(cue.start) * fps));
+                                        // holds to the next cue, or to its own end when it has one (subtitle gaps stay empty)
                                         const next = cues[k + 1];
-                                        const to = next ? Math.min(durationFrames, Math.round(Number(next.start) * fps)) : durationFrames;
+                                        let to = next ? Math.min(durationFrames, Math.round(Number(next.start) * fps)) : durationFrames;
+                                        if (cue.end != null && Number.isFinite(Number(cue.end))) to = Math.min(to, Math.round(Number(cue.end) * fps));
                                         if (to <= from) return null;
                                         return (
                                             <Sequence key={`cap-${i}-${k}`} from={from} durationInFrames={to - from}>
