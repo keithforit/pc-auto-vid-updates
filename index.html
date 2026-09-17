@@ -606,6 +606,10 @@
     .stl-zoom-row { display: flex; align-items: center; gap: 3px; }
     .stl-zoom-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted); border-radius: 5px; width: 22px; height: 18px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
     .stl-zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .stl-fit-btn { display: inline-flex; align-items: center; justify-content: center; height: 20px; margin-left: 6px; padding: 0 9px; font-size: 10px; font-weight: 600; line-height: 1; white-space: nowrap; background: #2563eb; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    .stl-fit-btn:hover { background: #1d4ed8; }
+    .stl-fit-btn.warn { background: #dc2626; }
+    .stl-fit-btn.warn:hover { background: #b91c1c; }
     .stl-zoom-lbl { font-size: 9px; color: var(--text-dim); font-family: monospace; min-width: 38px; text-align: center; }
     .stl-scroll { overflow-x: auto; overflow-y: hidden; background: var(--bg-deep); }
     .stl-canvas { position: relative; }
@@ -6605,7 +6609,7 @@
     }
 
     const fitToAudioBtn = audioDur > 0
-      ? `<button class="mini-dur-btn" style="margin-left:6px;padding:2px 8px;font-size:10px;white-space:nowrap;background:${voiceIsClipped ? '#dc2626' : '#2563eb'};color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? t.fit_to_audio_warn : t.fit_to_audio}</button>`
+      ? `<button class="stl-fit-btn${voiceIsClipped ? ' warn' : ''}" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? t.fit_to_audio_warn : t.fit_to_audio}</button>`
       : '';
 
     return `<div class="stl-wrap" id="mini-timeline-${i}">

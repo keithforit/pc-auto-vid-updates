@@ -1,10 +1,9 @@
 {
-  "version": "1.5.18",
-  "date": "2026-09-10",
-  "notes": "Two new text styles: Burst and Bubble. Burst puts your words in white with a heavy black outline on a jagged yellow comic starburst with a halftone dot texture — the treatment Japanese ads use for the moment a price or a reward is announced. The star is drawn to fit whatever you type, so it grows and shrinks with the text instead of being a fixed image. Bubble is a white speech balloon with a thick border and a tail pointing down at whoever is talking. Both sit alongside Box, Glow, Block, Shadow and Plain, for the main text of a scene and for extra texts, and both work with everything you already use: position, free X/Y placement, rotation, font, size, the animations, and the [word|#hex] colour highlight for calling out a number. Pick a colour with the existing block colour and outline controls; leave them alone and Burst comes out yellow with white text, Bubble comes out white with black text. The scene thumbnails show both styles exactly as they will render.",
-  "notes_ja": "新しい文字スタイルを 2 つ追加しました。「集中線バースト」は、黄色いギザギザの集中線バースト（ハーフトーンのドット模様つき）の上に、白文字＋太い黒フチで文字を表示します。金額や特典を打ち出す瞬間に日本の広告でよく使われる演出です。バーストは入力した文字に合わせて描画されるため、固定画像とは違い、文字量に応じて大きさが変わります。「吹き出し」は、太いフチと下向きのしっぽが付いた白い吹き出しです。どちらも「ボックス」「グロー」「ブロック」「シャドウ」「プレーン」と並んで、シーンのメインテキストにも追加テキストにも使えます。位置・自由配置（X/Y）・回転・フォント・サイズ・アニメーション・[文字|#色] のハイライト指定など、これまでの機能はすべてそのまま利用できます。色はこれまでのブロック色・フチ色の設定で変更でき、何も変更しなければバーストは黄色地に白文字、吹き出しは白地に黒文字になります。シーンのサムネイルにも、実際のレンダリングと同じ見た目で表示されます。",
+  "version": "1.5.19",
+  "date": "2026-09-17",
+  "notes": "The Fit to audio button in each scene's timeline now looks like a proper button. It was squeezed into the size of the small − and + buttons beside it, so only the word \"to\" sat on the blue background and the rest of the label spilled out over the \"s\" next to the duration box. It is now sized to its label, lines up with the other timeline controls, and still turns red with a warning sign when the voice is longer than the scene.",
+  "notes_ja": "各シーンのタイムラインにある「音声に合わせる」ボタンの表示を修正しました。隣の小さな −／＋ ボタンと同じサイズに押し込まれていたため、青い背景が文字の一部にしか付かず、ラベルが秒数欄の「s」に重なっていました。ラベルの長さに合わせた幅で表示し、タイムラインの他の操作ボタンと高さを揃えています。音声がシーンより長い場合に ⚠ 付きの赤いボタンになる動作はこれまでどおりです。",
   "files": [
-    "index.html",
-    "src/Caption.tsx"
+    "index.html"
   ]
 }
