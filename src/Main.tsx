@@ -167,6 +167,11 @@ export const Main: React.FC = () => {
                     const end = offset + Math.min(dur, e);
                     if (end > start) spans.push([start, end]);
                 }
+            } else if ((seg.background_type === 'video' && Number(seg.videoAudioVolume ?? 0) > 0)
+                || (seg.overlayVideos ?? []).some((v: any) => Number(v?.volume ?? 0) > 0)) {
+                // A clip playing its own sound (e.g. a cut-up recording) is treated as speech
+                // throughout, so the music never rises over it.
+                spans.push([offset, offset + dur]);
             }
             offset += Math.round(dur * fps) / fps;
         }

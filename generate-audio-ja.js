@@ -28,6 +28,13 @@ async function generate() {
             }
         }
 
+        if (!String(text || '').trim()) {
+            console.log(`⏭️  [${i + 1}/${segments.length}] No voiceover text — skipping, keeping duration ${(segments[i].duration || 5).toFixed(2)}s`);
+            if (!segments[i].duration) segments[i].duration = 5;
+            segments[i].audioFile = null;
+            continue;
+        }
+
         const filePath = path.join(voiceDir, `segment_${i}.mp3`);
 
         console.log(`🎙️ [${i + 1}/${segments.length}] ${text.substring(0, 40)}...`);

@@ -482,6 +482,33 @@
     .modal textarea { height: 80px; resize: vertical; }
     /* Text-to-Video script box: room for a full multi-line script (esp. Japanese) */
     .ttv-modal textarea#s1 { min-height: 280px; height: 320px; }
+    /* Video to Scenes modal */
+    .v2s-modal { width: 900px; }
+    .v2s-drop { border: 2px dashed var(--border-mid); border-radius: 14px; padding: 48px 20px; text-align: center; color: var(--text-muted); cursor: pointer; background: var(--bg-input); transition: border-color 0.15s, background 0.15s; }
+    .v2s-drop:hover, .v2s-drop.dragover { border-color: var(--accent); background: rgba(56,189,248,0.07); }
+    .v2s-drop.dragover { border-style: solid; }
+    .v2s-drop-icon { font-size: 40px; line-height: 1; margin-bottom: 10px; }
+    .v2s-progress { height: 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-top: 12px; }
+    .v2s-progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+    .v2s-body { display: grid; grid-template-columns: 1fr 290px; gap: 20px; }
+    .v2s-video { width: 100%; max-height: 340px; background: #000; border-radius: 10px; display: block; }
+    .v2s-timeline { position: relative; height: 34px; margin-top: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; overflow: hidden; }
+    .v2s-fill { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(56,189,248,0.18); pointer-events: none; }
+    .v2s-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+    .v2s-marker { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: #f59e0b; cursor: pointer; }
+    .v2s-marker:hover { background: #ef4444; }
+    .v2s-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .v2s-status { font-size: 12px; color: var(--text-muted); min-height: 16px; margin-top: 6px; line-height: 1.5; }
+    .v2s-segs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; max-height: 84px; overflow-y: auto; }
+    .v2s-seg { font-size: 11px; font-family: monospace; padding: 3px 8px; border-radius: 6px; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+    .v2s-side h4 { margin: 0 0 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); }
+    .v2s-sizes { display: flex; gap: 8px; margin-bottom: 10px; }
+    .v2s-size { flex: 1; padding: 10px 4px 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-input); color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .v2s-size:hover { border-color: var(--accent); }
+    .v2s-size.active { border-color: var(--accent); color: var(--text-main); box-shadow: inset 0 0 0 1px var(--accent); }
+    .v2s-shape { display: block; margin: 0 auto 7px; background: var(--text-dim); border-radius: 3px; }
+    .v2s-size.active .v2s-shape { background: var(--accent); }
+    .v2s-create { margin-top: 18px; }
     .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
     .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
     .editor-actions { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -1062,9 +1089,81 @@
     <div class="tab" onclick="switchTab('media')">🎨 Media Library</div>
     <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
     <button class="tab-cta" type="button" onclick="openTextToVideo()" title="Paste a script → auto-generate scenes">✨ <span data-i18n="ttv_open">Text to Video</span></button>
+    <button class="tab-cta" type="button" onclick="openVideoToScenes()" style="margin-left:8px" title="Drop a video → cut it into scenes">📹 <span data-i18n="v2s_open">Video to Scenes</span></button>
   </div>
 
   <!-- TEXT TO VIDEO — opened as a modal from the "✨ Text to Video" button (tab bar + editor top bar) -->
+  <div class="modal-overlay" id="videoToScenesModal" onclick="if(event.target===this)closeVideoToScenes()">
+   <div class="modal ttv-modal v2s-modal">
+    <button type="button" class="ttv-close" onclick="closeVideoToScenes()" aria-label="Close" title="Close">✕</button>
+    <h3 style="margin:0 0 4px">📹 <span data-i18n="v2s_title">Video to Scenes</span></h3>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--text-dim)" data-i18n="v2s_desc">Drop a video, choose the output size and cut it into scenes — then edit them like any other project.</p>
+
+    <div id="v2s-step-upload">
+      <div class="v2s-drop" id="v2s-drop">
+        <div class="v2s-drop-icon">📥</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text-main)" data-i18n="v2s_drop">Drag &amp; drop a video here</div>
+        <div style="font-size:12px;margin-top:4px" data-i18n="v2s_drop_sub">or click to choose a file · MP4, MOV, WebM</div>
+        <input type="file" id="v2s-file-input" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv" style="display:none" />
+      </div>
+      <div id="v2s-upload-progress" style="display:none">
+        <div class="v2s-progress"><div id="v2s-upload-fill"></div></div>
+        <div class="v2s-status" id="v2s-upload-status"></div>
+      </div>
+    </div>
+
+    <div id="v2s-step-edit" style="display:none">
+      <div class="v2s-body">
+        <div>
+          <div class="v2s-status" id="v2s-file-name" style="margin:0 0 6px"></div>
+          <video id="v2s-video" class="v2s-video" controls playsinline preload="metadata"></video>
+          <div class="v2s-timeline" id="v2s-timeline" onclick="v2sTimelineClick(event)">
+            <div class="v2s-fill" id="v2s-fill"></div>
+            <div class="v2s-playhead" id="v2s-playhead"></div>
+          </div>
+          <div class="v2s-row" style="margin-top:8px">
+            <button class="btn sm blue" type="button" onclick="v2sCutHere()" data-i18n="v2s_cut_here">✂ Cut here</button>
+            <span id="v2s-time" style="font-family:monospace;font-size:12px;color:var(--text-muted)">00:00.0</span>
+            <span style="flex:1"></span>
+            <span id="v2s-count" style="font-size:12px;color:var(--text-main);font-weight:600"></span>
+            <button class="btn sm ghost" type="button" onclick="v2sClearCuts()" data-i18n="v2s_clear">Clear</button>
+          </div>
+          <div class="v2s-status" data-i18n="v2s_cut_hint">Click the bar to seek, press M (or ✂) to cut at the playhead, click a marker to remove it.</div>
+          <div class="v2s-segs" id="v2s-segs"></div>
+        </div>
+        <div class="v2s-side">
+          <h4 data-i18n="v2s_size">Output size</h4>
+          <div class="v2s-sizes">
+            <button type="button" class="v2s-size" data-size="9:16" onclick="v2sSelectSize('9:16')"><span class="v2s-shape" style="width:18px;height:32px"></span>9:16</button>
+            <button type="button" class="v2s-size" data-size="1:1" onclick="v2sSelectSize('1:1')"><span class="v2s-shape" style="width:26px;height:26px;margin-top:3px;margin-bottom:10px"></span>1:1</button>
+            <button type="button" class="v2s-size" data-size="16:9" onclick="v2sSelectSize('16:9')"><span class="v2s-shape" style="width:32px;height:18px;margin-top:7px;margin-bottom:14px"></span>16:9</button>
+          </div>
+          <div class="v2s-status" style="margin:0 0 16px" data-i18n="v2s_size_hint">Wider video is cropped to the centre. Pan each scene afterwards with its framing sliders.</div>
+          <h4 data-i18n="v2s_cuts">Cut points</h4>
+          <div class="v2s-row">
+            <button class="btn sm blue" type="button" id="v2s-detect-btn" onclick="v2sDetect()" data-i18n="v2s_detect">🔍 Detect cuts</button>
+            <select id="v2s-sensitivity" style="width:auto;padding:5px 8px;font-size:12px">
+              <option value="0.45" data-i18n="v2s_sens_few">Fewer cuts</option>
+              <option value="0.3" selected data-i18n="v2s_sens_normal">Normal</option>
+              <option value="0.2" data-i18n="v2s_sens_many">More cuts</option>
+            </select>
+          </div>
+          <div class="v2s-status" id="v2s-detect-status" style="margin:0 0 10px"></div>
+          <div class="v2s-row">
+            <span style="font-size:12px;color:var(--text-muted)" data-i18n="v2s_every">Every</span>
+            <input type="number" id="v2s-every" class="mini-dur-num" min="1" max="120" step="1" value="5" style="width:56px" />
+            <span style="font-size:12px;color:var(--text-muted)">s</span>
+            <button class="btn sm ghost" type="button" onclick="v2sEvery()" data-i18n="v2s_every_apply">Apply</button>
+          </div>
+          <button class="btn full v2s-create" type="button" id="v2s-create-btn" onclick="v2sCreate()">🎬 Create scenes</button>
+          <div id="v2s-cut-progress" style="display:none"><div class="v2s-progress"><div id="v2s-cut-fill"></div></div></div>
+          <div class="v2s-status" id="v2s-create-status"></div>
+        </div>
+      </div>
+    </div>
+   </div>
+  </div>
+
   <div class="modal-overlay" id="textToVideoModal" onclick="if(event.target===this)closeTextToVideoModal()">
    <div class="modal ttv-modal">
     <button type="button" class="ttv-close" onclick="closeTextToVideoModal()" aria-label="Close" title="Close">✕</button>
@@ -2202,6 +2301,36 @@
       sr_done_title: '✅ Recording saved!',
       sr_download_btn: '⬇ Download Recording',
       // Long Video pipeline
+      v2s_open: 'Video to Scenes',
+      v2s_title: 'Video to Scenes',
+      v2s_desc: 'Drop a video, choose the output size and cut it into scenes — then edit them like any other project.',
+      v2s_drop: 'Drag & drop a video here',
+      v2s_drop_sub: 'or click to choose a file · MP4, MOV, WebM',
+      v2s_not_video: 'That file is not a video.',
+      v2s_uploading: 'Uploading…',
+      v2s_upload_failed: 'Upload failed',
+      v2s_size: 'Output size',
+      v2s_size_hint: 'Wider video is cropped to the centre. Pan each scene afterwards with its framing sliders.',
+      v2s_cuts: 'Cut points',
+      v2s_detect: '🔍 Detect cuts',
+      v2s_sens_few: 'Fewer cuts',
+      v2s_sens_normal: 'Normal',
+      v2s_sens_many: 'More cuts',
+      v2s_detecting: 'Looking for shot changes and pauses…',
+      v2s_detected: (n) => `Found ${n} cut point${n === 1 ? '' : 's'}`,
+      v2s_none_found: 'No cuts found — try "More cuts", or mark them yourself.',
+      v2s_every: 'Every',
+      v2s_every_apply: 'Apply',
+      v2s_cut_here: '✂ Cut here',
+      v2s_cut_hint: 'Click the bar to seek, press M (or ✂) to cut at the playhead, click a marker to remove it.',
+      v2s_clear: 'Clear',
+      v2s_remove: 'click to remove',
+      v2s_scene_count: (n) => `${n} scene${n === 1 ? '' : 's'}`,
+      v2s_create: '🎬 Create scenes',
+      v2s_confirm_replace: 'This replaces the current scenes with the cut-up video. Continue?',
+      v2s_cutting: 'Cutting video…',
+      v2s_done: (n) => `Created ${n} scene${n === 1 ? '' : 's'} from the video`,
+      v2s_failed: 'Could not cut the video',
       lv_upload_title: '📁 Step 1: Upload Your Video',
       lv_drop_hint: 'Drag & drop a video file here, or click to browse',
       lv_uploading: 'Uploading…',
@@ -2937,6 +3066,36 @@
       sr_done_title: '✅ 録画完了！',
       sr_download_btn: '⬇ 録画ファイルをダウンロード',
       // Long Video pipeline
+      v2s_open: '動画からシーン',
+      v2s_title: '動画からシーンを作成',
+      v2s_desc: '動画をドロップして出力サイズを選び、シーンに分割します。あとは通常のプロジェクトと同じように編集できます。',
+      v2s_drop: 'ここに動画をドラッグ＆ドロップ',
+      v2s_drop_sub: 'またはクリックしてファイルを選択 · MP4、MOV、WebM',
+      v2s_not_video: '動画ファイルではありません。',
+      v2s_uploading: 'アップロード中…',
+      v2s_upload_failed: 'アップロードに失敗しました',
+      v2s_size: '出力サイズ',
+      v2s_size_hint: '横長の動画は中央で切り抜かれます。各シーンのフレーミングで後から位置を調整できます。',
+      v2s_cuts: '分割点',
+      v2s_detect: '🔍 カットを検出',
+      v2s_sens_few: '少なめ',
+      v2s_sens_normal: '標準',
+      v2s_sens_many: '多め',
+      v2s_detecting: 'シーンの切り替わりと間を探しています…',
+      v2s_detected: (n) => `${n}件の分割点が見つかりました`,
+      v2s_none_found: '分割点が見つかりませんでした。「多め」を試すか、手動でマークしてください。',
+      v2s_every: '間隔',
+      v2s_every_apply: '適用',
+      v2s_cut_here: '✂ ここで分割',
+      v2s_cut_hint: 'バーをクリックで移動、Mキー（または ✂）で再生位置に分割、マーカーをクリックで削除。',
+      v2s_clear: 'クリア',
+      v2s_remove: 'クリックで削除',
+      v2s_scene_count: (n) => `${n}シーン`,
+      v2s_create: '🎬 シーンを作成',
+      v2s_confirm_replace: '現在のシーンをこの動画で置き換えます。続行しますか？',
+      v2s_cutting: '動画を分割中…',
+      v2s_done: (n) => `動画から${n}シーンを作成しました`,
+      v2s_failed: '動画を分割できませんでした',
       lv_upload_title: '📁 ステップ1: 動画をアップロード',
       lv_drop_hint: 'ここに動画ファイルをドラッグ＆ドロップ、またはクリックして選択',
       lv_uploading: 'アップロード中…',
@@ -14466,338 +14625,239 @@
   })();
 
   /* ══════════════════════════════════════════════════════════════════════════
-     LONG VIDEO PIPELINE
+     VIDEO TO SCENES — drop a video, mark cut points (auto-detect / every N s /
+     by hand), pick the output size; the server cuts one clip per scene and the
+     project opens in the normal editor. Server side: /upload-long-video,
+     /lv-video-info, /lv-detect-scenes and the 'lv-cut' socket event.
   ══════════════════════════════════════════════════════════════════════════ */
-  let _lvFilename = null, _lvEditorDuration = 0;
-  let _lvSplitPoints = [], _lvDetectedTimestamps = [];
-  let _lvKeydownBound = false;
+  const _v2s = { filename: null, duration: 0, cuts: [], size: '9:16', busy: false, bound: false, xhr: null };
+  const v2sT = () => (I18N[window._appLang||'en']||I18N.en);
 
-  // ── Drop zone init (called on first load) ──
-  (function lvInitDropZone() {
-    window.addEventListener('load', () => {
-      const zone = document.getElementById('lv-drop-zone');
-      if (!zone) return;
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) lvUploadFile(f); });
-      zone.addEventListener('click', () => document.getElementById('lv-file-input').click());
-    });
-  })();
+  function openVideoToScenes() {
+    const modal = document.getElementById('videoToScenesModal');
+    if (!modal) return;
+    v2sBind();
+    v2sReset();
+    v2sSelectSize(normalizeVideoSizePreset(currentSettings.videoSizePreset, currentSettings.outputWidth, currentSettings.outputHeight));
+    modal.classList.add('open');
+  }
 
-  async function lvUploadFile(file) {
-    const t = (I18N[window._appLang||'en']||I18N.en);
-    const progressWrap = document.getElementById('lv-upload-progress');
-    const progressFill = document.getElementById('lv-upload-fill');
-    const statusEl     = document.getElementById('lv-upload-status');
-    progressWrap.style.display = '';
-    progressFill.style.width   = '0%';
-    statusEl.textContent       = t.lv_uploading;
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const fd  = new FormData();
-      fd.append('video', file);
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round(e.loaded / e.total * 100);
-          progressFill.style.width = pct + '%';
-          statusEl.textContent = `${t.lv_uploading} ${pct}%`;
-        }
-      };
-      xhr.onload = async () => {
-        if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText);
-          _lvFilename = data.filename;
-          statusEl.textContent = t.lv_upload_done + ' — ' + _lvFilename;
-          document.getElementById('lv-step2').style.display = '';
-          document.getElementById('lv-step3').style.display = '';
-          try {
-            const info = await fetch(`/lv-video-info?filename=${encodeURIComponent(_lvFilename)}`).then(r => r.json());
-            lvEditorInit(_lvFilename, info.duration || 0);
-          } catch(e) { console.warn('lv-video-info:', e); }
-          resolve(data);
-        } else { reject(new Error('Upload failed: ' + xhr.status)); }
-      };
-      xhr.onerror = () => reject(new Error('Network error'));
-      xhr.open('POST', '/upload-long-video');
-      xhr.send(fd);
+  function closeVideoToScenes() {
+    if (_v2s.busy) return;   // the cut is running server-side; let it finish
+    document.getElementById('v2s-video')?.pause();
+    document.getElementById('videoToScenesModal')?.classList.remove('open');
+  }
+
+  function v2sReset() {
+    if (_v2s.xhr) { try { _v2s.xhr.abort(); } catch {} _v2s.xhr = null; }
+    _v2s.filename = null; _v2s.duration = 0; _v2s.cuts = [];
+    document.getElementById('v2s-step-upload').style.display = '';
+    document.getElementById('v2s-step-edit').style.display = 'none';
+    document.getElementById('v2s-upload-progress').style.display = 'none';
+    document.getElementById('v2s-upload-fill').style.width = '0%';
+    document.getElementById('v2s-upload-status').textContent = '';
+    document.getElementById('v2s-file-input').value = '';
+    document.getElementById('v2s-detect-status').textContent = '';
+    document.getElementById('v2s-create-status').textContent = '';
+    document.getElementById('v2s-cut-progress').style.display = 'none';
+    const vid = document.getElementById('v2s-video');
+    vid.pause(); vid.removeAttribute('src'); vid.load();
+    v2sRenderCuts();
+  }
+
+  function v2sBind() {
+    if (_v2s.bound) return;
+    _v2s.bound = true;
+    const modal = document.getElementById('videoToScenesModal');
+    const zone = document.getElementById('v2s-drop');
+    const stop = e => { e.preventDefault(); e.stopPropagation(); };
+    // The whole modal is a drop target, not only the dashed box.
+    ['dragenter', 'dragover'].forEach(ev => modal.addEventListener(ev, e => { stop(e); zone.classList.add('dragover'); }));
+    modal.addEventListener('dragleave', e => { stop(e); if (!modal.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
+    modal.addEventListener('drop', e => { stop(e); zone.classList.remove('dragover'); const f = e.dataTransfer?.files?.[0]; if (f) v2sUpload(f); });
+    zone.addEventListener('click', () => document.getElementById('v2s-file-input').click());
+    document.getElementById('v2s-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) v2sUpload(f); });
+    document.addEventListener('keydown', e => {
+      if (!modal.classList.contains('open') || !_v2s.filename) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      if (e.key === 'm' || e.key === 'M') { e.preventDefault(); v2sCutHere(); }
+      if (e.key === ' ') { e.preventDefault(); const v = document.getElementById('v2s-video'); v.paused ? v.play() : v.pause(); }
     });
   }
 
-  function lvEditorInit(filename, duration) {
-    _lvFilename = filename;
-    _lvEditorDuration = duration;
-    _lvSplitPoints = [];
-    _lvDetectedTimestamps = [];
-    const vid = document.getElementById('lv-editor-video');
-    if (vid) {
-      vid.src = `/public/long-video-input/${encodeURIComponent(filename)}`;
-      vid.style.display = '';
-      vid.ontimeupdate = () => lvUpdatePlayhead(vid.currentTime, duration);
+  function v2sUpload(file) {
+    const t = v2sT();
+    if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm|mkv)$/i.test(file.name)) { toast(t.v2s_not_video, 'error'); return; }
+    if (_v2s.busy) return;
+    v2sReset();
+    const wrap = document.getElementById('v2s-upload-progress');
+    const fill = document.getElementById('v2s-upload-fill');
+    const status = document.getElementById('v2s-upload-status');
+    wrap.style.display = '';
+    status.textContent = `${t.v2s_uploading} ${file.name}`;
+    const xhr = new XMLHttpRequest();
+    _v2s.xhr = xhr;
+    const fd = new FormData();
+    fd.append('video', file);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) fill.style.width = Math.round(e.loaded / e.total * 100) + '%'; };
+    xhr.onload = async () => {
+      _v2s.xhr = null;
+      let data = null;
+      try { data = JSON.parse(xhr.responseText); } catch {}
+      if (xhr.status !== 200 || !data?.filename) { status.textContent = `❌ ${t.v2s_upload_failed} (${data?.error || xhr.status})`; return; }
+      let duration = 0;
+      try { duration = (await fetch(`/lv-video-info?filename=${encodeURIComponent(data.filename)}`).then(r => r.json())).duration || 0; } catch {}
+      v2sEditorInit(data.filename, duration, file.name);
+    };
+    xhr.onerror = () => { _v2s.xhr = null; status.textContent = `❌ ${t.v2s_upload_failed}`; };
+    xhr.open('POST', '/upload-long-video');
+    xhr.send(fd);
+  }
+
+  function v2sEditorInit(filename, duration, displayName) {
+    _v2s.filename = filename; _v2s.duration = duration; _v2s.cuts = [];
+    document.getElementById('v2s-step-upload').style.display = 'none';
+    document.getElementById('v2s-step-edit').style.display = '';
+    document.getElementById('v2s-file-name').textContent = `${displayName} · ${lvFmtSec(duration)}`;
+    const vid = document.getElementById('v2s-video');
+    vid.src = `/public/long-video-input/${encodeURIComponent(filename)}`;
+    vid.ontimeupdate = () => v2sPlayhead(vid.currentTime);
+    vid.onloadedmetadata = () => { if (!_v2s.duration && isFinite(vid.duration)) { _v2s.duration = vid.duration; v2sRenderCuts(); } };
+    v2sPlayhead(0);
+    v2sRenderCuts();
+  }
+
+  function v2sPlayhead(cur) {
+    const pct = _v2s.duration > 0 ? cur / _v2s.duration * 100 : 0;
+    document.getElementById('v2s-fill').style.width = pct + '%';
+    document.getElementById('v2s-playhead').style.left = pct + '%';
+    document.getElementById('v2s-time').textContent = lvFmtSec(cur);
+  }
+
+  function v2sTimelineClick(e) {
+    if (!_v2s.duration) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    document.getElementById('v2s-video').currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * _v2s.duration;
+  }
+
+  // Cuts stay 0.3s clear of each other and of both ends, so no scene can be a sliver.
+  function v2sAddCut(t) {
+    t = Math.round(t * 100) / 100;
+    if (t <= 0.3 || t >= _v2s.duration - 0.3) return false;
+    if (_v2s.cuts.some(c => Math.abs(c - t) < 0.3)) return false;
+    _v2s.cuts.push(t);
+    _v2s.cuts.sort((a, b) => a - b);
+    return true;
+  }
+  function v2sCutHere() { const v = document.getElementById('v2s-video'); if (v && _v2s.duration && v2sAddCut(v.currentTime)) v2sRenderCuts(); }
+  function v2sRemoveCut(t) { _v2s.cuts = _v2s.cuts.filter(c => c !== t); v2sRenderCuts(); }
+  function v2sClearCuts() { _v2s.cuts = []; v2sRenderCuts(); }
+
+  function v2sRenderCuts() {
+    const t = v2sT();
+    const tl = document.getElementById('v2s-timeline');
+    if (!tl) return;
+    tl.querySelectorAll('.v2s-marker').forEach(m => m.remove());
+    _v2s.cuts.forEach(c => {
+      const m = document.createElement('div');
+      m.className = 'v2s-marker';
+      m.style.left = (_v2s.duration ? c / _v2s.duration * 100 : 0) + '%';
+      m.title = `${lvFmtSec(c)} — ${t.v2s_remove}`;
+      m.onclick = e => { e.stopPropagation(); v2sRemoveCut(c); };
+      tl.appendChild(m);
+    });
+    const bounds = [0, ..._v2s.cuts, _v2s.duration];
+    document.getElementById('v2s-segs').innerHTML = bounds.slice(0, -1)
+      .map((s, k) => `<span class="v2s-seg">#${k + 1} ${lvFmtSec(s)} – ${lvFmtSec(bounds[k + 1])}</span>`).join('');
+    const n = _v2s.cuts.length + 1;
+    document.getElementById('v2s-count').textContent = t.v2s_scene_count(n);
+    document.getElementById('v2s-create-btn').textContent = `${t.v2s_create} (${n})`;
+  }
+
+  async function v2sDetect() {
+    const t = v2sT();
+    if (!_v2s.filename) return;
+    const threshold = parseFloat(document.getElementById('v2s-sensitivity').value) || 0.3;
+    const status = document.getElementById('v2s-detect-status');
+    const btn = document.getElementById('v2s-detect-btn');
+    status.textContent = t.v2s_detecting;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/lv-detect-scenes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: _v2s.filename, threshold }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      _v2s.cuts = [];
+      let last = 0;   // detected silences cluster around a shot change; keep cuts at least 1s apart
+      (data.timestamps || []).map(Number).sort((a, b) => a - b).forEach(ts => { if (ts - last >= 1 && v2sAddCut(ts)) last = ts; });
+      v2sRenderCuts();
+      status.textContent = _v2s.cuts.length ? t.v2s_detected(_v2s.cuts.length) : t.v2s_none_found;
+    } catch (err) {
+      status.textContent = '❌ ' + err.message;
+    } finally {
+      btn.disabled = false;
     }
-    lvRenderMarkers();
-    if (!_lvKeydownBound) {
-      document.addEventListener('keydown', (e) => {
-        if ((e.key === 'm' || e.key === 'M') && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) lvMarkSplit();
+  }
+
+  function v2sEvery() {
+    const n = parseFloat(document.getElementById('v2s-every').value);
+    if (!(n >= 1) || !_v2s.duration) return;
+    _v2s.cuts = [];
+    for (let x = n; x < _v2s.duration - 0.3; x += n) v2sAddCut(x);
+    v2sRenderCuts();
+  }
+
+  function v2sSelectSize(key) {
+    _v2s.size = VIDEO_SIZE_PRESETS[key] ? key : '9:16';
+    document.querySelectorAll('.v2s-size').forEach(b => b.classList.toggle('active', b.dataset.size === _v2s.size));
+  }
+
+  async function v2sCreate() {
+    const t = v2sT();
+    if (!_v2s.filename || _v2s.busy) return;
+    if ((sdSegments || []).length && !confirm(t.v2s_confirm_replace)) return;
+    _v2s.busy = true;
+    const btn = document.getElementById('v2s-create-btn');
+    const status = document.getElementById('v2s-create-status');
+    const wrap = document.getElementById('v2s-cut-progress');
+    const fill = document.getElementById('v2s-cut-fill');
+    btn.disabled = true; wrap.style.display = ''; fill.style.width = '0%';
+    status.textContent = t.v2s_cutting;
+    document.getElementById('v2s-video').pause();
+    try {
+      // The output size is a project setting: persist it first so the new scenes load into the right frame.
+      const preset = VIDEO_SIZE_PRESETS[_v2s.size];
+      const sr = await fetch('/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoSizePreset: preset.key, outputWidth: preset.width, outputHeight: preset.height }) });
+      if (!sr.ok) throw new Error(`settings ${sr.status}`);
+      applyVideoSizePreset(preset.key);
+      const count = await new Promise((resolve, reject) => {
+        const onProg = ({ pct }) => { fill.style.width = (pct || 0) + '%'; status.textContent = `${t.v2s_cutting} ${pct || 0}%`; };
+        const cleanup = () => { socket.off('lv-cut-progress', onProg); socket.off('lv-cut-done', onDone); socket.off('lv-cut-error', onFail); };
+        const onDone = d => { cleanup(); resolve(d.chunkCount); };
+        const onFail = e => { cleanup(); reject(new Error(e?.message || 'error')); };
+        socket.on('lv-cut-progress', onProg);
+        socket.once('lv-cut-done', onDone);
+        socket.once('lv-cut-error', onFail);
+        socket.emit('lv-cut', { filename: _v2s.filename, timestamps: _v2s.cuts });
       });
-      _lvKeydownBound = true;
+      _v2s.busy = false;
+      closeVideoToScenes();
+      await loadSegments();
+      toast(t.v2s_done(count), 'success');
+    } catch (err) {
+      status.textContent = `❌ ${t.v2s_failed}: ${err.message}`;
+    } finally {
+      _v2s.busy = false;
+      btn.disabled = false;
+      wrap.style.display = 'none';
     }
-  }
-
-  function lvUpdatePlayhead(current, duration) {
-    const pct = duration > 0 ? (current / duration * 100) : 0;
-    const fill = document.getElementById('lv-timeline-fill');
-    const head  = document.getElementById('lv-timeline-playhead');
-    if (fill) fill.style.width = pct + '%';
-    if (head) head.style.left  = pct + '%';
-  }
-
-  function lvTimelineClick(e) {
-    if (!_lvEditorDuration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct  = (e.clientX - rect.left) / rect.width;
-    const vid  = document.getElementById('lv-editor-video');
-    if (vid) vid.currentTime = pct * _lvEditorDuration;
-  }
-
-  function lvMarkSplit() {
-    const vid = document.getElementById('lv-editor-video');
-    if (!vid || !_lvEditorDuration) return;
-    const t = parseFloat(vid.currentTime.toFixed(2));
-    if (!_lvSplitPoints.includes(t)) {
-      _lvSplitPoints.push(t);
-      _lvSplitPoints.sort((a, b) => a - b);
-      lvRenderMarkers();
-    }
-  }
-
-  function lvRemoveSplit(t) {
-    _lvSplitPoints = _lvSplitPoints.filter(x => x !== t);
-    lvRenderMarkers();
-  }
-
-  function lvRenderMarkers() {
-    const timeline = document.getElementById('lv-timeline');
-    const chips    = document.getElementById('lv-chips');
-    if (!timeline) return;
-    timeline.querySelectorAll('.lv-marker').forEach(m => m.remove());
-    _lvSplitPoints.forEach(pt => {
-      const pct = _lvEditorDuration > 0 ? (pt / _lvEditorDuration * 100) : 0;
-      const m   = document.createElement('div');
-      m.className = 'lv-marker';
-      m.style.left = pct + '%';
-      m.title = lvFmtSec(pt) + ' — click to remove';
-      m.onclick = (e) => { e.stopPropagation(); lvRemoveSplit(pt); };
-      timeline.appendChild(m);
-    });
-    if (chips) chips.innerHTML = _lvSplitPoints.map(pt =>
-      `<span class="lv-chip" onclick="lvRemoveSplit(${pt})" title="Click to remove">${lvFmtSec(pt)}</span>`
-    ).join('');
   }
 
   function lvFmtSec(s) {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
-    const dec = Math.round((s % 1) * 10);
-    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${dec}`;
-  }
-
-  function lvClearSplits() {
-    _lvSplitPoints = [];
-    lvRenderMarkers();
-  }
-
-  function lvSwitchSplitTab(name) {
-    ['editor','auto','fixed'].forEach(n => {
-      document.getElementById(`lv-split-tab-${n}`)?.classList.toggle('active', n === name);
-      const p = document.getElementById(`lv-split-panel-${n}`);
-      if (p) p.style.display = n === name ? '' : 'none';
-    });
-  }
-
-  async function lvAutoDetect() {
-    const t = (I18N[window._appLang||'en']||I18N.en);
-    if (!_lvFilename) return;
-    const threshold = parseFloat(document.getElementById('lv-detect-threshold')?.value || 0.35);
-    const statusEl  = document.getElementById('lv-detect-status');
-    const useBtn    = document.getElementById('lv-use-detected-btn');
-    const detectBtn = document.getElementById('lv-detect-btn');
-    statusEl.textContent = t.lv_detecting;
-    useBtn.style.display  = 'none';
-    detectBtn.disabled    = true;
-    try {
-      const res  = await fetch('/lv-detect-scenes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: _lvFilename, threshold })
-      });
-      const data = await res.json();
-      _lvDetectedTimestamps = data.timestamps || [];
-      const countMsg = typeof t.lv_detected_count === 'function'
-        ? t.lv_detected_count(_lvDetectedTimestamps.length)
-        : `Found ${_lvDetectedTimestamps.length} split point(s).`;
-      statusEl.textContent = countMsg;
-      const preview = document.getElementById('lv-detect-preview');
-      if (preview) preview.textContent = _lvDetectedTimestamps.map(lvFmtSec).join('  ') || '—';
-      if (_lvDetectedTimestamps.length > 0) useBtn.style.display = '';
-    } catch(err) {
-      statusEl.textContent = '❌ ' + err.message;
-    } finally {
-      detectBtn.disabled = false;
-    }
-  }
-
-  function lvUseDetected() {
-    _lvSplitPoints = [..._lvDetectedTimestamps].sort((a, b) => a - b);
-    lvRenderMarkers();
-    lvSwitchSplitTab('editor');
-  }
-
-  async function lvExecuteSplit() {
-    const t = (I18N[window._appLang||'en']||I18N.en);
-    if (!_lvFilename) return;
-    if (_lvSplitPoints.length === 0) { toast(t.lv_no_splits, 'error'); return; }
-    const transcript = document.getElementById('lv-transcript')?.value || '';
-    const statusEl  = document.getElementById('lv-split-status');
-    const splitBtn  = document.getElementById('lv-split-btn');
-    statusEl.textContent = t.lv_splitting;
-    splitBtn.disabled    = true;
-    try {
-      const res  = await fetch('/lv-split-at-timestamps', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: _lvFilename, timestamps: _lvSplitPoints, transcriptText: transcript })
-      });
-      const data = await res.json();
-      const doneMsg = typeof t.lv_split_done === 'function' ? t.lv_split_done(data.chunkCount) : `Split into ${data.chunkCount} scenes.`;
-      statusEl.textContent = doneMsg;
-      document.getElementById('lv-step4').style.display = '';
-      lvLoadScenes();
-    } catch(err) {
-      statusEl.textContent = '❌ ' + err.message;
-    } finally {
-      splitBtn.disabled = false;
-    }
-  }
-
-  function lvFixedSplit() {
-    const t = (I18N[window._appLang||'en']||I18N.en);
-    if (!_lvFilename) return;
-    const chunkSec  = parseInt(document.getElementById('lv-chunk-size')?.value || 5);
-    const transcript = document.getElementById('lv-transcript')?.value || '';
-    const statusEl  = document.getElementById('lv-fixed-split-status');
-    const logEl     = document.getElementById('lv-fixed-split-log');
-    const splitBtn  = document.getElementById('lv-fixed-split-btn');
-    statusEl.textContent = t.lv_splitting;
-    logEl.textContent    = '';
-    splitBtn.disabled    = true;
-    socket.emit('split-long-video', { filename: _lvFilename, chunkDuration: chunkSec, transcriptText: transcript });
-    socket.on('lv-split-log', (msg) => { logEl.textContent += msg + '\n'; logEl.scrollTop = logEl.scrollHeight; });
-    socket.on('lv-split-progress', ({ pct }) => { statusEl.textContent = `${t.lv_splitting} ${pct}%`; });
-    socket.once('lv-split-done', (data) => {
-      socket.off('lv-split-log'); socket.off('lv-split-progress');
-      const doneMsg = typeof t.lv_split_done === 'function' ? t.lv_split_done(data.chunkCount) : `Split into ${data.chunkCount} scenes.`;
-      statusEl.textContent = doneMsg;
-      splitBtn.disabled    = false;
-      document.getElementById('lv-step4').style.display = '';
-      lvLoadScenes();
-    });
-    socket.once('lv-split-error', (err) => {
-      socket.off('lv-split-log'); socket.off('lv-split-progress');
-      statusEl.textContent = '❌ ' + (err.message || err);
-      splitBtn.disabled    = false;
-    });
-  }
-
-  async function lvLoadScenes() {
-    const list = document.getElementById('lv-scenes-list');
-    if (!list) return;
-    list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading scenes…</p>';
-    try {
-      const res  = await fetch(`/segments?t=${Date.now()}`, { cache: 'no-store' });
-      const segs = await res.json();
-      if (!Array.isArray(segs) || !segs.length) {
-        list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No scenes found — split a video first.</p>';
-        return;
-      }
-      list.innerHTML = '';
-      segs.forEach((seg, i) => {
-        const card = document.createElement('div');
-        card.className = 'lv-scene-item';
-        const dur = seg.video_duration || seg.duration || 0;
-        const file = seg.background_url || '';
-        const videoSrc = file ? `/backgrounds/${encodeURIComponent(file)}` : '';
-        card.innerHTML = `
-          <div class="lv-scene-item-header">
-            <span class="lv-scene-badge">Scene ${i + 1}</span>
-            <span class="lv-scene-dur">${dur.toFixed ? dur.toFixed(1) : dur}s</span>
-            <span style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${file}</span>
-          </div>
-          ${videoSrc ? `<video src="${videoSrc}" preload="metadata" controls style="width:100%;max-height:130px;border-radius:6px;object-fit:contain;background:#000"></video>` : ''}
-          <textarea class="lv-scene-caption" data-idx="${i}" placeholder="Caption (optional — leave blank for no text overlay)">${escapeHtml ? escapeHtml(seg.text || '') : (seg.text || '')}</textarea>`;
-        list.appendChild(card);
-      });
-    } catch (err) {
-      list.innerHTML = `<p style="color:#fca5a5;font-size:13px">Error loading scenes: ${err.message}</p>`;
-    }
-  }
-
-  async function lvSaveAllCaptions() {
-    const statusEl = document.getElementById('lv-captions-status');
-    const inputs = document.querySelectorAll('#lv-scenes-list .lv-scene-caption');
-    if (!inputs.length) { statusEl.textContent = 'No scenes to save.'; return; }
-    statusEl.textContent = 'Saving…';
-    let failed = 0;
-    for (const ta of inputs) {
-      const idx = parseInt(ta.dataset.idx);
-      try {
-        await fetch('/update-scene-texts', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ index: idx, text: ta.value }),
-        });
-      } catch (_) { failed++; }
-    }
-    statusEl.textContent = failed ? `⚠️ ${failed} scene(s) failed to save` : `✅ ${inputs.length} scene(s) saved`;
-  }
-
-  function lvStartRender() {
-    const t = (I18N[window._appLang||'en']||I18N.en);
-    const batchSize  = parseInt(document.getElementById('lv-batch-size')?.value || 20);
-    const statusEl   = document.getElementById('lv-render-status');
-    const renderBtn  = document.getElementById('lv-render-btn');
-    const stopBtn    = document.getElementById('lv-render-stop-btn');
-    const logEl      = document.getElementById('lv-render-log');
-    const fillEl     = document.getElementById('lv-render-fill');
-    const resultEl   = document.getElementById('lv-render-result');
-    renderBtn.style.display = 'none';
-    stopBtn.style.display   = '';
-    stopBtn.disabled        = false;
-    logEl.style.display     = '';
-    logEl.textContent       = '';
-    fillEl.style.width      = '0%';
-    statusEl.textContent    = t.lv_rendering;
-    resultEl.innerHTML      = '';
-    socket.emit('long-video-render', { batchSize });
-    socket.on('lv-log', (msg) => { logEl.textContent += msg + '\n'; logEl.scrollTop = logEl.scrollHeight; });
-    socket.on('lv-render-progress', ({ pct }) => { if (fillEl) fillEl.style.width = (pct || 0) + '%'; });
-    socket.once('lv-done', (data) => {
-      socket.off('lv-log'); socket.off('lv-render-progress');
-      renderBtn.style.display = ''; stopBtn.style.display = 'none';
-      statusEl.textContent = '✅ Done!';
-      fillEl.style.width = '100%';
-      const fname = (data.file || '').split('/').pop();
-      if (fname) resultEl.innerHTML = `<a href="/renders/${encodeURIComponent(fname)}" class="btn full" style="margin-top:10px" download>${t.lv_download_btn}</a>`;
-    });
-    socket.once('lv-render-error', (err) => {
-      socket.off('lv-log'); socket.off('lv-render-progress');
-      renderBtn.style.display = ''; stopBtn.style.display = 'none';
-      statusEl.textContent = '❌ ' + (err.message || err);
-    });
-  }
-
-  function lvStopRender() {
-    socket.emit('lv-render-stop');
-    const stopBtn  = document.getElementById('lv-render-stop-btn');
-    const statusEl = document.getElementById('lv-render-status');
-    if (stopBtn)  stopBtn.disabled    = true;
-    if (statusEl) statusEl.textContent = (I18N[window._appLang||'en']||I18N.en).log_cancelled || 'Stopping…';
+    const dec = Math.round((s % 1) * 10) % 10;
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${dec}`;
   }
 </script>
 
@@ -14842,6 +14902,7 @@
       </span>
     </span>
     <button class="tl-ed-btn" onclick="openTextToVideo()">✨ <span data-i18n="ttv_open">Text to Video</span></button>
+    <button class="tl-ed-btn" onclick="openVideoToScenes()">📹 <span data-i18n="v2s_open">Video to Scenes</span></button>
     <button class="tl-ed-btn" onclick="tlEditorAddScene()">＋ <span data-i18n="tl_add_scene">Scene</span></button>
     <button class="tl-ed-btn" id="tl-ed-clear-btn" onclick="clearAllScenes()" title="Delete every scene" style="color:#f87171;border-color:#7f1d1d;"><span data-i18n="delete_all_scenes">🗑 Delete all</span></button>
     <button class="tl-ed-btn tl-ed-gen" onclick="tlEditorGenerate()"><i class="fa-solid fa-play"></i> <span data-i18n="btn_generate">Generate</span></button>

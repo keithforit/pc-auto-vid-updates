@@ -2289,6 +2289,66 @@ io.on('connection', (socket) => {
     });
 
     // ── Auto-detect scene cuts + silences with live progress ──
+    // Video to Scenes: cut the uploaded video at the chosen times, one clip per scene. Re-encodes
+    // with a keyframe forced at every cut, so each scene starts exactly where it was marked — a
+    // stream copy can only split at the source's own keyframes, often seconds apart on a download.
+    // The long side is capped at 1920px so a 4K source doesn't bloat the project.
+    socket.on('lv-cut', async ({ filename, timestamps = [] }) => {
+        const srcPath = path.join(__dirname, 'public', 'long-video-input', path.basename(String(filename || '')));
+        if (!filename || !fs.existsSync(srcPath)) return socket.emit('lv-cut-error', { message: 'Source file not found.' });
+        const cuts = [...new Set((timestamps || []).map(Number).filter(t => Number.isFinite(t) && t > 0))].sort((a, b) => a - b);
+        const total = (await getVideoDuration(srcPath)) || 0;
+        const ts = Date.now();
+        const bgDir = path.join(__dirname, 'public', 'backgrounds');
+        fs.mkdirSync(bgDir, { recursive: true });
+        const args = ['-hide_banner', '-y', '-i', srcPath,
+            '-vf', "scale=w='min(1920,iw)':h=-2",
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-b:a', '160k',
+            '-f', 'segment', '-reset_timestamps', '1', '-avoid_negative_ts', 'make_zero'];
+        if (cuts.length) {
+            const list = cuts.map(t => t.toFixed(3)).join(',');
+            args.push('-force_key_frames', list, '-segment_times', list);
+        }
+        args.push(path.join(bgDir, `lv-${ts}-%04d.mp4`));
+        socket.emit('lv-cut-progress', { pct: 0 });
+        const code = await new Promise((resolve) => {
+            const proc = spawn('ffmpeg', args);
+            proc.stderr.on('data', chunk => {
+                const m = String(chunk).match(/time=(\d+):(\d+):(\d+\.?\d*)/);
+                if (m && total > 0) {
+                    const done = (+m[1]) * 3600 + (+m[2]) * 60 + parseFloat(m[3]);
+                    socket.emit('lv-cut-progress', { pct: Math.min(99, Math.round(done / total * 100)) });
+                }
+            });
+            proc.on('error', () => resolve(-1));
+            proc.on('close', resolve);
+        });
+        const chunks = fs.readdirSync(bgDir).filter(f => f.startsWith(`lv-${ts}-`) && f.endsWith('.mp4')).sort();
+        if (code !== 0 || !chunks.length) return socket.emit('lv-cut-error', { message: `ffmpeg exited with code ${code}` });
+        const scenes = [];
+        for (const file of chunks) {
+            const dur = Math.round(((await getVideoDuration(path.join(bgDir, file))) || 5) * 100) / 100;
+            scenes.push({
+                text: '',
+                voiceover_text: '',
+                background_url: file,
+                background_type: 'video',
+                videoFit: 'cover',
+                video_duration: dur,
+                duration: dur,
+                videoAudioVolume: 100,        // the clip's own sound is the narration
+                backgroundMusicEnabled: false,
+                textAnimation: 'pop',
+                textNoWrap: true,
+            });
+        }
+        writeJsonFile(CONTENT_PATH, scenes);
+        applyStylesToContent(readSettings());
+        socket.emit('lv-cut-progress', { pct: 100 });
+        socket.emit('lv-cut-done', { chunkCount: scenes.length });
+    });
+
     socket.on('lv-detect-scenes', async ({ filename, threshold = 0.3 }) => {
         const { spawn } = require('child_process');
         const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
