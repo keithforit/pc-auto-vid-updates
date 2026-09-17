@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const mp3Duration = require('mp3-duration');
+const { refreshCaptionCues } = require('./caption-cues');
 
 // ── Single-instance guard ─────────────────────────────────────────────────────
 // Kill ALL stale server instances so re-running the script always binds to 3000
@@ -239,6 +240,8 @@ const LOG = {
         warn_bg:          (n, f) => `Scene ${n}: Background video "${f}" not found — scene will render on a black background`,
         cleanup_bg:       (n) => `🧹 Cleaned up ${n} unused background video${n === 1 ? '' : 's'}`,
         cleanup_kept:     (n) => `📌 Kept ${n} recently downloaded background video${n === 1 ? '' : 's'} not used by any scene yet`,
+        captions_timed:   (n, count, exact) => `💬 Scene ${n}: ${count} caption${count === 1 ? '' : 's'} timed to the voice${exact ? ' (VOICEVOX)' : ''}`,
+        captions_failed:  (n, msg) => `Scene ${n}: couldn't time captions (${msg}) — the scene renders without them`,
     },
     ja: {
         cancelled:        '⏹ 制作がキャンセルされました。',
@@ -262,6 +265,8 @@ const LOG = {
         warn_bg:          (n, f) => `シーン${n}: 背景動画「${f}」が見つかりません — 黒背景でレンダリングします`,
         cleanup_bg:       (n) => `🧹 使用していない背景動画を${n}件削除しました`,
         cleanup_kept:     (n) => `📌 まだどのシーンでも使用していない最近ダウンロードした背景動画${n}件を保持しました`,
+        captions_timed:   (n, count, exact) => `💬 シーン${n}: 字幕${count}件を音声に合わせました${exact ? '（VOICEVOX）' : ''}`,
+        captions_failed:  (n, msg) => `シーン${n}: 字幕のタイミングを取得できませんでした（${msg}）— 字幕なしでレンダリングします`,
     },
 };
 
@@ -316,6 +321,21 @@ function cleanupUnusedBackgrounds(logFn, lang = 'en') {
 
 // Pre-render validation: strip any asset references whose files are missing from disk.
 // Returns a list of warning strings (empty = all good).
+// Time voice captions against the current voice files, rebuilding only scenes whose narration or audio changed.
+async function refreshCaptionsForRender(logFn, lang = 'en') {
+    const L = LOG[lang] || LOG.en;
+    try {
+        await refreshCaptionCues({
+            contentPath: CONTENT_PATH,
+            settings: readSettings(),
+            voiceDir: path.join(__dirname, 'public', 'voiceovers'),
+            log: (i, cues, source, err) => logFn(cues ? L.captions_timed(i + 1, cues.length, source === 'voicevox') : L.captions_failed(i + 1, err?.message || source)),
+        });
+    } catch (e) {
+        logFn(L.captions_failed('?', e.message));
+    }
+}
+
 function validateContentForRender(logFn, lang = 'en') {
     try {
         const segs = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
@@ -1633,6 +1653,7 @@ app.post('/update-scene-texts', (req, res) => {
             'backgroundScale', 'backgroundX', 'backgroundY', 'kenBurns',
             'videoSpeed', 'overlayType', 'overlayOpacity', 'spotlightRadius', 'spotlightSoftness', 'videoAudioVolume', 'videoFit',
             'clipStart', 'clipEnd',
+            'voiceCaptions',
         ];
         nullableFields.forEach(f => {
             if (f in req.body) {
@@ -1642,6 +1663,21 @@ app.post('/update-scene-texts', (req, res) => {
         });
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Time voice captions for every scene that has them on, and return each scene's cues for the editor
+app.post('/caption-cues', async (req, res) => {
+    try {
+        const errors = [];
+        await refreshCaptionCues({
+            contentPath: CONTENT_PATH,
+            settings: readSettings(),
+            voiceDir: path.join(__dirname, 'public', 'voiceovers'),
+            log: (i, cues, source, err) => { if (!cues) errors.push({ scene: i, error: err?.message || source }); },
+        });
+        const segments = readJsonFile(CONTENT_PATH, []);
+        res.json({ cues: segments.map(s => s.captionCues || null), errors });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1926,6 +1962,7 @@ io.on('connection', (socket) => {
                 const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
                 const finalName = `${title}_${Date.now()}.mp4`;
 
+                await refreshCaptionsForRender(msg => socket.emit('log', msg), lang);
                 validateContentForRender(msg => socket.emit('log', msg), lang);
                 socket.emit('log', L.rendering);
                 await runProc('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
@@ -1994,6 +2031,7 @@ io.on('connection', (socket) => {
             if (audioCode !== 0) throw new Error(`Audio generation failed (exit ${audioCode})`);
             socket.emit('log', L.voice_ready);
 
+            await refreshCaptionsForRender(msg => socket.emit('log', msg), lang);
             validateContentForRender(msg => socket.emit('log', msg), lang);
             socket.emit('log', L.rendering_only);
             const render = spawn('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true, detached: true });

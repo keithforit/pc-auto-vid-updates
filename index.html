@@ -610,6 +610,22 @@
     .stl-fit-btn:hover { background: #1d4ed8; }
     .stl-fit-btn.warn { background: #dc2626; }
     .stl-fit-btn.warn:hover { background: #b91c1c; }
+    .stl-cap-btn { display: inline-flex; align-items: center; height: 20px; margin-left: 4px; padding: 0 9px; font-size: 10px; font-weight: 600; line-height: 1; white-space: nowrap; background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; }
+    .stl-cap-btn:hover { border-color: #f59e0b; color: #fbbf24; }
+    .stl-cap-btn.on { background: rgba(245,158,11,0.14); border-color: #f59e0b; color: #fbbf24; }
+    .stl-lbl-captions { color: #fbbf24; }
+    .stl-cue { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; background: #d97706; display: flex; align-items: center; overflow: hidden; box-sizing: border-box; box-shadow: inset -2px 0 0 rgba(0,0,0,0.35); }
+    .caption-style-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .caption-style-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 104px; padding: 14px 10px 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; color: var(--text-muted); font-size: 11px; cursor: pointer; }
+    .caption-style-btn:hover { border-color: var(--accent); }
+    .caption-style-btn.active { border-color: var(--accent); color: var(--text-main); box-shadow: inset 0 0 0 1px var(--accent); }
+    .cap-sample { font-size: 15px; font-weight: 900; line-height: 1.3; padding: 2px 8px; border-radius: 5px; font-family: "Noto Sans JP", sans-serif; }
+    .cap-sample.cap-outline { color: #fff; -webkit-text-stroke: 4px #000; paint-order: stroke fill; }
+    .cap-sample.cap-box { color: #fff; background: rgba(0,0,0,0.7); font-weight: 600; }
+    .cap-sample.cap-block { color: #000; background: #ffdd00; }
+    .caption-range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .caption-range-row input[type=range] { flex: 1; }
+    .caption-range-row span { font-size: 12px; color: var(--text-muted); min-width: 44px; text-align: right; font-family: monospace; }
     .stl-zoom-lbl { font-size: 9px; color: var(--text-dim); font-family: monospace; min-width: 38px; text-align: center; }
     .stl-scroll { overflow-x: auto; overflow-y: hidden; background: var(--bg-deep); }
     .stl-canvas { position: relative; }
@@ -1328,6 +1344,34 @@
       <div class="font-cards" id="settings-font-cards"></div>
     </div>
 
+    <!-- VOICE CAPTIONS -->
+    <div class="settings-section">
+      <h3 data-i18n="settings_captions">💬 Voice captions</h3>
+      <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 12px" data-i18n="settings_captions_hint">Shows each scene's narration as short captions, timed to the voice. Each scene can switch them off or on from its timeline.</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-main);margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="voiceCaptionsToggle" onchange="updateCaptionSettingsUI()" />
+        <span data-i18n="captions_enable">Show voice captions</span>
+      </label>
+      <div id="caption-settings-body">
+        <div class="field-label" data-i18n="captions_style">Style</div>
+        <div class="caption-style-row">
+          <button type="button" class="caption-style-btn" data-cap-style="outline" onclick="selectCaptionStyle('outline')"><span class="cap-sample cap-outline">字幕 Aa</span><span data-i18n="captions_outline">Outline</span></button>
+          <button type="button" class="caption-style-btn" data-cap-style="box" onclick="selectCaptionStyle('box')"><span class="cap-sample cap-box">字幕 Aa</span><span data-i18n="captions_box">Box</span></button>
+          <button type="button" class="caption-style-btn" data-cap-style="block" onclick="selectCaptionStyle('block')"><span class="cap-sample cap-block">字幕 Aa</span><span data-i18n="captions_block">Block</span></button>
+        </div>
+        <div class="field-label" data-i18n="captions_size">Size</div>
+        <div class="caption-range-row">
+          <input type="range" id="voiceCaptionSizeRange" min="36" max="120" step="2" value="64" oninput="updateCaptionSettingsUI()" />
+          <span id="voiceCaptionSizeValue">64px</span>
+        </div>
+        <div class="field-label" data-i18n="captions_position">Height on screen</div>
+        <div class="caption-range-row">
+          <input type="range" id="voiceCaptionYRange" min="10" max="95" step="1" value="80" oninput="updateCaptionSettingsUI()" />
+          <span id="voiceCaptionYValue">80%</span>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section">
       <h3 data-i18n="settings_bgmusic">🎵 Background Music</h3>
       <div class="field-label" data-i18n="settings_random">Random</div>
@@ -1714,6 +1758,22 @@
       timeline_title: 'Timeline',
       scene_label: 'Scene',
       voice_label: 'Voice',
+      settings_captions: '💬 Voice captions',
+      settings_captions_hint: "Shows each scene's narration as short captions, timed to the voice. Each scene can switch them off or on from its timeline.",
+      captions_enable: 'Show voice captions',
+      captions_style: 'Style',
+      captions_outline: 'Outline',
+      captions_box: 'Box',
+      captions_block: 'Block',
+      captions_size: 'Size',
+      captions_position: 'Height on screen',
+      captions_label: 'Captions',
+      captions_on: 'Captions on',
+      captions_off: 'Captions off',
+      captions_scene_tip: 'Voice captions for this scene. The default for all scenes is in Settings.',
+      captions_timing: 'Timing captions…',
+      captions_need_voice: 'Captions appear once the voice is generated',
+      captions_failed: "Couldn't time captions",
       main_text_label: 'Main text',
       main_text_placeholder: 'Type the original scene text here...',
       no_audio_yet: 'No audio yet',
@@ -2428,6 +2488,22 @@
       timeline_title: 'タイムライン',
       scene_label: 'シーン',
       voice_label: '音声',
+      settings_captions: '💬 音声字幕',
+      settings_captions_hint: '各シーンのナレーションを、音声に合わせた短い字幕で表示します。シーンごとにタイムラインからオン・オフを切り替えられます。',
+      captions_enable: '音声字幕を表示する',
+      captions_style: 'スタイル',
+      captions_outline: 'フチ取り',
+      captions_box: 'ボックス',
+      captions_block: 'ブロック',
+      captions_size: 'サイズ',
+      captions_position: '画面上の高さ',
+      captions_label: '字幕',
+      captions_on: '字幕オン',
+      captions_off: '字幕オフ',
+      captions_scene_tip: 'このシーンの音声字幕。全シーンの既定値は設定で変更できます。',
+      captions_timing: '字幕のタイミングを計算中…',
+      captions_need_voice: '音声を生成すると字幕が表示されます',
+      captions_failed: '字幕のタイミングを取得できませんでした',
       main_text_label: 'メインテキスト',
       main_text_placeholder: 'ここに元のシーンテキストを入力してください...',
       no_audio_yet: '音声なし',
@@ -3033,6 +3109,8 @@
     document.querySelectorAll('.stl-title').forEach(el => { el.textContent = t.timeline_title; });
     document.querySelectorAll('.stl-lbl-scene').forEach(el => { el.textContent = t.scene_label; });
     document.querySelectorAll('.stl-lbl-voice').forEach(el => { el.textContent = t.voice_label; });
+    document.querySelectorAll('.stl-lbl-captions').forEach(el => { el.textContent = t.captions_label; });
+    document.querySelectorAll('.stl-cap-btn').forEach(el => { el.textContent = '💬 ' + (el.classList.contains('on') ? t.captions_on : t.captions_off); el.title = t.captions_scene_tip; });
     document.querySelectorAll('.stl-lbl-maintext').forEach(el => { el.textContent = t.main_text_label; });
     document.querySelectorAll('.delivery-title').forEach(el => { if(el.textContent.includes('Delivery') || el.textContent.includes('デリバリー')) el.textContent = t.delivery_title; });
     document.querySelectorAll('.delivery-hint').forEach(el => { el.textContent = t.delivery_hint; });
@@ -4333,6 +4411,31 @@
       : 'No custom music uploaded.';
     applyVideoSizePreset(normalizeVideoSizePreset(s.videoSizePreset, s.outputWidth, s.outputHeight));
     updateBackgroundMusicUI();
+
+    document.getElementById('voiceCaptionsToggle').checked = s.voiceCaptions === true;
+    currentSettings.voiceCaptionStyle = s.voiceCaptionStyle || 'outline';
+    document.getElementById('voiceCaptionSizeRange').value = s.voiceCaptionSize ?? 64;
+    document.getElementById('voiceCaptionYRange').value = s.voiceCaptionY ?? 80;
+    updateCaptionSettingsUI();
+  }
+
+  function selectCaptionStyle(style) {
+    currentSettings.voiceCaptionStyle = style;
+    updateCaptionSettingsUI();
+  }
+
+  function updateCaptionSettingsUI() {
+    const on = document.getElementById('voiceCaptionsToggle')?.checked;
+    const body = document.getElementById('caption-settings-body');
+    if (body) body.style.opacity = on ? '1' : '0.45';
+    const style = currentSettings.voiceCaptionStyle || 'outline';
+    document.querySelectorAll('.caption-style-btn').forEach(b => b.classList.toggle('active', b.dataset.capStyle === style));
+    const size = document.getElementById('voiceCaptionSizeRange')?.value;
+    const y = document.getElementById('voiceCaptionYRange')?.value;
+    const sizeLbl = document.getElementById('voiceCaptionSizeValue');
+    const yLbl = document.getElementById('voiceCaptionYValue');
+    if (sizeLbl) sizeLbl.textContent = `${size}px`;
+    if (yLbl) yLbl.textContent = `${y}%`;
   }
 
   function onVoiceChange() {
@@ -4751,6 +4854,10 @@
       backgroundMusicFile: document.getElementById('bgMusicFileSelect').value,
       backgroundMusicUseCustom: document.getElementById('bgMusicUseCustom').checked,
       backgroundMusicCustomFile: document.getElementById('bgMusicCustomFile').value,
+      voiceCaptions: document.getElementById('voiceCaptionsToggle').checked,
+      voiceCaptionStyle: currentSettings.voiceCaptionStyle || 'outline',
+      voiceCaptionSize: parseInt(document.getElementById('voiceCaptionSizeRange').value) || 64,
+      voiceCaptionY: parseInt(document.getElementById('voiceCaptionYRange').value) || 80,
     };
 
     const res  = await fetch('/settings', {
@@ -6331,6 +6438,7 @@
         if (previewState.voiceAudio) {
           previewState.voiceAudio.currentTime = 0;
           try { await previewState.voiceAudio.play(); } catch (err) { console.warn('Voice preview failed:', err); }
+          startCaptionPreviewTicker(i, previewState);
         }
         if (previewState.sfxAudio) {
           stopAudioElement(previewState.sfxAudio);
@@ -6506,6 +6614,105 @@
     </div>`;
   }
 
+  // ── Voice captions ─────────────────────────────────────────────────────────
+  // Cues are built server-side (POST /caption-cues) and stored on each scene; a scene's
+  // voiceCaptions true/false overrides the Settings default, and is absent when it matches.
+  function sceneCaptionsOn(i) {
+    const o = sdSegments?.[i]?.voiceCaptions;
+    return o === true || o === false ? o : currentSettings?.voiceCaptions === true;
+  }
+
+  function sceneCaptionCues(i) {
+    const cues = sdSegments?.[i]?.captionCues;
+    return Array.isArray(cues) ? cues : [];
+  }
+
+  let _captionRefreshSeq = 0;
+  async function refreshCaptionCuesUI() {
+    const n = (sdSegments || []).length;
+    const onIdx = [];
+    for (let i = 0; i < n; i++) { if (sceneCaptionsOn(i)) onIdx.push(i); else updateCaptionPreview(i); }
+    if (!onIdx.length) return;
+    const seq = ++_captionRefreshSeq;
+    try {
+      const data = await fetch('/caption-cues', { method: 'POST' }).then(r => r.json());
+      if (seq !== _captionRefreshSeq || !Array.isArray(data.cues)) return;
+      data.cues.forEach((cues, i) => { if (sdSegments[i]) { sdSegments[i].captionCues = cues || undefined; delete sdSegments[i]._captionError; } });
+      (data.errors || []).forEach(e => { if (sdSegments[e.scene]) sdSegments[e.scene]._captionError = e.error; });
+    } catch (e) {
+      console.warn('Caption timing failed:', e);
+    }
+    onIdx.forEach(i => { refreshMiniTimeline(i); updateCaptionPreview(i); });
+  }
+
+  async function toggleSceneCaptions(i) {
+    if (!sdSegments?.[i]) return;
+    const next = !sceneCaptionsOn(i);
+    // store an override only when the scene differs from the Settings default
+    const value = next === (currentSettings?.voiceCaptions === true) ? null : next;
+    if (value == null) delete sdSegments[i].voiceCaptions; else sdSegments[i].voiceCaptions = value;
+    refreshMiniTimeline(i);
+    updateCaptionPreview(i);
+    try {
+      const res = await fetch('/update-scene-texts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: i, voiceCaptions: value }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    } catch (e) {
+      toast(`${tr('captions_failed')}: ${e.message}`, 'error');
+      return;
+    }
+    if (next) refreshCaptionCuesUI();
+  }
+
+  // Mirrors the caption styles in src/Caption.tsx, scaled from render px to the thumbnail.
+  function captionPreviewCss() {
+    const s = currentSettings || {};
+    const W = getActiveVideoPreset().width;
+    const u = (px) => `calc(var(--thumb-w, 96px) * ${(px / W).toFixed(6)})`;
+    const base = `position:absolute;left:50%;top:${Number(s.voiceCaptionY ?? 80)}%;transform:translate(-50%,-50%);white-space:pre;pointer-events:none;z-index:7;line-height:1.3;font-size:${u(Number(s.voiceCaptionSize) || 64)};`;
+    const style = s.voiceCaptionStyle || 'outline';
+    if (style === 'box') return base + `font-weight:600;color:#fff;background:rgba(0,0,0,0.7);padding:${u(25)} ${u(45)};border-radius:${u(20)};`;
+    if (style === 'block') return base + `font-weight:900;color:#000;background:#ffdd00;padding:${u(18)} ${u(40)};border-radius:${u(10)};`;
+    return base + `font-weight:900;color:#fff;-webkit-text-stroke:0.2em #000;paint-order:stroke fill;text-shadow:0 0.07em 0.2em rgba(0,0,0,0.45);`;
+  }
+
+  // Shows the cue playing at `atSec`, or the first cue when the preview isn't playing.
+  function updateCaptionPreview(i, atSec = null) {
+    const el = document.getElementById(`cap-preview-${i}`);
+    if (!el) return;
+    const cues = sceneCaptionCues(i);
+    let cue = null;
+    if (sceneCaptionsOn(i) && cues.length) {
+      if (atSec == null) cue = cues[0];
+      else for (const c of cues) if (atSec >= Number(c.start)) cue = c;
+    }
+    if (!cue) { el.style.display = 'none'; el.dataset.cue = ''; return; }
+    const key = `${cue.text}|${captionPreviewCss()}`;
+    if (el.dataset.cue === key && el.style.display !== 'none') return;
+    el.dataset.cue = key;
+    el.style.cssText = captionPreviewCss();
+    el.style.fontFamily = fontFamilyFor(sdSegments?.[i]?.font || currentSettings?.font || 'noto');
+    el.textContent = cue.text;
+    // same auto-fit as the render: shrink until the line fits ~88% of the frame width
+    const avail = (el.parentElement?.clientWidth || 0) * 0.88;
+    if (avail > 0 && el.offsetWidth > avail) {
+      el.style.fontSize = `${(parseFloat(getComputedStyle(el).fontSize) * avail / el.offsetWidth).toFixed(2)}px`;
+    }
+  }
+
+  function startCaptionPreviewTicker(i, previewState) {
+    if (previewState.captionTicker || !previewState.voiceAudio || !sceneCaptionsOn(i)) return;
+    previewState.captionTicker = true;
+    const tick = () => {
+      if (activeThumbnailPreview !== previewState) { updateCaptionPreview(i); return; }
+      updateCaptionPreview(i, previewState.voiceAudio.currentTime);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
   function stlRow(rowLabel, color, startSec, endSec, duration, pps, leftJs, rightJs, barLabel, anim, fadeIn, fadeOut, sceneIdx, itemType, itemIdx, rowClass='') {
     return `<div class="stl-row">
       <div class="stl-lbl ${rowClass}">${rowLabel}</div>
@@ -6517,6 +6724,7 @@
     const pps = stlGetPPS(i);
     const duration = Math.max(0.5, Number(seg.duration) || 5);
     const totalWidth = Math.max(280, Math.ceil(duration * pps) + 32);
+    const capOn = sceneCaptionsOn(i);
 
     // Main text animation data — try seg first, fall back to DOM
     const mainAnim    = seg.textAnimation
@@ -6568,6 +6776,21 @@
       `stlDown(event,${i},'maintext',0,'end')`,
       seg.text || t.main_text_label, mainAnim, mainFadeIn, mainFadeOut, i, 'maintext', 0, 'stl-lbl-maintext'));
 
+    // ── Voice captions (read-only: timed from the voice, so they follow it rather than being dragged)
+    if (capOn && String(sdSegments?.[i]?.voiceover_text || '').trim()) {
+      const cues = sceneCaptionCues(i);
+      const status = sdSegments?.[i]?._captionError ? t.captions_failed : hasAudioDur ? t.captions_timing : t.captions_need_voice;
+      const bars = cues.length
+        ? cues.map((c, k) => {
+            const cs = Math.min(Number(c.start) || 0, duration);
+            const ce = Math.min(cues[k + 1] ? Number(cues[k + 1].start) : duration, duration);
+            if (ce <= cs) return '';
+            return `<div class="stl-cue" style="left:${cs * pps}px;width:${Math.max(6, (ce - cs) * pps)}px" title="${escapeHtml(c.text)} · ${cs.toFixed(2)}s"><span class="stl-bar-lbl">${escapeHtml(c.text)}</span></div>`;
+          }).join('')
+        : `<div class="stl-bar" style="left:0;width:${duration * pps}px;background:#475569"><span class="stl-bar-lbl">${status}</span></div>`;
+      rows.push(`<div class="stl-row"><div class="stl-lbl stl-lbl-captions">${t.captions_label}</div><div class="stl-track">${bars}</div></div>`);
+    }
+
     // ── Extra text layers
     extraTexts.forEach((et, j) => {
       const s = clampTimelineStart(et?.startAt ?? 0, duration);
@@ -6611,6 +6834,7 @@
     const fitToAudioBtn = audioDur > 0
       ? `<button class="stl-fit-btn${voiceIsClipped ? ' warn' : ''}" onclick="setSceneDuration(${i},${(audioDur + 0.5).toFixed(1)})" title="Set scene duration to audio length + 0.5s">${voiceIsClipped ? t.fit_to_audio_warn : t.fit_to_audio}</button>`
       : '';
+    const captionBtn = `<button class="stl-cap-btn${capOn ? ' on' : ''}" onclick="toggleSceneCaptions(${i})" title="${t.captions_scene_tip}">💬 ${capOn ? t.captions_on : t.captions_off}</button>`;
 
     return `<div class="stl-wrap" id="mini-timeline-${i}">
       <div class="stl-header">
@@ -6629,6 +6853,7 @@
           <span style="font-size:9px;color:#64748b">s</span>
         </div>
         ${fitToAudioBtn}
+        ${captionBtn}
       </div>
       <div class="stl-scroll" id="stl-scroll-${i}">
         <div class="stl-canvas" id="stl-canvas-${i}" style="width:${totalWidth}px">
@@ -7395,7 +7620,7 @@
         </details>
         </div><!-- /scene-body-wrap -->
       </div>
-      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="video-overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildVideoOverlayPreviewsHTML(i, seg)}</div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="${tr('tip_preview_scene')}">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="${tr('tip_mute')}" disabled>🔊</button></div></div>`;
+      <div class="thumb-wrap"><div class="scene-preview-layer" id="scene-preview-${i}" data-scene-animation="${seg.sceneAnimation||'static'}">${thumbHTML}${buildBgOverlayPreviewHTML(i, seg)}${buildTextPreviewHTML(i, seg)}<div id="extra-text-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildExtraTextPreviewsHTML(i, seg)}</div><div id="overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildOverlayPreviewsHTML(i, seg, true)}</div><div id="shape-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildShapePreviewsHTML(i, seg)}</div><div id="video-overlay-previews-${i}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;">${buildVideoOverlayPreviewsHTML(i, seg)}</div><div class="caption-preview" id="cap-preview-${i}" style="display:none"></div><div id="scene-fade-indicator-${i}" class="scene-fade-indicator${(()=>{const m=seg.sceneAnimation||'static';return m==='fade-in'?' fi-in':m==='fade-out'?' fi-out':m==='fade-both'?' fi-both':'';})()+''}"></div><div class="scene-block-preview" id="scene-block-preview-${i}"></div></div><div class="thumb-audio-controls"><button class="thumb-audio-btn" id="thumb-audio-play-${i}" type="button" onclick="toggleThumbnailAudio(${i})" title="${tr('tip_preview_scene')}">▶</button><button class="thumb-audio-btn" id="thumb-audio-mute-${i}" type="button" onclick="toggleThumbnailAudioMute(${i})" title="${tr('tip_mute')}" disabled>🔊</button></div></div>`;
     return card;
   }
 
@@ -7480,6 +7705,7 @@
       sdSegments = segs;
       try { renderSceneDock(); } catch (e) { console.warn('scene dock:', e); }
       try { applySceneViewMode(); } catch (e) { console.warn('view mode:', e); }
+      refreshCaptionCuesUI();
       // Show the regenerate section now that scenes are loaded
       const scenesRerenderSection = document.getElementById('scenes-rerender-section');
       if (scenesRerenderSection) scenesRerenderSection.style.display = 'block';

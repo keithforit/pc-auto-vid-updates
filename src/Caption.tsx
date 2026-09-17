@@ -365,6 +365,11 @@ export const Caption: React.FC<CaptionProps> = ({
         const sAlpha2 = Math.round(sAlpha * 70) / 100;
         const shadowCss = `${Math.round(sOff * 0.67)}px ${sOff}px ${sBlur}px rgba(0,0,0,${sAlpha.toFixed(2)}), 0 1px ${Math.max(1, Math.round(sBlur / 3))}px rgba(0,0,0,${sAlpha2.toFixed(2)})`;
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor, fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, textShadow: shadowCss, ...widthStyle };
+    } else if (textStyle === 'outline') {
+        // Subtitle look: white text on a heavy black edge. paint-order puts the stroke behind
+        // the fill, so only its outer half shows and the letters keep their full weight.
+        const outline = strokeWidth > 0 ? strokeWidth : Math.max(6, Math.round(renderFontSize * 0.2));
+        textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || '#ffffff', fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, WebkitTextStroke: `${outline}px ${textStrokeColor || '#000000'}`, paintOrder: 'stroke fill', textShadow: `0 ${Math.round(outline * 0.35)}px ${outline}px rgba(0,0,0,0.45)`, ...widthStyle };
     } else if (textStyle === 'plain') {
         textContentStyle = { textAlign: textAlign as any, padding: '0 30px', color: textColor || 'white', fontSize: renderFontSize, fontWeight: '900', fontFamily, lineHeight: 1.3, ...widthStyle };
     } else if (textStyle === 'burst') {

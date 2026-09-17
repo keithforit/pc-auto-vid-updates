@@ -1,9 +1,13 @@
 {
-  "version": "1.5.19",
+  "version": "1.5.20",
   "date": "2026-09-17",
-  "notes": "The Fit to audio button in each scene's timeline now looks like a proper button. It was squeezed into the size of the small − and + buttons beside it, so only the word \"to\" sat on the blue background and the rest of the label spilled out over the \"s\" next to the duration box. It is now sized to its label, lines up with the other timeline controls, and still turns red with a warning sign when the voice is longer than the scene.",
-  "notes_ja": "各シーンのタイムラインにある「音声に合わせる」ボタンの表示を修正しました。隣の小さな −／＋ ボタンと同じサイズに押し込まれていたため、青い背景が文字の一部にしか付かず、ラベルが秒数欄の「s」に重なっていました。ラベルの長さに合わせた幅で表示し、タイムラインの他の操作ボタンと高さを揃えています。音声がシーンより長い場合に ⚠ 付きの赤いボタンになる動作はこれまでどおりです。",
+  "notes": "Voice captions. Turn them on in Settings and each scene's narration appears on screen as short captions that change in time with the voice, the way TikTok and Reels videos subtitle speech. The narration is split into natural phrases rather than cut at a fixed length, so a caption never breaks a word or a verb in half. With VOICEVOX voices the timing comes straight from VOICEVOX, so each caption changes exactly when that phrase is spoken; with other voices and uploaded audio it is worked out from the recording itself. Each caption stays up until the next one starts, so there are no blank moments between phrases or between scenes. Choose Outline (white text with a thick black edge), Box or Block, and set the size and how high on screen they sit. Every scene's timeline gets a Captions on/off button and a Captions row showing where each phrase starts, and the scene preview shows the captions changing as the voice plays. Captions are off until you switch them on, so existing videos render exactly as before, and they are re-timed automatically whenever the voice is regenerated.",
+  "notes_ja": "音声字幕を追加しました。設定でオンにすると、各シーンのナレーションが音声に合わせて切り替わる短い字幕として画面に表示されます。TikTok やリールでよく見る、話している内容をそのまま字幕にするスタイルです。ナレーションは決まった文字数ではなく自然な区切りで分けるため、単語や動詞の途中で字幕が切れることはありません。VOICEVOX の音声では VOICEVOX 自体のタイミング情報を使うので、各フレーズが話される瞬間にぴったり字幕が切り替わります。その他の音声やアップロードした音声では、録音そのものからタイミングを割り出します。字幕は次の字幕が始まるまで表示し続けるため、フレーズの間やシーンの切り替わりで字幕が消える瞬間はありません。スタイルは「フチ取り」（白文字＋太い黒フチ）「ボックス」「ブロック」から選べ、サイズと画面上の高さも調整できます。各シーンのタイムラインに「字幕オン／オフ」ボタンと、各フレーズの開始位置がわかる「字幕」行が追加され、シーンのプレビューでも音声の再生に合わせて字幕が切り替わります。字幕はオンにするまで表示されないため、既存の動画はこれまでどおりレンダリングされます。音声を再生成すると、字幕のタイミングも自動で合わせ直されます。",
   "files": [
-    "index.html"
+    "caption-cues.js",
+    "server.js",
+    "index.html",
+    "src/Caption.tsx",
+    "src/Main.tsx"
   ]
 }

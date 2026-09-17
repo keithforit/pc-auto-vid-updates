@@ -409,6 +409,45 @@ export const Main: React.FC = () => {
                                 />
                             </Sequence>
                         );})}
+
+                        {/* Voice captions: the narration in short phrases, each timed to the voice
+                            (cues are built server-side before render). Each holds until the next. */}
+                        {(() => {
+                            const seg = segment as any;
+                            const captionsOn = seg.voiceCaptions === true || (seg.voiceCaptions !== false && settings.voiceCaptions === true);
+                            const cues: any[] = Array.isArray(seg.captionCues) ? seg.captionCues : [];
+                            if (!captionsOn || !cues.length || !seg.audioFile) return null;
+                            const style = settings.voiceCaptionStyle || 'outline';
+                            return (
+                                <AbsoluteFill style={{ zIndex: 50 }}>
+                                    {cues.map((cue: any, k: number) => {
+                                        const from = Math.max(0, Math.round(Number(cue.start) * fps));
+                                        const next = cues[k + 1];
+                                        const to = next ? Math.min(durationFrames, Math.round(Number(next.start) * fps)) : durationFrames;
+                                        if (to <= from) return null;
+                                        return (
+                                            <Sequence key={`cap-${i}-${k}`} from={from} durationInFrames={to - from}>
+                                                <Caption
+                                                    text={cue.text}
+                                                    textStyle={style}
+                                                    animation="static"
+                                                    font={seg.font}
+                                                    textX={50}
+                                                    textY={settings.voiceCaptionY ?? 80}
+                                                    fontSize={settings.voiceCaptionSize ?? 64}
+                                                    textColor={style === 'block' ? '#000000' : '#ffffff'}
+                                                    blockColor="#ffdd00"
+                                                    textStrokeColor="#000000"
+                                                    noWrap
+                                                    autoFit
+                                                    totalDurationInFrames={to - from}
+                                                />
+                                            </Sequence>
+                                        );
+                                    })}
+                                </AbsoluteFill>
+                            );
+                        })()}
                     </Sequence>
                 );
             })}
