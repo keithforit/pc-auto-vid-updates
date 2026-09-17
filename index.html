@@ -1176,6 +1176,19 @@
             <select id="v2s-yt-langs" class="v2s-input"></select>
             <button class="btn sm blue" type="button" onclick="v2sYtUse()" data-i18n="v2s_yt_use">Use</button>
           </div>
+          <div class="v2s-row">
+            <button class="btn sm ghost" type="button" id="v2s-whisper-btn" onclick="v2sWhisper()" data-i18n="v2s_whisper_btn">🎤 Transcribe</button>
+            <select id="v2s-whisper-lang" class="v2s-input" style="flex:0 0 auto">
+              <option value="auto" data-i18n="v2s_whisper_auto">Auto-detect</option>
+              <option value="ja">日本語</option>
+              <option value="en">English</option>
+            </select>
+            <select id="v2s-whisper-model" class="v2s-input" style="flex:0 0 auto">
+              <option value="small" selected data-i18n="v2s_whisper_small">Better (488 MB)</option>
+              <option value="base" data-i18n="v2s_whisper_base">Faster (148 MB)</option>
+            </select>
+          </div>
+          <div class="v2s-status" style="margin:-4px 0 8px" data-i18n="v2s_whisper_hint">Recognises the speech on this computer with whisper.cpp — no account or online service. The first run downloads the recogniser and the chosen model.</div>
           <div class="v2s-status" id="v2s-subs-status" style="margin:0 0 6px"></div>
           <button class="btn full v2s-create" type="button" id="v2s-create-btn" onclick="v2sCreate()">🎬 Create scenes</button>
           <div id="v2s-cut-progress" style="display:none"><div class="v2s-progress"><div id="v2s-cut-fill"></div></div></div>
@@ -2369,6 +2382,18 @@
       v2s_subs_loaded: (n, a, b) => `📝 ${n} caption${n === 1 ? '' : 's'} · ${a} – ${b}`,
       v2s_subs_empty: 'No captions found in that file.',
       v2s_subs_remove: 'remove',
+      v2s_whisper_btn: '🎤 Transcribe',
+      v2s_whisper_auto: 'Auto-detect',
+      v2s_whisper_small: 'Better (488 MB)',
+      v2s_whisper_base: 'Faster (148 MB)',
+      v2s_whisper_hint: 'Recognises the speech on this computer with whisper.cpp — no account or online service. The first run downloads the recogniser and the chosen model.',
+      v2s_whisper_dl_bin: (p) => `Downloading the recogniser… ${p}%`,
+      v2s_whisper_dl_model: (p, mb) => `Downloading the model (${mb} MB, once)… ${p}%`,
+      v2s_whisper_audio: 'Extracting the audio…',
+      v2s_whisper_running: (p) => `Transcribing… ${p}%`,
+      v2s_whisper_done: (n, lang) => `🎤 Transcribed ${n} caption${n === 1 ? '' : 's'} (${lang})`,
+      v2s_whisper_missing: 'whisper.cpp is not installed on this computer. Mac: brew install whisper-cpp',
+      v2s_whisper_failed: 'Transcription failed',
       v2s_cutting: 'Cutting video…',
       v2s_done: (n) => `Created ${n} scene${n === 1 ? '' : 's'} from the video`,
       v2s_failed: 'Could not cut the video',
@@ -3153,6 +3178,18 @@
       v2s_subs_loaded: (n, a, b) => `📝 字幕${n}件 · ${a} – ${b}`,
       v2s_subs_empty: 'このファイルに字幕が見つかりませんでした。',
       v2s_subs_remove: '削除',
+      v2s_whisper_btn: '🎤 文字起こし',
+      v2s_whisper_auto: '自動判定',
+      v2s_whisper_small: '高精度（488 MB）',
+      v2s_whisper_base: '高速（148 MB）',
+      v2s_whisper_hint: 'whisper.cpp でこのパソコン上で音声を認識します。アカウントもオンラインサービスも不要です。初回のみ認識エンジンと選んだモデルをダウンロードします。',
+      v2s_whisper_dl_bin: (p) => `認識エンジンをダウンロード中… ${p}%`,
+      v2s_whisper_dl_model: (p, mb) => `モデルをダウンロード中（${mb} MB、初回のみ）… ${p}%`,
+      v2s_whisper_audio: '音声を抽出中…',
+      v2s_whisper_running: (p) => `文字起こし中… ${p}%`,
+      v2s_whisper_done: (n, lang) => `🎤 字幕${n}件を文字起こししました（${lang}）`,
+      v2s_whisper_missing: 'whisper.cpp がこのパソコンにインストールされていません。Mac: brew install whisper-cpp',
+      v2s_whisper_failed: '文字起こしに失敗しました',
       v2s_cutting: '動画を分割中…',
       v2s_done: (n) => `動画から${n}シーンを作成しました`,
       v2s_failed: '動画を分割できませんでした',
@@ -15012,6 +15049,41 @@
       v2sSetSubs(cues);
     } catch (err) {
       status.textContent = `❌ ${t.v2s_yt_failed}: ${err.message}`;
+    }
+  }
+
+  async function v2sWhisper() {
+    const t = v2sT();
+    if (!_v2s.filename || _v2s.busy) return;
+    const status = document.getElementById('v2s-subs-status');
+    const btn = document.getElementById('v2s-whisper-btn');
+    const language = document.getElementById('v2s-whisper-lang').value;
+    const model = document.getElementById('v2s-whisper-model').value;
+    btn.disabled = true;
+    status.textContent = t.v2s_whisper_audio;
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const onProg = (p) => {
+          if (p.phase === 'binary') status.textContent = t.v2s_whisper_dl_bin(p.pct || 0);
+          else if (p.phase === 'model') status.textContent = t.v2s_whisper_dl_model(p.pct || 0, p.mb || '');
+          else if (p.phase === 'audio') status.textContent = t.v2s_whisper_audio;
+          else status.textContent = t.v2s_whisper_running(p.pct || 0);
+        };
+        const cleanup = () => { socket.off('whisper-progress', onProg); socket.off('whisper-done', onDone); socket.off('whisper-error', onFail); };
+        const onDone = (d) => { cleanup(); resolve(d); };
+        const onFail = (e) => { cleanup(); const err = new Error(e?.message || 'error'); err.code = e?.code; reject(err); };
+        socket.on('whisper-progress', onProg);
+        socket.once('whisper-done', onDone);
+        socket.once('whisper-error', onFail);
+        socket.emit('whisper-transcribe', { filename: _v2s.filename, language, model });
+      });
+      if (!result.cues?.length) { status.textContent = t.v2s_subs_empty; return; }
+      v2sSetSubs(result.cues);
+      status.innerHTML = `${t.v2s_whisper_done(result.cues.length, result.language || language)} · ${status.innerHTML}`;
+    } catch (err) {
+      status.textContent = err.code === 'WHISPER_MISSING' ? `⚠️ ${t.v2s_whisper_missing}` : `❌ ${t.v2s_whisper_failed}: ${err.message}`;
+    } finally {
+      btn.disabled = false;
     }
   }
 

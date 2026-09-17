@@ -23,3 +23,7 @@ src/SceneDrafts.json
 src/MediaLibrary.json
 src/VideoSettings.json
 content.json
+
+# Local speech-recognition models/binaries (downloaded on first use)
+whisper-models
+whisper-bin

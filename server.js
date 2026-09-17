@@ -8,6 +8,7 @@ const multer = require('multer');
 const mp3Duration = require('mp3-duration');
 const { refreshCaptionCues } = require('./caption-cues');
 const { refreshVoiceLevels } = require('./voice-levels');
+const whisperLocal = require('./whisper-local');
 
 // ── Single-instance guard ─────────────────────────────────────────────────────
 // Kill ALL stale server instances so re-running the script always binds to 3000
@@ -2367,6 +2368,23 @@ io.on('connection', (socket) => {
         socket.emit('lv-cut-done', { chunkCount: scenes.length });
     });
 
+    // Video to Scenes: caption the uploaded video's own speech with whisper.cpp, locally.
+    socket.on('whisper-transcribe', async ({ filename, language = 'auto', model = 'small' } = {}) => {
+        const inputPath = path.join(__dirname, 'public', 'long-video-input', path.basename(String(filename || '')));
+        if (!filename || !fs.existsSync(inputPath)) return socket.emit('whisper-error', { message: 'Source file not found.' });
+        try {
+            const result = await whisperLocal.transcribeFile({
+                inputPath,
+                language: String(language || 'auto').slice(0, 8),
+                model: ['base', 'small'].includes(model) ? model : 'small',
+                onProgress: (p) => socket.emit('whisper-progress', p),
+            });
+            socket.emit('whisper-done', result);
+        } catch (e) {
+            socket.emit('whisper-error', { message: e.message, code: e.code || null, hint: e.hint || null });
+        }
+    });
+
     socket.on('lv-detect-scenes', async ({ filename, threshold = 0.3 }) => {
         const { spawn } = require('child_process');
         const srcPath = path.join(__dirname, 'public', 'long-video-input', filename);
@@ -2597,6 +2615,11 @@ app.post('/yt-subs-list', (req, res) => {
         options.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
         res.json({ title: info.title || '', duration: info.duration || 0, options });
     });
+});
+
+// What the local recogniser needs before its first run (so the UI can say what will download)
+app.get('/whisper-status', (req, res) => {
+    try { res.json(whisperLocal.whisperStatus()); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/yt-subs-fetch', (req, res) => {
