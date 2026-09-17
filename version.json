@@ -1,13 +1,10 @@
 {
-  "version": "1.5.22",
+  "version": "1.5.23",
   "date": "2026-09-17",
-  "notes": "Video to Scenes. A new 📹 button beside Text to Video takes a video you already have — a downloaded clip, a screen recording, a phone video — and turns it into scenes. Drag the file onto the window (or click to choose it), pick the output size (9:16 for TikTok and Shorts, 1:1 or 16:9), and set the cut points: Detect cuts finds the shot changes and pauses for you, Every N seconds cuts at a fixed interval, or scrub the preview and press M to cut exactly where you want. Create scenes then cuts the video into one clip per scene, keeps each clip's own sound as the narration, and opens the result in the normal editor, so you can add text, overlays, shapes and effects and render as usual. Cuts are frame-accurate: the video is re-encoded with a keyframe at every cut, rather than snapping to the nearest existing keyframe, which on downloaded video can be seconds away. Wider video is cropped to the centre of the new frame; use a scene's framing sliders to pan to whoever is talking. Also fixed: scenes with no narration no longer trip up VOICEVOX or Japanese gTTS at render time, and background music now stays low under a clip's own sound instead of rising over it.",
-  "notes_ja": "「動画からシーン」機能を追加しました。「テキストから動画」の隣にある 📹 ボタンから、手元にある動画（ダウンロードした動画、画面録画、スマホで撮った動画など）をシーンに変換できます。ファイルをウィンドウにドラッグ＆ドロップ（またはクリックして選択）し、出力サイズ（TikTok・Shorts 向けの 9:16、1:1、16:9）を選んで、分割点を決めます。「カットを検出」でシーンの切り替わりや間を自動で見つけるほか、一定の秒数ごとに分割したり、プレビューを再生しながら M キーで好きな位置に分割することもできます。「シーンを作成」を押すと、動画が 1 シーン 1 クリップに分割され、各クリップの音声はそのままナレーションとして使われます。結果は通常のエディターで開くので、テキスト・オーバーレイ・シェイプ・エフェクトを追加して、いつもどおりレンダリングできます。分割はフレーム単位で正確です。既存のキーフレームに合わせて位置がずれる（ダウンロード動画では数秒ずれることもある）のではなく、各分割点にキーフレームを入れて再エンコードします。横長の動画は新しいフレームの中央で切り抜かれます。話している人に合わせるには、シーンのフレーミングスライダーで位置を調整してください。あわせて、ナレーションのないシーンがレンダリング時に VOICEVOX や日本語 gTTS でエラーになる問題を修正し、クリップ自体の音声が流れている間は BGM が大きくならないようにしました。",
+  "notes": "Video to Scenes now frames each scene on the speaker. When the video is wider than the output — a 16:9 recording going to 9:16 — the crop no longer simply takes the middle: the app looks at a few frames of each scene, finds the face, and pans that scene's crop so the person is in view. Someone standing at the left of a wide shot ends up centred in the vertical version instead of cropped out. It works for wide shots as well as close-ups, picks the most prominent face when several people are in frame, and falls back to the centre for scenes with no face, which you can still adjust with the framing sliders. The face detector runs on your own PC in the browser; it downloads once (about 11 MB) the first time you use it, so that first run needs an internet connection. It's on by default in the Video to Scenes window and can be switched off there.",
+  "notes_ja": "「動画からシーン」で、各シーンを話している人に合わせて自動でフレーミングするようになりました。動画が出力サイズより横長の場合（16:9 の録画を 9:16 にする場合など）、これまでは単純に中央を切り抜いていましたが、各シーンの数フレームを解析して顔を検出し、その人が映るように切り抜き位置を調整します。横長の画面の左端に立っている人も、縦動画では中央に収まり、切れてしまうことがなくなります。引きの画にもアップにも対応し、複数の人が映っている場合は最も大きく映っている顔を優先します。顔が見つからないシーンは中央で切り抜かれ、フレーミングスライダーで調整できます。顔検出はブラウザ内で、お使いの PC 上で動作します。初回のみ約 11 MB をダウンロードするため、最初の実行時はインターネット接続が必要です。「動画からシーン」ウィンドウで既定でオンになっており、そこでオフにもできます。",
   "files": [
     "index.html",
-    "server.js",
-    "src/Main.tsx",
-    "generate-audio-voicevox.js",
-    "generate-audio-ja.js"
+    "server.js"
   ]
 }

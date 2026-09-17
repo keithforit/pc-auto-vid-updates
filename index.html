@@ -1138,7 +1138,12 @@
             <button type="button" class="v2s-size" data-size="1:1" onclick="v2sSelectSize('1:1')"><span class="v2s-shape" style="width:26px;height:26px;margin-top:3px;margin-bottom:10px"></span>1:1</button>
             <button type="button" class="v2s-size" data-size="16:9" onclick="v2sSelectSize('16:9')"><span class="v2s-shape" style="width:32px;height:18px;margin-top:7px;margin-bottom:14px"></span>16:9</button>
           </div>
-          <div class="v2s-status" style="margin:0 0 16px" data-i18n="v2s_size_hint">Wider video is cropped to the centre. Pan each scene afterwards with its framing sliders.</div>
+          <div class="v2s-status" style="margin:0 0 10px" data-i18n="v2s_size_hint">Wider video is cropped to fit. Pan any scene afterwards with its framing sliders.</div>
+          <label class="settings-check" style="margin:0 0 16px">
+            <input type="checkbox" id="v2s-autoframe" checked />
+            <span><span data-i18n="v2s_autoframe">Auto-frame on the speaker</span>
+            <small data-i18n="v2s_autoframe_hint">Finds the face in each scene and pans the crop to keep it in view.</small></span>
+          </label>
           <h4 data-i18n="v2s_cuts">Cut points</h4>
           <div class="v2s-row">
             <button class="btn sm blue" type="button" id="v2s-detect-btn" onclick="v2sDetect()" data-i18n="v2s_detect">🔍 Detect cuts</button>
@@ -2328,6 +2333,11 @@
       v2s_scene_count: (n) => `${n} scene${n === 1 ? '' : 's'}`,
       v2s_create: '🎬 Create scenes',
       v2s_confirm_replace: 'This replaces the current scenes with the cut-up video. Continue?',
+      v2s_autoframe: 'Auto-frame on the speaker',
+      v2s_autoframe_hint: 'Finds the face in each scene and pans the crop to keep it in view.',
+      v2s_framing: (k, n) => `Finding the speaker… scene ${k}/${n}`,
+      v2s_framed: (f, n) => `Framed ${f} of ${n} scene${n === 1 ? '' : 's'} on a face; the rest use the centre.`,
+      v2s_frame_unavailable: 'Face detection needs an internet connection the first time — using the centre for now.',
       v2s_cutting: 'Cutting video…',
       v2s_done: (n) => `Created ${n} scene${n === 1 ? '' : 's'} from the video`,
       v2s_failed: 'Could not cut the video',
@@ -3093,6 +3103,11 @@
       v2s_scene_count: (n) => `${n}シーン`,
       v2s_create: '🎬 シーンを作成',
       v2s_confirm_replace: '現在のシーンをこの動画で置き換えます。続行しますか？',
+      v2s_autoframe: '話している人に合わせて自動フレーミング',
+      v2s_autoframe_hint: '各シーンで顔を検出し、顔が映るように切り抜き位置を調整します。',
+      v2s_framing: (k, n) => `顔を検出中… シーン ${k}/${n}`,
+      v2s_framed: (f, n) => `${n}シーン中${f}シーンで顔に合わせました。残りは中央で切り抜きます。`,
+      v2s_frame_unavailable: '顔検出には初回のみインターネット接続が必要です。今回は中央で切り抜きます。',
       v2s_cutting: '動画を分割中…',
       v2s_done: (n) => `動画から${n}シーンを作成しました`,
       v2s_failed: '動画を分割できませんでした',
@@ -14830,6 +14845,11 @@
         body: JSON.stringify({ videoSizePreset: preset.key, outputWidth: preset.width, outputHeight: preset.height }) });
       if (!sr.ok) throw new Error(`settings ${sr.status}`);
       applyVideoSizePreset(preset.key);
+      let framing = [];
+      if (document.getElementById('v2s-autoframe')?.checked) {
+        framing = await v2sAutoFrame(preset, status);
+      }
+      status.textContent = t.v2s_cutting;
       const count = await new Promise((resolve, reject) => {
         const onProg = ({ pct }) => { fill.style.width = (pct || 0) + '%'; status.textContent = `${t.v2s_cutting} ${pct || 0}%`; };
         const cleanup = () => { socket.off('lv-cut-progress', onProg); socket.off('lv-cut-done', onDone); socket.off('lv-cut-error', onFail); };
@@ -14838,7 +14858,7 @@
         socket.on('lv-cut-progress', onProg);
         socket.once('lv-cut-done', onDone);
         socket.once('lv-cut-error', onFail);
-        socket.emit('lv-cut', { filename: _v2s.filename, timestamps: _v2s.cuts });
+        socket.emit('lv-cut', { filename: _v2s.filename, timestamps: _v2s.cuts, framing });
       });
       _v2s.busy = false;
       closeVideoToScenes();
@@ -14851,6 +14871,117 @@
       btn.disabled = false;
       wrap.style.display = 'none';
     }
+  }
+
+  // ── Auto-framing: pan each scene's crop onto the largest face ──────────────
+  // Runs in the browser on the modal's own <video> with MediaPipe's face detector, so it
+  // works on every user's PC without native installs. Loaded from the CDN on first use.
+  const V2S_MP_VERSION = '0.10.35';
+  const V2S_MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+  let _v2sDetector = null;
+  async function v2sFaceDetector() {
+    if (_v2sDetector) return _v2sDetector;
+    const base = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V2S_MP_VERSION}`;
+    const vision = await import(`${base}/vision_bundle.mjs`);
+    const files = await vision.FilesetResolver.forVisionTasks(`${base}/wasm`);
+    _v2sDetector = await vision.FaceDetector.createFromOptions(files, {
+      baseOptions: { modelAssetPath: V2S_MP_MODEL },
+      runningMode: 'IMAGE',
+      minDetectionConfidence: 0.5,
+    });
+    return _v2sDetector;
+  }
+
+  function v2sSeek(video, t) {
+    return new Promise(resolve => {
+      const done = () => { video.removeEventListener('seeked', done); resolve(); };
+      video.addEventListener('seeked', done);
+      video.currentTime = t;
+      setTimeout(done, 1500);   // never hang on a seek the browser drops
+    });
+  }
+
+  // Returns [{ x, y } | null] per scene: the framing-slider pan that centres the face in the
+  // visible slice of a cover-fit crop. Only the overflowing axis matters — a 16:9 source in a
+  // 9:16 frame overflows sideways, so x is set and y left at the centre.
+  async function v2sAutoFrame(preset, statusEl) {
+    const t = v2sT();
+    const video = document.getElementById('v2s-video');
+    const bounds = [0, ..._v2s.cuts, _v2s.duration];
+    const n = bounds.length - 1;
+    const none = new Array(n).fill(null);
+    const srcW = video.videoWidth, srcH = video.videoHeight;
+    if (!srcW || !srcH) return none;
+    const srcAR = srcW / srcH, tgtAR = preset.width / preset.height;
+    if (Math.abs(srcAR - tgtAR) < 0.02) return none;   // same shape: nothing is cropped
+    const horizontal = srcAR > tgtAR;
+    // fraction of the source visible along the overflowing axis
+    const visible = horizontal ? tgtAR / srcAR : srcAR / tgtAR;
+    let detector;
+    try { detector = await v2sFaceDetector(); }
+    catch (e) { console.warn('face detector unavailable:', e); statusEl.textContent = t.v2s_frame_unavailable; await new Promise(r => setTimeout(r, 1200)); return none; }
+
+    // The short-range model wants a face that fills a good part of the picture; in a wide shot
+    // it's a few percent of the frame and gets missed. So besides the whole frame, scan square
+    // windows sliding along the long side (50% overlap) — inside one of those the face is large.
+    const tile = Math.min(srcW, srcH);
+    const windows = [];
+    if (horizontal) { for (let x = 0; x < srcW - tile; x += tile / 2) windows.push({ x, y: 0 }); windows.push({ x: srcW - tile, y: 0 }); }
+    else { for (let y = 0; y < srcH - tile; y += tile / 2) windows.push({ x: 0, y }); windows.push({ x: 0, y: srcH - tile }); }
+    const tileCanvas = document.createElement('canvas');
+    tileCanvas.width = tileCanvas.height = 384;
+    const tctx = tileCanvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 640 / srcW);
+    canvas.width = Math.round(srcW * scale); canvas.height = Math.round(srcH * scale);
+    const ctx = canvas.getContext('2d');
+    // best face in a frame: source-pixel centre + size, ranked by confidence × size
+    const findFace = () => {
+      let best = null;
+      const consider = (b, score, sx, sy, ox, oy) => {
+        const f = { cx: ox + (b.originX + b.width / 2) * sx, cy: oy + (b.originY + b.height / 2) * sy, w: b.width * sx, h: b.height * sy, score };
+        f.rank = f.w * f.h * score;
+        if (!best || f.rank > best.rank) best = f;
+      };
+      for (const w of windows) {
+        tctx.drawImage(video, w.x, w.y, tile, tile, 0, 0, 384, 384);
+        try { for (const d of detector.detect(tileCanvas).detections) consider(d.boundingBox, d.categories?.[0]?.score ?? 0.5, tile / 384, tile / 384, w.x, w.y); } catch (err) { console.warn('detect:', err); }
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try { for (const d of detector.detect(canvas).detections) consider(d.boundingBox, d.categories?.[0]?.score ?? 0.5, 1 / scale, 1 / scale, 0, 0); } catch (err) { console.warn('detect:', err); }
+      return best;
+    };
+    const wasPaused = video.paused, wasAt = video.currentTime;
+    video.pause();
+    const result = [];
+    let framed = 0;
+    for (let i = 0; i < n; i++) {
+      statusEl.textContent = t.v2s_framing(i + 1, n);
+      const s = bounds[i], e = bounds[i + 1], len = e - s;
+      const samples = [0.15, 0.38, 0.62, 0.85].map(f => s + len * f);
+      let sumX = 0, sumY = 0, sumW = 0;
+      for (const ts of samples) {
+        await v2sSeek(video, ts);
+        const best = findFace();
+        if (!best || best.score < 0.5) continue;
+        // weight samples by face size so a brief glimpse can't drag the crop away from the speaker
+        const w = best.w * best.h;
+        sumX += (best.cx / srcW) * w;
+        sumY += (best.cy / srcH) * w;
+        sumW += w;
+      }
+      if (!sumW) { result.push(null); continue; }
+      const f = horizontal ? sumX / sumW : sumY / sumW;      // face centre, 0..1 of the source
+      const p = Math.max(0, Math.min(1, (f - visible / 2) / (1 - visible)));   // object-position
+      const pan = Math.round((p * 100 - 50) * 2);           // → framing slider (-100..100)
+      result.push(horizontal ? { x: pan } : { y: pan });
+      framed++;
+    }
+    await v2sSeek(video, wasAt);
+    if (!wasPaused) video.play().catch(() => {});
+    statusEl.textContent = t.v2s_framed(framed, n);
+    await new Promise(r => setTimeout(r, 900));
+    return result;
   }
 
   function lvFmtSec(s) {

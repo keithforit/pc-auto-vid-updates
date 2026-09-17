@@ -2293,7 +2293,9 @@ io.on('connection', (socket) => {
     // with a keyframe forced at every cut, so each scene starts exactly where it was marked — a
     // stream copy can only split at the source's own keyframes, often seconds apart on a download.
     // The long side is capped at 1920px so a 4K source doesn't bloat the project.
-    socket.on('lv-cut', async ({ filename, timestamps = [] }) => {
+    // `framing[i]` is the client's face-based pan for scene i ({ x, y } in the -100..100 range of
+    // the framing sliders), or null when no face was found — the scene then keeps the centre crop.
+    socket.on('lv-cut', async ({ filename, timestamps = [], framing = [] }) => {
         const srcPath = path.join(__dirname, 'public', 'long-video-input', path.basename(String(filename || '')));
         if (!filename || !fs.existsSync(srcPath)) return socket.emit('lv-cut-error', { message: 'Source file not found.' });
         const cuts = [...new Set((timestamps || []).map(Number).filter(t => Number.isFinite(t) && t > 0))].sort((a, b) => a - b);
@@ -2327,9 +2329,14 @@ io.on('connection', (socket) => {
         const chunks = fs.readdirSync(bgDir).filter(f => f.startsWith(`lv-${ts}-`) && f.endsWith('.mp4')).sort();
         if (code !== 0 || !chunks.length) return socket.emit('lv-cut-error', { message: `ffmpeg exited with code ${code}` });
         const scenes = [];
-        for (const file of chunks) {
+        for (const [i, file] of chunks.entries()) {
             const dur = Math.round(((await getVideoDuration(path.join(bgDir, file))) || 5) * 100) / 100;
+            const fr = Array.isArray(framing) ? framing[i] : null;
+            const pan = {};
+            if (fr && Number.isFinite(Number(fr.x))) pan.backgroundX = Math.max(-100, Math.min(100, Math.round(Number(fr.x))));
+            if (fr && Number.isFinite(Number(fr.y))) pan.backgroundY = Math.max(-100, Math.min(100, Math.round(Number(fr.y))));
             scenes.push({
+                ...pan,
                 text: '',
                 voiceover_text: '',
                 background_url: file,
