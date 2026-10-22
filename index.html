@@ -8768,6 +8768,8 @@
         const dragVid = document.getElementById(`thumb-${i}`);
         const wasPlaying = dragVid && dragVid.tagName === 'VIDEO' && !dragVid.paused;
         if (dragVid && dragVid.tagName === 'VIDEO') { try { dragVid.pause(); } catch(_) {} }
+        // Suspend the clip-loop guard while scrubbing — it still holds the old bounds and would snap outward scrubs back.
+        if (dragVid) dragVid._clipDragging = true;
         function onMove(ev) {
           const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
           const raw = parseFloat(fromPct(x - rect.left, rect).toFixed(2));
@@ -8785,6 +8787,7 @@
         }
         function onUp() {
           handle.classList.remove('dragging');
+          if (dragVid) dragVid._clipDragging = false;
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
           document.removeEventListener('touchmove', onMove);
@@ -8821,6 +8824,7 @@
       video.addEventListener('loadedmetadata', doSeek, { once: true });
     if (!video._clipHandler) {
       video._clipHandler = () => {
+        if (video._clipDragging) return;
         const cs = video._clipStart, ce = video._clipEnd;
         if (ce != null && video.currentTime >= ce) {
           video.currentTime = cs; // hit clip end — loop to clip start

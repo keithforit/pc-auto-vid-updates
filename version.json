@@ -1,8 +1,8 @@
 {
-  "version": "1.5.26",
-  "date": "2026-09-17",
-  "notes": "Captions from the speech itself, made on your own computer. When a video has no subtitles, Video to Scenes can now transcribe it: press 🎤 Transcribe, choose the language (or leave it on auto-detect) and a model, and the speech becomes timed captions — split at natural phrase boundaries, each starting exactly when that phrase is spoken. It uses whisper.cpp, a speech recogniser that runs entirely on this PC: no account, no API key, no online service, and nothing is uploaded. The first run downloads the recogniser (on Windows, automatically) and the chosen model once — Better is 488 MB and gives the more accurate Japanese, Faster is 148 MB. On a Mac, install the recogniser with: brew install whisper-cpp. After that it's quick: a 20-second clip takes about a second and a half. Speech recognition is never perfect, so it's worth skimming the captions in the editor before rendering. Whisper transcribes in the language spoken; for a translation, use the video's own YouTube subtitle track from the previous release.",
-  "notes_ja": "音声そのものから、お使いのパソコン上で字幕を作れるようになりました。字幕のない動画でも、「動画からシーン」の「🎤 文字起こし」を押し、言語（自動判定のままでも可）とモデルを選ぶと、話している内容が時間付きの字幕になります。字幕は自然なフレーズの区切りで分割され、それぞれがそのフレーズを話し始める瞬間に表示されます。使用するのは whisper.cpp という、このパソコン上だけで動く音声認識エンジンです。アカウントも API キーもオンラインサービスも不要で、何もアップロードされません。初回のみ、認識エンジン（Windows では自動）と選んだモデルをダウンロードします。「高精度」は 488 MB で日本語の精度が高く、「高速」は 148 MB です。Mac では brew install whisper-cpp で認識エンジンをインストールしてください。それ以降は高速で、20 秒のクリップなら約 1.5 秒で完了します。音声認識は完璧ではないため、レンダリング前にエディターで字幕をざっと確認することをおすすめします。文字起こしは話されている言語のままです。翻訳が必要な場合は、前回のリリースで追加した YouTube の字幕トラックをご利用ください。",
+  "version": "1.5.27",
+  "date": "2026-10-22",
+  "notes": "Fix: trimming a background video's clip now updates the preview. Dragging the Clip start or end handle past the range you had already set used to leave the preview frozen on the old range while only the labels changed. Now the preview follows the handle in both directions, and after you let go the video loops inside the new clip.",
+  "notes_ja": "修正：背景動画の「クリップ」範囲を変更すると、プレビューにすぐ反映されるようになりました。これまでは、設定済みの範囲より外側へ開始・終了ハンドルをドラッグすると、ラベルの数値だけが変わり、プレビューは古い範囲のまま止まっていました。今はどちらの方向にドラッグしてもプレビューがハンドルに追従し、手を離すと新しい範囲内でループ再生されます。",
   "files": [
     "index.html",
     "server.js",
