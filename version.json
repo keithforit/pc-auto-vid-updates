@@ -1,8 +1,8 @@
 {
-  "version": "1.5.27",
+  "version": "1.5.28",
   "date": "2026-10-22",
-  "notes": "Fix: trimming a background video's clip now updates the preview. Dragging the Clip start or end handle past the range you had already set used to leave the preview frozen on the old range while only the labels changed. Now the preview follows the handle in both directions, and after you let go the video loops inside the new clip.",
-  "notes_ja": "修正：背景動画の「クリップ」範囲を変更すると、プレビューにすぐ反映されるようになりました。これまでは、設定済みの範囲より外側へ開始・終了ハンドルをドラッグすると、ラベルの数値だけが変わり、プレビューは古い範囲のまま止まっていました。今はどちらの方向にドラッグしてもプレビューがハンドルに追従し、手を離すと新しい範囲内でループ再生されます。",
+  "notes": "Background music now starts off. New scenes — from Text to Video or the + Scene button — no longer have the project music turned on, and the 🎵 BGM button in the header shows OFF until you switch it on. One click on that button still turns music on for every scene, and you can switch it on per scene as before. Projects you've already made keep their current music settings.",
+  "notes_ja": "背景音楽（BGM）が初期設定でオフになりました。「テキストから動画」や「＋シーン」で作成した新しいシーンでは、プロジェクトの音楽がオンになりません。ヘッダーの 🎵 BGM ボタンも、オンにするまでは「オフ」と表示されます。これまでどおり、このボタンを1回押せば全シーンの音楽をオンにでき、シーンごとにオンにすることもできます。作成済みのプロジェクトは、現在の音楽設定がそのまま保たれます。",
   "files": [
     "index.html",
     "server.js",

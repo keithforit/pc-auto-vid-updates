@@ -63,7 +63,8 @@ async function parse() {
             background_color: '#0f172a', // placeholder; server overwrites with brand/random colour
             textPosition: 'center',
             textAlign: 'center',
-            duration: 5
+            duration: 5,
+            backgroundMusicEnabled: false
         });
     }
 

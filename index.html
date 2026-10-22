@@ -1251,7 +1251,7 @@
         <button class="btn sm blue" onclick="loadSegments()" data-i18n="load_scenes">🔄 Load Scenes</button>
         <button class="btn sm ghost" type="button" onclick="saveProjectDraft()" data-i18n="save_project_draft">💾 Save Project Draft</button>
         <button class="btn sm ghost" type="button" onclick="restoreProjectDraft()" data-i18n="restore_project_draft">↩ Restore Project Draft</button>
-        <button class="btn sm" type="button" id="global-bgm-btn" onclick="toggleAllScenesBgm()" title="Toggle background music on/off for all scenes" style="background:#1e293b;border:1px solid #334155;">🎵 BGM: ON</button>
+        <button class="btn sm" type="button" id="global-bgm-btn" onclick="toggleAllScenesBgm()" title="Toggle background music on/off for all scenes" style="background:#1e293b;border:1px solid #475569;color:#94a3b8;" data-bgm-on="0">🎵 BGM: OFF</button>
         <span class="view-toggle" id="scene-view-toggle">
           <button type="button" id="view-btn-list" onclick="setSceneViewMode('list')" data-i18n="view_list">📋 List</button>
           <button type="button" id="view-btn-timeline" onclick="setSceneViewMode('timeline')" data-i18n="view_timeline">🎞 Timeline</button>
@@ -6346,7 +6346,7 @@
     } else {
       document.querySelectorAll('[id^="bgm-enabled-"]').forEach(cb => { total++; if (cb.checked) enabledCount++; });
     }
-    _setGlobalBgmBtn(total === 0 || enabledCount >= total / 2);
+    _setGlobalBgmBtn(total > 0 && enabledCount >= total / 2); // no scenes yet → OFF, matching the default for new scenes
   }
 
   function _setGlobalBgmBtn(on) {
@@ -8364,7 +8364,7 @@
     const isCreateTab = document.getElementById('tab-create')?.classList.contains('active');
     const resetAll = Boolean(isCreateTab && !createDraftStarted);
     const bgmBtn = document.getElementById('global-bgm-btn');
-    const backgroundMusicEnabled = !bgmBtn || bgmBtn.dataset.bgmOn !== '0';
+    const backgroundMusicEnabled = bgmBtn?.dataset.bgmOn === '1';
     closeModal();
     const res = await fetch('/add-scene',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({afterIndex: resetAll ? -1 : pendingInsertAfter, text, voiceover_text, resetAll, backgroundMusicEnabled}) });
     let newIndex = -1;
@@ -8381,7 +8381,7 @@
     const resetAll = Boolean(isCreateTab && !createDraftStarted);
     const afterIndex = resetAll ? -1 : pendingInsertAfter;
     const bgmBtn = document.getElementById('global-bgm-btn');
-    const backgroundMusicEnabled = !bgmBtn || bgmBtn.dataset.bgmOn !== '0';
+    const backgroundMusicEnabled = bgmBtn?.dataset.bgmOn === '1';
     // First add a blank scene at the right position
     const addRes = await fetch('/add-scene', {
       method: 'POST',

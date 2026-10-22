@@ -1500,7 +1500,7 @@ app.post('/add-scene', (req, res) => {
             sceneFadeInDuration: 1.5,
             sceneFadeOutDuration: 1.5,
             textNoWrap: true,
-            backgroundMusicEnabled: backgroundMusicEnabled !== false,
+            backgroundMusicEnabled: backgroundMusicEnabled === true,
         };
         const insertAt = (afterIndex !== undefined && afterIndex >= 0) ? afterIndex + 1 : segments.length;
         segments.splice(insertAt, 0, newScene);

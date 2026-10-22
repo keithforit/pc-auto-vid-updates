@@ -162,7 +162,8 @@ async function parse() {
             background_url: videoFile,
             textPosition: 'center',
             textAlign: 'center',
-            duration: 5
+            duration: 5,
+            backgroundMusicEnabled: false
         });
     }
 
