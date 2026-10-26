@@ -1,8 +1,8 @@
 {
-  "version": "1.5.30",
+  "version": "1.5.31",
   "date": "2026-10-26",
-  "notes": "Fix: a scene's background video no longer gets stuck after you change it. If you had trimmed the clip and then swapped in a different, shorter video, the old trim was kept, so the preview froze on the last frame and the render could break. Now changing the background video resets the clip to the full new video. Scenes that are already stuck this way play the whole video again.",
-  "notes_ja": "修正：シーンの背景動画を変更した後に、動画が止まったままになる問題を直しました。クリップ範囲を設定した後に、より短い別の動画に差し替えると、古い範囲がそのまま残り、プレビューが最後のフレームで止まり、書き出しも正しく行われないことがありました。今は背景動画を変更すると、クリップ範囲が新しい動画の全体にリセットされます。すでにこの状態で止まっているシーンも、動画全体が再生されるようになります。",
+  "notes": "Fix: the ▶ preview button on a scene thumbnail works smoothly again. It now shows … while the voice loads, instead of flipping back to ▶ and inviting a second click that left two previews fighting. The background video now starts from the beginning of your clip together with the voice and loops with it, so the preview lines up the way the finished video does. Starting another scene's preview while one is loading now cleanly replaces it.",
+  "notes_ja": "修正：シーンのサムネイルにある ▶ プレビューボタンが、スムーズに動作するようになりました。音声の読み込み中は「…」と表示されます。これまでは ▶ に戻ってしまい、もう一度押すと2つのプレビューが重なって再生されていました。背景動画は、音声と一緒にクリップの開始位置から再生され、音声と一緒にループするので、完成動画と同じタイミングで確認できます。読み込み中に別のシーンのプレビューを始めても、前のプレビューはきちんと止まります。",
   "files": [
     "index.html",
     "server.js",

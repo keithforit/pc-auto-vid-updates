@@ -6667,27 +6667,31 @@
       stopThumbnailAudioPreview();
       return;
     }
-    resetThumbnailAudioButtons();
-    updateThumbnailAudioButtons(i, false, false);
-    const playBtn = document.getElementById(`thumb-audio-play-${i}`);
-    if (playBtn) { playBtn.disabled = true; playBtn.textContent = '…'; }
     // Create + prime the audio elements NOW, inside the click gesture. The play() calls below run
     // after awaits (settings + voice fetch), by which point Safari/iOS would block them (silent fail).
     const voiceEl = _primeAudioEl(new Audio());
     const sfxEl = _primeAudioEl(new Audio());
     const bgmEl = _primeAudioEl(new Audio());
+    stopAudioElement(currentVoicePreviewAudio);
+    currentVoicePreviewAudio = null;
+    _restoreVoicePreviewButton();
+    stopSceneSfxPreview();
+    stopThumbnailAudioPreview();
+    // Register the preview before any await, so another click (this scene or another) can cancel it while it loads.
+    const previewState = { sceneIndex: i, muted: false, voiceAudio: null, sfxAudio: null, bgMusicAudio: null, startTimer: null, stopTimer: null, cleanupTimer: null };
+    activeThumbnailPreview = previewState;
+    const stale = () => activeThumbnailPreview !== previewState;
+    const abandon = () => { [voiceEl, sfxEl, bgmEl].forEach(stopAudioElement); };
+    // Show "…" for the whole load (voice generation can take a second or two) — after the resets above, not before.
+    const playBtn = document.getElementById(`thumb-audio-play-${i}`);
+    if (playBtn) { playBtn.disabled = true; playBtn.textContent = '…'; }
     try {
-      stopAudioElement(currentVoicePreviewAudio);
-      currentVoicePreviewAudio = null;
-      _restoreVoicePreviewButton();
-      stopSceneSfxPreview();
-      stopThumbnailAudioPreview();
       await ensureCurrentSettingsLoaded();
-      const previewState = { sceneIndex: i, muted: false, voiceAudio: null, sfxAudio: null, bgMusicAudio: null, startTimer: null, stopTimer: null, cleanupTimer: null };
-      activeThumbnailPreview = previewState;
+      if (stale()) return abandon();
 
       const bgMusicSettings = getBackgroundMusicSettingsSnapshot();
       if (bgMusicSettings.backgroundMusicRandom !== false) await ensureMusicFilesLoaded();
+      if (stale()) return abandon();
       const bgMusicFile = getSelectedBackgroundMusicFilenameFromSettings(bgMusicSettings);
       if (bgMusicFile && getSceneBgmEnabled(i)) {
         bgmEl.src = `/public/music/${encodeURIComponent(bgMusicFile)}?t=${Date.now()}`;
@@ -6698,6 +6702,7 @@
         try { await bgmEl.play(); } catch (err) { console.warn('Thumbnail background music preview failed:', err); }
       }
       const voiceAudio = await createSceneVoicePreviewAudio(i, 'full', false, voiceEl);
+      if (stale()) return abandon();
       if (voiceAudio) previewState.voiceAudio = voiceAudio;
       const sfxFile = document.getElementById(`sfxsrc-${i}`)?.value?.trim();
       if (sfxFile) {
@@ -6718,6 +6723,12 @@
         updateExtraTextPreviewAll(i);
         refreshOverlayPreview(i, true, true);
         updateShapePreviewAll(i, null, true);
+        // Restart the background video at the clip start with the voice, like the render, instead of leaving it mid-loop.
+        const bgVid = document.getElementById(`thumb-${i}`);
+        if (bgVid && bgVid.tagName === 'VIDEO') {
+          const cs = bgVid._clipStart || 0;
+          try { bgVid.currentTime = (isFinite(bgVid.duration) && cs >= bgVid.duration - 0.1) ? 0 : cs; const p = bgVid.play(); if (p && p.catch) p.catch(() => {}); } catch {}
+        }
         if (previewState.voiceAudio) {
           previewState.voiceAudio.currentTime = 0;
           try { await previewState.voiceAudio.play(); } catch (err) { console.warn('Voice preview failed:', err); }
@@ -6746,8 +6757,11 @@
       }
 
       await runLoop();
+      if (stale()) return abandon();
       updateThumbnailAudioButtons(i, true, false);
     } catch (err) {
+      // Only tear down if this preview is still the active one — don't kill a newer preview that replaced it.
+      if (stale()) { abandon(); return; }
       stopThumbnailAudioPreview();
       previewFailedToast(err);
     } finally {
