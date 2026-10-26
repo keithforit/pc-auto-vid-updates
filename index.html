@@ -8720,6 +8720,8 @@
       if (vid && vid.tagName === 'VIDEO' && isFinite(vid.duration) && vid.duration > 0) dur = vid.duration;
     }
 
+    // Swap in fresh handles so a re-init (after a background change) doesn't stack drag listeners.
+    for (const id of [`clip-hs-${i}`, `clip-he-${i}`]) { const h = document.getElementById(id); if (h) h.replaceWith(h.cloneNode(true)); }
     const track  = document.getElementById(`clip-track-${i}`);
     const fill   = document.getElementById(`clip-fill-${i}`);
     const hs     = document.getElementById(`clip-hs-${i}`);
@@ -8741,6 +8743,9 @@
 
     let cs = seg.clipStart != null ? Number(seg.clipStart) : 0;
     let ce = seg.clipEnd   != null ? Number(seg.clipEnd)   : dur;
+    // A trim saved against a longer video falls outside this one — show the full clip instead.
+    if (cs >= dur - 0.1) cs = 0;
+    if (ce > dur) ce = dur;
     cs = Math.max(0, Math.min(cs, dur));
     ce = Math.max(cs + 0.1, Math.min(ce, dur));
 
@@ -8840,6 +8845,8 @@
       video._clipHandler = () => {
         if (video._clipDragging) return;
         const cs = video._clipStart, ce = video._clipEnd;
+        // Start past the end (trim from a longer video) would pin playback to the last frame — just let it loop whole.
+        if (isFinite(video.duration) && cs >= video.duration - 0.1) return;
         if (ce != null && video.currentTime >= ce) {
           video.currentTime = cs; // hit clip end — loop to clip start
         } else if (cs > 0.5 && video.currentTime < cs - 0.5) {
@@ -8972,6 +8979,15 @@
     if(el.tagName==='VIDEO'){el.src=src;updateBackgroundTransformPreview(i);}  // new object-position model
     else{el.outerHTML=`<video class="video-thumb" id="thumb-${i}" src="${src}" style="${style}" autoplay muted loop playsinline></video>`;}
     const vid = document.getElementById(`thumb-${i}`);
+    // New video, new trim: the server clears clipStart/clipEnd, so drop the old range here too and rebuild the slider.
+    if (vid && vid.tagName === 'VIDEO') { vid._clipStart = 0; vid._clipEnd = null; }
+    const seg = sdSegments[i];
+    if (seg) { delete seg.clipStart; delete seg.clipEnd; delete seg.video_duration; }
+    const clipBox = document.getElementById(`clip-timeline-${i}`);
+    if (clipBox && seg && vid && vid.tagName === 'VIDEO') {
+      clipBox.dataset.duration = '';
+      vid.addEventListener('loadedmetadata', () => { try { initClipTimeline(i, seg); } catch(e) { console.warn('clip timeline init:', e); } }, { once: true });
+    }
     if (vid) vid.onerror = () => addEditorLog(`⚠️ Scene ${i+1} video preview failed to load — the file may not have saved correctly`);
     setBackgroundTransformPanelState(i, true);
   }

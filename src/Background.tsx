@@ -202,8 +202,12 @@ export const Background: React.FC<BackgroundProps> = ({
     };
 
     // Clip boundaries (in seconds)
-    const clipStartSecs = Math.max(0, Number(clipStart) || 0);
-    const clipEndSecs = (clipEnd != null && Number(clipEnd) > clipStartSecs) ? Number(clipEnd) : null;
+    // A trim saved against a longer video (before the background was swapped) is ignored rather than producing a negative loop.
+    const vidDur = Number(videoDurationInSeconds) || 0;
+    let clipStartSecs = Math.max(0, Number(clipStart) || 0);
+    if (vidDur && clipStartSecs >= vidDur - 0.1) clipStartSecs = 0;
+    let clipEndSecs = (clipEnd != null && Number(clipEnd) > clipStartSecs) ? Number(clipEnd) : null;
+    if (vidDur && clipEndSecs != null && clipEndSecs > vidDur) clipEndSecs = null;
     // Effective duration for one loop cycle: clip range, or full video minus start
     const effectiveVideoDuration = clipEndSecs
         ? clipEndSecs - clipStartSecs

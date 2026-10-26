@@ -524,6 +524,9 @@ app.get('/scene-draft-library', (req, res) => {
 // Download a remote video to public/backgrounds/ and return the local filename
 // Probe a local video file for its duration using ffprobe.
 // Returns the duration in seconds (rounded to 2 dp), or null if ffprobe fails / is unavailable.
+// A trim belongs to one video — a new background must not inherit the old clip range.
+function clearClipTrim(seg) { delete seg.clipStart; delete seg.clipEnd; }
+
 async function getVideoDuration(filepath) {
     const { execFile } = require('child_process');
     return new Promise((resolve) => {
@@ -657,6 +660,7 @@ app.post('/replace-video', async (req, res) => {
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
+        clearClipTrim(segments[index]);
         segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
@@ -693,6 +697,7 @@ app.post('/replace-video-by-url', async (req, res) => {
             const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
             const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
             segments[index].background_url  = filename;
+            clearClipTrim(segments[index]);
             segments[index].video_duration  = videoDuration;
             segments[index].background_type = 'video';
             fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
@@ -723,6 +728,7 @@ app.post('/replace-video-by-url', async (req, res) => {
             });
             const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
             segments[index].background_url  = filename;
+            clearClipTrim(segments[index]);
             segments[index].background_type = 'image';
             delete segments[index].video_duration;
             fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
@@ -759,6 +765,7 @@ app.post('/replace-video-pixabay', async (req, res) => {
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
+        clearClipTrim(segments[index]);
         segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
@@ -797,6 +804,7 @@ app.post('/replace-video-pixabay-url', async (req, res) => {
         const videoDuration = await getVideoDuration(`./public/backgrounds/${filename}`);
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
+        clearClipTrim(segments[index]);
         segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
@@ -853,6 +861,7 @@ app.post('/upload-image', upload.single('image'), (req, res) => {
         const filename = req.file.filename;
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url  = filename;
+        clearClipTrim(segments[index]);
         segments[index].background_type = 'image';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ filename, previewUrl: `/public/backgrounds/${filename}` });
@@ -870,6 +879,7 @@ app.post('/upload-video', upload.single('video'), async (req, res) => {
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         const isFirstVideo = !segments[index].background_url;
         segments[index].background_url  = filename; // stored as filename, Background.tsx picks it up from backgrounds/
+        clearClipTrim(segments[index]);
         segments[index].video_duration  = videoDuration;
         segments[index].background_type = 'video';
         // Auto-set scene duration to video length on first upload to a new scene
@@ -1044,6 +1054,7 @@ app.post('/use-stock-video', (req, res) => {
         const { index, filename } = req.body;
         const segments = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
         segments[index].background_url = `stockvideo/${filename}`; // Background.tsx resolves via staticFile()
+        clearClipTrim(segments[index]);
         segments[index].background_type = 'video';
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));
         res.json({ ok: true });
@@ -1835,11 +1846,13 @@ app.post('/set-background-style', (req, res) => {
         if (type === 'color') {
             segments[index].background_color = color;
             segments[index].background_url = '';
+            clearClipTrim(segments[index]);
         } else if (type === 'gradient') {
             segments[index].gradient_start     = gradientStart;
             segments[index].gradient_end       = gradientEnd;
             segments[index].gradient_direction = gradientDirection || 'to bottom';
             segments[index].background_url = '';
+            clearClipTrim(segments[index]);
         }
         // type === 'video' or 'image': leave background_url untouched
         fs.writeFileSync('./src/Content.json', JSON.stringify(segments, null, 2));

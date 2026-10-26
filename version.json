@@ -1,8 +1,8 @@
 {
-  "version": "1.5.29",
+  "version": "1.5.30",
   "date": "2026-10-26",
-  "notes": "Fix: the preview now shows the video while you drag a Clip handle. Before, dragging the start or end handle left the preview blank or frozen until you let go, and sometimes the thumbnail stayed stopped afterwards. Now the preview follows the handle frame by frame, and when you let go it always plays again, looping inside the new clip.",
-  "notes_ja": "修正：「クリップ」のハンドルをドラッグしている間、プレビューに映像が表示されるようになりました。これまでは開始・終了ハンドルをドラッグしても、手を離すまでプレビューが真っ白または止まったままで、離した後もサムネイルが止まったままになることがありました。今はハンドルに合わせてプレビューが追従し、手を離すと必ず再生が再開され、新しい範囲内でループします。",
+  "notes": "Fix: a scene's background video no longer gets stuck after you change it. If you had trimmed the clip and then swapped in a different, shorter video, the old trim was kept, so the preview froze on the last frame and the render could break. Now changing the background video resets the clip to the full new video. Scenes that are already stuck this way play the whole video again.",
+  "notes_ja": "修正：シーンの背景動画を変更した後に、動画が止まったままになる問題を直しました。クリップ範囲を設定した後に、より短い別の動画に差し替えると、古い範囲がそのまま残り、プレビューが最後のフレームで止まり、書き出しも正しく行われないことがありました。今は背景動画を変更すると、クリップ範囲が新しい動画の全体にリセットされます。すでにこの状態で止まっているシーンも、動画全体が再生されるようになります。",
   "files": [
     "index.html",
     "server.js",
