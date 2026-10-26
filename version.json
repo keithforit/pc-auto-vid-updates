@@ -1,8 +1,8 @@
 {
-  "version": "1.5.28",
-  "date": "2026-10-22",
-  "notes": "Background music now starts off. New scenes — from Text to Video or the + Scene button — no longer have the project music turned on, and the 🎵 BGM button in the header shows OFF until you switch it on. One click on that button still turns music on for every scene, and you can switch it on per scene as before. Projects you've already made keep their current music settings.",
-  "notes_ja": "背景音楽（BGM）が初期設定でオフになりました。「テキストから動画」や「＋シーン」で作成した新しいシーンでは、プロジェクトの音楽がオンになりません。ヘッダーの 🎵 BGM ボタンも、オンにするまでは「オフ」と表示されます。これまでどおり、このボタンを1回押せば全シーンの音楽をオンにでき、シーンごとにオンにすることもできます。作成済みのプロジェクトは、現在の音楽設定がそのまま保たれます。",
+  "version": "1.5.29",
+  "date": "2026-10-26",
+  "notes": "Fix: the preview now shows the video while you drag a Clip handle. Before, dragging the start or end handle left the preview blank or frozen until you let go, and sometimes the thumbnail stayed stopped afterwards. Now the preview follows the handle frame by frame, and when you let go it always plays again, looping inside the new clip.",
+  "notes_ja": "修正：「クリップ」のハンドルをドラッグしている間、プレビューに映像が表示されるようになりました。これまでは開始・終了ハンドルをドラッグしても、手を離すまでプレビューが真っ白または止まったままで、離した後もサムネイルが止まったままになることがありました。今はハンドルに合わせてプレビューが追従し、手を離すと必ず再生が再開され、新しい範囲内でループします。",
   "files": [
     "index.html",
     "server.js",

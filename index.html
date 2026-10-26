@@ -8766,28 +8766,41 @@
         const rect = track.getBoundingClientRect();
         // Pause the looping preview while dragging so each scrubbed frame holds still.
         const dragVid = document.getElementById(`thumb-${i}`);
-        const wasPlaying = dragVid && dragVid.tagName === 'VIDEO' && !dragVid.paused;
-        if (dragVid && dragVid.tagName === 'VIDEO') { try { dragVid.pause(); } catch(_) {} }
+        const isVid = dragVid && dragVid.tagName === 'VIDEO';
+        if (isVid) { try { dragVid.pause(); } catch(_) {} }
         // Suspend the clip-loop guard while scrubbing — it still holds the old bounds and would snap outward scrubs back.
         if (dragVid) dragVid._clipDragging = true;
+        // Coalesce scrub seeks: a new currentTime on every mousemove aborts the previous seek, so no frame ever paints.
+        // Seek only once the last one has landed, always to the latest handle position.
+        let scrubTarget = null;
+        function scrubTo(t) {
+          if (!isVid) return;
+          scrubTarget = t;
+          if (dragVid.seeking) return;
+          const go = scrubTarget; scrubTarget = null;
+          try { dragVid.currentTime = go; } catch(_) {}
+        }
+        function onSeeked() { if (scrubTarget != null) scrubTo(scrubTarget); }
+        if (isVid) dragVid.addEventListener('seeked', onSeeked);
         function onMove(ev) {
           const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
           const raw = parseFloat(fromPct(x - rect.left, rect).toFixed(2));
-          const vid = document.getElementById(`thumb-${i}`);
           if (type === 'start') {
             cs = Math.max(0, Math.min(raw, ce - 0.1));
             // Scrub the preview to the start frame so you see where the clip begins.
-            if (vid && vid.tagName === 'VIDEO') try { vid.currentTime = cs; } catch(_) {}
+            scrubTo(cs);
           } else {
             ce = Math.max(cs + 0.1, Math.min(raw, dur));
             // Scrub the preview to the end frame so you see where the clip ends (mirrors the start handle).
-            if (vid && vid.tagName === 'VIDEO') try { vid.currentTime = ce; } catch(_) {}
+            scrubTo(ce);
           }
           render();
         }
         function onUp() {
           handle.classList.remove('dragging');
           if (dragVid) dragVid._clipDragging = false;
+          if (isVid) dragVid.removeEventListener('seeked', onSeeked);
+          scrubTarget = null;
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
           document.removeEventListener('touchmove', onMove);
@@ -8795,8 +8808,9 @@
           saveBgClip(i);
           applyClipToThumb(i, cs > 0.05 ? cs : null, ce < dur - 0.05 ? ce : null);
           // Resume from the clip start so you immediately see the selected segment play (and loop within it).
-          if (dragVid && dragVid.tagName === 'VIDEO') {
-            try { dragVid.currentTime = cs; if (wasPlaying) { const p = dragVid.play(); if (p && p.catch) p.catch(() => {}); } } catch(_) {}
+          // Always resume: the thumbnail is an autoplay loop, and a stalled-before-drag preview shouldn't stay frozen.
+          if (isVid) {
+            try { dragVid.currentTime = cs; const p = dragVid.play(); if (p && p.catch) p.catch(() => {}); } catch(_) {}
           }
         }
         document.addEventListener('mousemove', onMove);
