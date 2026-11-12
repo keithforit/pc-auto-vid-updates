@@ -1,8 +1,8 @@
 {
-  "version": "1.5.31",
-  "date": "2026-10-26",
-  "notes": "Fix: the ▶ preview button on a scene thumbnail works smoothly again. It now shows … while the voice loads, instead of flipping back to ▶ and inviting a second click that left two previews fighting. The background video now starts from the beginning of your clip together with the voice and loops with it, so the preview lines up the way the finished video does. Starting another scene's preview while one is loading now cleanly replaces it.",
-  "notes_ja": "修正：シーンのサムネイルにある ▶ プレビューボタンが、スムーズに動作するようになりました。音声の読み込み中は「…」と表示されます。これまでは ▶ に戻ってしまい、もう一度押すと2つのプレビューが重なって再生されていました。背景動画は、音声と一緒にクリップの開始位置から再生され、音声と一緒にループするので、完成動画と同じタイミングで確認できます。読み込み中に別のシーンのプレビューを始めても、前のプレビューはきちんと止まります。",
+  "version": "1.5.32",
+  "date": "2026-11-12",
+  "notes": "Polish: dropdown arrows now sit a little in from the right edge instead of hugging the border, so menus like Fade in/out duration look cleaner.",
+  "notes_ja": "改善：ドロップダウンの矢印が右端に寄りすぎないよう、少し内側に表示されるようになりました（フェードイン/アウト時間など）。",
   "files": [
     "index.html",
     "server.js",

@@ -535,6 +535,12 @@
       width: 100%; box-sizing: border-box; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid);
       border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none;
     }
+    /* Custom chevron so the arrow sits inset from the right edge instead of hugging the border. */
+    select {
+      -webkit-appearance: none; appearance: none; padding-right: 34px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; background-size: 12px 8px;
+    }
     select:focus, .settings-section input[type=text]:focus, #settings-pexels-key:focus, #settings-pixabay-key:focus { border-color: var(--accent); }
 
     /* Voice extra fields */
@@ -578,7 +584,7 @@
     /* Compact per-scene / per-layer font picker */
     .typo-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
     .typo-row label { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
-    .font-select { flex: 1; min-width: 0; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 6px; padding: 6px 8px; font-size: 13px; outline: none; cursor: pointer; }
+    .font-select { flex: 1; min-width: 0; background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-mid); border-radius: 6px; padding: 6px 28px 6px 8px; background-position: right 9px center; font-size: 13px; outline: none; cursor: pointer; }
     .font-select:focus { border-color: var(--accent); }
 
     /* Glow color row */
