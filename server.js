@@ -1878,39 +1878,70 @@ function killTree(proc) {
     setTimeout(() => { try { process.kill(-pid, 0); sig('SIGKILL'); } catch (_) {} }, 4000);
 }
 
+// The one production batch currently running (server-wide), or null.
+let currentBatch = null;
+
 io.on('connection', (socket) => {
+    // Tell a (re)connecting page whether a production batch is still running, and re-attach the
+    // batch's log/status output to this connection so a dropped socket doesn't orphan the run.
+    socket.on('batch-state', () => {
+        if (currentBatch && !currentBatch.cancelled) currentBatch.socket = socket;
+        socket.emit('batch-state', { running: !!(currentBatch && !currentBatch.cancelled) });
+    });
+
+    // Stop works from ANY connection (the batch is server-wide, not tied to the socket that started
+    // it). With nothing running we still acknowledge, so the page's button can never get stuck on STOP.
+    socket.on('cancel-batch', () => {
+        if (currentBatch && !currentBatch.cancelled) currentBatch.cancel(socket);
+        else socket.emit('batch-cancelled');
+    });
+
     socket.on('start-batch', async (data) => {
         const scripts = data.scripts.filter(s => s.trim() !== "").slice(0, 2);
         const contentType = data.contentType || 'stock'; // 'stock' | 'captions'
         const lang = data.lang || 'en';
         const L = LOG[lang] || LOG.en;
 
-        // ── Cancellation support ──────────────────────────────────────────
-        let cancelled = false;
-        let activeProc = null;
+        // A previous run may still be alive (e.g. Remotion's browser crashed and is stuck retrying,
+        // or its page disconnected). Kill it and wait for it to unwind before starting fresh.
+        if (currentBatch) {
+            const prev = currentBatch;
+            if (!prev.cancelled) prev.cancel(null, true);   // silent: don't reset the page's button for the new run
+            await Promise.race([prev.done, new Promise(r => setTimeout(r, 8000))]);
+        }
 
-        const cancelHandler = () => {
-            cancelled = true;
-            if (activeProc) {
-                killTree(activeProc);   // kill the render tree, not just the shell
-                activeProc = null;
-            }
-            socket.emit('log', L.cancelled);
-            socket.emit('batch-cancelled');
+        // ── Cancellation support ──────────────────────────────────────────
+        let activeProc = null;
+        let finish;
+        const batch = {
+            socket,
+            cancelled: false,
+            done: null,
+            cancel(requester, silent = false) {
+                if (batch.cancelled) return;
+                batch.cancelled = true;
+                if (activeProc) { killTree(activeProc); activeProc = null; }   // kill the render tree, not just the shell
+                if (silent) return;
+                bOut.emit('log', L.cancelled);
+                bOut.emit('batch-cancelled');
+                if (requester && requester !== batch.socket) requester.emit('batch-cancelled');
+            },
         };
-        socket.once('cancel-batch', cancelHandler);
+        batch.done = new Promise(r => { finish = r; });
+        const bOut = { emit: (...a) => { try { batch.socket.emit(...a); } catch (_) {} } };
+        currentBatch = batch;
 
         // Helper: spawn a process, stream its output, reject on non-zero exit
         const runProc = (cmd, args, opts = {}) => new Promise((resolve, reject) => {
-            if (cancelled) return reject(new Error('cancelled'));
+            if (batch.cancelled) return reject(new Error('cancelled'));
             const proc = spawn(cmd, args, { ...opts, detached: true });
             activeProc = proc;
-            const fwd = d => d.toString().split('\n').filter(l => l.trim()).forEach(l => socket.emit('log', l));
+            const fwd = d => d.toString().split('\n').filter(l => l.trim()).forEach(l => bOut.emit('log', l));
             proc.stdout?.on('data', fwd);
             proc.stderr?.on('data', fwd);
             proc.on('close', code => {
                 activeProc = null;
-                if (cancelled) return reject(new Error('cancelled'));
+                if (batch.cancelled) return reject(new Error('cancelled'));
                 code === 0 ? resolve() : reject(new Error(`Process exited with code ${code}`));
             });
         });
@@ -1924,18 +1955,18 @@ io.on('connection', (socket) => {
         ];
 
         for (let i = 0; i < scripts.length; i++) {
-            if (cancelled) break;
+            if (batch.cancelled) break;
             try {
                 const script = scripts[i];
                 const japanese = isJapanese(script);
 
-                socket.emit('log', L.script_info(i + 1, japanese, contentType));
+                bOut.emit('log', L.script_info(i + 1, japanese, contentType));
 
                 fs.writeFileSync('temp_input.txt', script);
 
                 // Step 1: Parse script → Content.json
                 const parserScript = contentType === 'captions' ? 'parser-captions.js' : 'parser.js';
-                socket.emit('log', L.parsing(contentType === 'captions'));
+                bOut.emit('log', L.parsing(contentType === 'captions'));
                 // Hand the parser the resolved keys (wizard users keep them in UserConfig, not
                 // the environment) plus the provider order — so it can fall back Pexels↔Pixabay
                 // if the preferred stock provider is down.
@@ -1949,12 +1980,12 @@ io.on('connection', (socket) => {
                     STOCK_PROVIDER_ORDER: (order.length ? order : ['pexels', 'pixabay']).join(','),
                 };
                 await runProc('node', [parserScript], { env: parserEnv });
-                if (cancelled) break;
-                socket.emit('log', L.parsed);
+                if (batch.cancelled) break;
+                bOut.emit('log', L.parsed);
 
                 // For captions-only: assign brand or random colours to each scene
                 if (contentType === 'captions') {
-                    socket.emit('log', L.applying_colors);
+                    bOut.emit('log', L.applying_colors);
                     const segments = readJsonFile(CONTENT_PATH, []);
                     const mediaLib = readMediaLibrary();
                     const brandColors = (mediaLib.brandColors || []).map(c => c.color).filter(Boolean);
@@ -1968,49 +1999,50 @@ io.on('connection', (socket) => {
                         seg.background_color = color;
                     });
                     writeJsonFile(CONTENT_PATH, segments);
-                    socket.emit('log', L.assigned_colors(brandColors.length > 0, segments.length));
+                    bOut.emit('log', L.assigned_colors(brandColors.length > 0, segments.length));
                 }
 
                 // Step 1b: Apply current style settings to all parsed segments
                 applyStylesToContent(readSettings());
 
                 // Step 2: Generate voiceovers
-                socket.emit('log', L.gen_voice);
+                bOut.emit('log', L.gen_voice);
                 const voiceSettings = readSettings();
                 const segmentsForVoice = JSON.parse(fs.readFileSync('./src/Content.json', 'utf8'));
                 const audioScriptName = contentUsesVoicevox(segmentsForVoice, voiceSettings)
                     ? 'generate-audio-voicevox.js'
                     : japanese ? 'generate-audio-ja.js' : 'generate-audio.js';
                 await runProc('node', [audioScriptName]);
-                if (cancelled) break;
-                socket.emit('log', L.voice_ready);
+                if (batch.cancelled) break;
+                bOut.emit('log', L.voice_ready);
 
                 // Step 3: Render video
                 const title = fs.readFileSync('temp_title.txt', 'utf8').trim();
                 const finalName = `${title}_${Date.now()}.mp4`;
 
-                await prepareVoiceForRender(msg => socket.emit('log', msg), lang);
-                validateContentForRender(msg => socket.emit('log', msg), lang);
-                socket.emit('log', L.rendering);
+                await prepareVoiceForRender(msg => bOut.emit('log', msg), lang);
+                validateContentForRender(msg => bOut.emit('log', msg), lang);
+                bOut.emit('log', L.rendering);
                 await runProc('npx', ['remotion', 'render', 'src/index.ts', '1', '--force', '--concurrency=1'], { shell: true });
-                if (cancelled) break;
+                if (batch.cancelled) break;
 
                 if (!fs.existsSync('renders')) fs.mkdirSync('renders');
                 fs.renameSync('out/1.mp4', `renders/${finalName}`);
-                cleanupUnusedBackgrounds(msg => socket.emit('log', msg), lang);
-                socket.emit('status', { msg: L.done_status(finalName), progress: ((i + 1) / scripts.length) * 100 });
-                socket.emit('log', L.saved(finalName));
+                cleanupUnusedBackgrounds(msg => bOut.emit('log', msg), lang);
+                bOut.emit('status', { msg: L.done_status(finalName), progress: ((i + 1) / scripts.length) * 100 });
+                bOut.emit('log', L.saved(finalName));
 
             } catch (err) {
                 if (err.message === 'cancelled') break;
-                socket.emit('log', L.error(err.message));
+                bOut.emit('log', L.error(err.message));
             }
         }
 
-        socket.off('cancel-batch', cancelHandler);
-        if (!cancelled) {
-            socket.emit('status', { msg: L.batch_complete, progress: 100 });
+        if (!batch.cancelled) {
+            bOut.emit('status', { msg: L.batch_complete, progress: 100 });
         }
+        if (currentBatch === batch) currentBatch = null;
+        finish();
     });
 
     // ── Render-only cancellation support ─────────────────────────

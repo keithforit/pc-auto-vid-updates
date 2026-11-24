@@ -4294,10 +4294,12 @@
   }
 
   let _batchRunning = false;
+  let _batchStopFallback = null;   // frees the STOP button if the server never confirms the cancel
   let _ttvReloaded = false;   // guards the batch's double progress:100 from reloading the editor twice
 
   function _setBatchBtn(running) {
     _batchRunning = running;
+    clearTimeout(_batchStopFallback);
     const btn = document.getElementById('startBtn');
     if (!btn) return;
     if (running) {
@@ -4314,7 +4316,18 @@
 
   async function startBatch() {
     if (_batchRunning) {
+      // Stop must always work, even if the render's browser crashed or the connection dropped and the
+      // server never answers: ask the server to kill the run, then free the button after a short wait
+      // regardless, so the user can always start again.
       socket.emit('cancel-batch');
+      const btn = document.getElementById('startBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏹ …'; }
+      clearTimeout(_batchStopFallback);
+      _batchStopFallback = setTimeout(() => {
+        if (!_batchRunning) return;
+        _setBatchBtn(false);
+        document.getElementById('status-text').textContent = (I18N[window._appLang||'en']||I18N.en).log_cancelled;
+      }, 5000);
       return;
     }
     // Text to Video regenerates the whole project from the script — confirm before wiping existing scenes.
@@ -4427,6 +4440,14 @@
       ov.addEventListener('click', e => { if (e.target === ov) done(false); });
     });
   }
+
+  // On every (re)connect, sync the button with the server: a dropped connection mid-render must not
+  // leave the page stuck on STOP for a run that already ended (or hide one that's still going).
+  socket.on('connect', () => socket.emit('batch-state'));
+  socket.on('batch-state', d => {
+    const running = !!(d && d.running);
+    if (running !== _batchRunning) _setBatchBtn(running);
+  });
 
   socket.on('batch-cancelled', () => {
     _setBatchBtn(false);

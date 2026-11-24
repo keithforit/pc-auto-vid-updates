@@ -1,8 +1,8 @@
 {
-  "version": "1.5.32",
-  "date": "2026-11-12",
-  "notes": "Polish: dropdown arrows now sit a little in from the right edge instead of hugging the border, so menus like Fade in/out duration look cleaner.",
-  "notes_ja": "改善：ドロップダウンの矢印が右端に寄りすぎないよう、少し内側に表示されるようになりました（フェードイン/アウト時間など）。",
+  "version": "1.5.33",
+  "date": "2026-11-24",
+  "notes": "Fix: STOP PRODUCTION now always works — even if the render's browser crashes or the page loses its connection. Stop kills the stuck render, the button resets, and you can start again right away. Starting a new production also clears out any leftover stuck run.",
+  "notes_ja": "修正：レンダリング中のブラウザがクラッシュしたり接続が切れたりしても「制作停止」が必ず効くようになりました。止まったレンダリングを終了してボタンが元に戻り、すぐに再開できます。新しく制作を開始すると、残っていた停止できない処理も自動で片付けます。",
   "files": [
     "index.html",
     "server.js",
